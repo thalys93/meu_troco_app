@@ -8,12 +8,13 @@ import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/hooks/use-user';
 
 const MobileNav = () => {
   const location = useLocation();
   const [open, setOpen] = React.useState(false);
   const {setTheme, theme} = useTheme()
-  const {user , logout} = useAuth()
+  const {user , handleLogout} = useUser()
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -65,7 +66,7 @@ const MobileNav = () => {
               <Moon className="w-4 h-4 mr-2" />
               <span>Modo Escuro</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={logout}>
+            <DropdownMenuItem onClick={handleLogout}>
               <DoorOpen className="w-4 h-4 mr-2" />
               <span>Logout</span>
             </DropdownMenuItem>

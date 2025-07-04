@@ -1,6 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import NotFoundPage from "@/subdomains/layout/NotFoundPage";
-import RequireAuth from "./guards/RequireAuth";
+import NotFoundPage from "@/subdomains/components/NotFoundPage";
 import { AllRoutes } from "./map";
 
 const renderAllRoutes = () => {
@@ -26,9 +25,7 @@ const renderAllRoutes = () => {
                     key={fullPath}
                     path={fullPath}
                     element={
-                        <RequireAuth>
-                            <Element />
-                        </RequireAuth>
+                        <Element />
                     }
                 />
             );

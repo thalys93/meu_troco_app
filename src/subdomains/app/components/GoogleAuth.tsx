@@ -1,19 +1,10 @@
 import { Button } from '@/components/ui/button'
-import { AuthProvider, GoogleProvider } from '@/utils/api/firebase'
+import { useLoginWithGoogle } from '@/utils/api/auth'
 import { GoogleLogoIcon } from '@phosphor-icons/react'
-import { browserSessionPersistence, setPersistence, signInWithPopup } from 'firebase/auth'
 
-
-function GoogleAuth() {            
-    async function handleLogin() {
-        try {
-            await setPersistence(AuthProvider, browserSessionPersistence);
-            await signInWithPopup(AuthProvider, GoogleProvider);
-        } catch (error) {
-            console.error("Erro no login com redirect:", error);
-        }
-    }    
-
+function GoogleAuth() {
+    const mutate = useLoginWithGoogle();
+    async function handleLogin() {mutate.mutate();}
     return (
         <Button variant='outline' onClick={handleLogin} className='bg-emerald-500 border-0'>
             <GoogleLogoIcon className='scale-150 text-white' />

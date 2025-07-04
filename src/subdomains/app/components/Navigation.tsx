@@ -99,7 +99,7 @@ function Navigation({ type }: { type: "simple" | "full" }) {
                             </div>
                             <div className="flex items-center gap-2">
                                 <ThemeToggle />
-                                <Button onClick={() => navigate("/")} disabled={isCallBack}>                                    
+                                <Button onClick={() => navigate(-1)} disabled={isCallBack}>                                    
                                     Voltar
                                 </Button>
                             </div>

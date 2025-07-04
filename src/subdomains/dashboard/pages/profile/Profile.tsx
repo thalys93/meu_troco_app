@@ -14,7 +14,8 @@ import { Form } from '@/components/ui/form';
 import { AuthProvider, FireStore } from '@/utils/api/firebase';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/hooks/use-user';
+import { AccountProviders } from '@/types/enums/AccountProviders';
 
 const initialNameForm = {
   name: "",
@@ -27,10 +28,10 @@ const initialPassForm = {
   confirmPassword: ""
 }
 
-const ProfilePage = () => {  
+const ProfilePage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const {user} = useAuth()
+  const { user } = useUser()
 
   const nameForm = useForm({
     defaultValues: initialNameForm
@@ -48,7 +49,7 @@ const ProfilePage = () => {
   };
 
   const handleSaveProfile = async (data: typeof initialNameForm) => {
-    const { name } = data;    
+    const { name } = data;
     const firstName = name.trim().split(" ")[0] || "";
     const lastName = name.trim().split(" ").slice(1).join(" ") || "";
     try {
@@ -124,13 +125,13 @@ const ProfilePage = () => {
     passForm.reset();
   };
 
-  React.useEffect(() => {    
-    if (user) {      
+  React.useEffect(() => {
+    if (user) {
       nameForm.reset({
         name: user.displayName,
-        email: user.email        
-      })      
-    }    
+        email: user.email
+      })
+    }
   }, [nameForm, user]);
 
   const handleUpgrade = () => {
@@ -222,17 +223,18 @@ const ProfilePage = () => {
               <Form form={nameForm} onSubmit={handleSaveProfile} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Nome</Label>
-                  <Input                    
+                  <Input
                     leftIcon={<User className="w-4 h-4" />}
                     type="text"
                     name="name"
+                    disabled={user.provider !== AccountProviders.EMAIL}
                     placeholder="Seu nome completo"
                     control={nameForm.control}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
-                  <Input                    
+                  <Input
                     leftIcon={<Mail className="w-4 h-4" />}
                     type="email"
                     name="email"
@@ -241,7 +243,7 @@ const ProfilePage = () => {
                     disabled
                   />
                 </div>
-                <Button type="submit" className="w-full">
+                <Button type="submit" className="w-full" disabled={user.provider !== AccountProviders.EMAIL}>
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Informações
                 </Button>

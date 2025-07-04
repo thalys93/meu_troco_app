@@ -1,5 +1,6 @@
 import LandingPage from "@/subdomains/app/pages/home/Landing";
-import LoginPage from "@/subdomains/app/pages/login/Login";
+import LoginPage from "@/subdomains/app/pages/oauth/Login";
+import RegisterPage from "@/subdomains/app/pages/oauth/Register";
 import DashboardPage from "@/subdomains/dashboard/pages/dashboard/Dashboard";
 import ExpensesPage from "@/subdomains/dashboard/pages/expenses/Expenses";
 import IncomePage from "@/subdomains/dashboard/pages/income/Income";
@@ -24,6 +25,7 @@ export const AppRoutes: RoutesGroup = {
     public: [
         { path: "", element: LandingPage },
         { path: "oauth/login", element: LoginPage },
+        { path: "oauth/register", element: RegisterPage }
     ]
 }
 

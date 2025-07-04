@@ -10,21 +10,19 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from '@radix-ui/react-select';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@/hooks/use-user';
 
-const AppSidebar = () => {  
+const AppSidebar = () => {
   const [open, setOpen] = React.useState(false);
   const { theme } = useTheme();
-  const {user, logout} = useAuth();
-
-
+  const { user, handleLogout } = useUser();
 
   const navigation = [
     { name: 'Home', href: '/dashboard', icon: Home },
     { name: 'Receitas', href: '/dashboard/income', icon: TrendingUp },
     { name: 'Despesas', href: '/dashboard/expenses', icon: TrendingDown },
     // { name: 'Premium', href: '/pricing', icon: Crown },
-    // { name: 'Pagamentos', href: '/payments', icon: CreditCard },
-    // { name: 'Perfil', href: '/dashboard/profile', icon: User },
+    // { name: 'Pagamentos', href: '/payments', icon: CreditCard },    
   ];
 
   return (
@@ -98,7 +96,7 @@ const AppSidebar = () => {
               <NavLink
                 to="/"
                 className=" group w-full hover:bg-secondary hover:text-secondary-foregroundflex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground"
-                onClick={logout}
+                onClick={handleLogout}
               >
 
                 <DropdownMenuItem className='flex items-center gap-2'>

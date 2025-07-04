@@ -1,4 +1,5 @@
 import { AccountTypes } from "@/types/enums/AccountsTypes";
+import { AccountProviders } from "../enums/AccountProviders";
 
 export type User = {
     uid: string;
@@ -10,5 +11,6 @@ export type User = {
     createdAt: Date;
     updatedAt: Date;
     photoUrl: string;    
-    accountType?: AccountTypes    
+    accountType?: AccountTypes
+    provider?: AccountProviders    
 }

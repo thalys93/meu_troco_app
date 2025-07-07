@@ -16,6 +16,12 @@ import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 
 import { doc, updateDoc } from 'firebase/firestore';
 import { useUser } from '@/hooks/use-user';
 import { AccountProviders } from '@/types/enums/AccountProviders';
+import useUserStore from '@/store/UserStore';
+import { useGetUserData } from '@/utils/api/auth';
+import AvatarTrigger from '@/components/AvatarTrigger';
+import ImageDropzone from '@/components/Dropzone';
+import axios from "axios";
+import { api } from '@/utils/api/api';
 
 const initialNameForm = {
   name: "",
@@ -31,7 +37,10 @@ const initialPassForm = {
 const ProfilePage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { user } = useUser()
+  const { user: userLocal } = useUser()
+  const { uid } = useUserStore();
+  const { refetch } = useGetUserData(uid);
+  const [file, setFile] = React.useState<File | null>(null);
 
   const nameForm = useForm({
     defaultValues: initialNameForm
@@ -41,7 +50,7 @@ const ProfilePage = () => {
     defaultValues: initialPassForm
   })
 
-  const userPlan = user.accountType;
+  const userPlan = userLocal?.accountType;
   const isPremium = {
     "BASIC": false,
     "ADMIN": true,
@@ -53,7 +62,7 @@ const ProfilePage = () => {
     const firstName = name.trim().split(" ")[0] || "";
     const lastName = name.trim().split(" ").slice(1).join(" ") || "";
     try {
-      const userRef = doc(FireStore, "users", user.uid);
+      const userRef = doc(FireStore, "users", userLocal.uid);
 
       await updateDoc(userRef, {
         firstName,
@@ -67,6 +76,7 @@ const ProfilePage = () => {
         title: "Perfil atualizado",
         description: "Suas informações foram salvas com sucesso!",
       });
+      refetch();
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
       toast({
@@ -78,6 +88,7 @@ const ProfilePage = () => {
   };
 
   const handleChangePassword = async (data: typeof initialPassForm) => {
+    if (userLocal?.provider !== AccountProviders.EMAIL) return;
     if (passForm.getValues('newPassword') !== passForm.getValues('confirmPassword')) {
       toast({
         title: "Erro",
@@ -88,22 +99,35 @@ const ProfilePage = () => {
     }
 
     const user = AuthProvider.currentUser;
-
     if (!user || !user.email) {
       toast({
         title: "Erro",
         description: "Usuário não autenticado",
         variant: "destructive",
       })
-
       return;
     }
 
     try {
       const credential = EmailAuthProvider.credential(user.email, data.currentPassword);
-      await reauthenticateWithCredential(user, credential);
+      await reauthenticateWithCredential(user, credential).catch((err) => {
+        toast({
+          title: "Atenção",
+          description: "Senha Incorreta, Verifique se suas credenciais estão corretas.",
+        })
 
-      await updatePassword(user, data.newPassword);
+        return;
+      });
+
+      await updatePassword(user, data.newPassword).catch((err) => {
+        console.error("Erro ao atualizar senha:", err);
+        toast({
+          title: "Erro ao alterar senha",
+          description: err.message || "Tente novamente.",
+          variant: "destructive",
+        });
+        return;
+      });
       toast({
         title: "Senha alterada",
         description: "Sua senha foi alterada com sucesso!",
@@ -125,14 +149,47 @@ const ProfilePage = () => {
     passForm.reset();
   };
 
+  const handleSaveAvatar = async (data: File) => {
+    const query = new URLSearchParams({ id: uid, })
+    const { data: config } = await api.get(`/cloudinary-signature?${query.toString()}`);
+    const formData = new FormData();
+    formData.append("file", data);
+    formData.append("timestamp", config.timestamp.toString());
+    formData.append("public_id", config.public_id);
+    formData.append("signature", config.signature);
+    formData.append("api_key", config.api_key);
+    formData.append("uploud_preset", "meu_troco");
+    const response = await axios.post(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, formData)
+    if (response.status !== 200) throw new Error("Erro ao fazer upload da imagem");
+    try {
+      const userRef = doc(FireStore, "users", userLocal.uid);
+      await updateDoc(userRef, {
+        photoUrl: response.data.secure_url,
+        updatedAt: new Date(),
+      });
+      toast({
+        title: "Avatar atualizado",
+        description: "Seu avatar foi atualizado com sucesso!",
+      });
+      refetch();
+    } catch (error) {
+      console.error("Erro ao atualizar avatar:", error);
+      toast({
+        title: "Erro ao atualizar avatar",
+        description: "Tente novamente mais tarde.",
+        variant: "destructive",
+      });
+    }
+  }
+
   React.useEffect(() => {
-    if (user) {
+    if (userLocal) {
       nameForm.reset({
-        name: user.displayName,
-        email: user.email
+        name: userLocal.displayName,
+        email: userLocal.email
       })
     }
-  }, [nameForm, user]);
+  }, [nameForm, userLocal]);
 
   const handleUpgrade = () => {
     navigate('/app/payments');
@@ -227,7 +284,7 @@ const ProfilePage = () => {
                     leftIcon={<User className="w-4 h-4" />}
                     type="text"
                     name="name"
-                    disabled={user.provider !== AccountProviders.EMAIL}
+                    disabled={userLocal?.provider !== AccountProviders.EMAIL}
                     placeholder="Seu nome completo"
                     control={nameForm.control}
                   />
@@ -243,7 +300,7 @@ const ProfilePage = () => {
                     disabled
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={user.provider !== AccountProviders.EMAIL}>
+                <Button type="submit" className="w-full" disabled={userLocal?.provider !== AccountProviders.EMAIL}>
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Informações
                 </Button>
@@ -300,36 +357,57 @@ const ProfilePage = () => {
           </Card>
         </div>
 
+        <div className='grid gap-6 md:grid-cols-2'>
+          <Card className='glass-card '>
+            <CardHeader className='flex flex-col gap-1 items-center justify-center'>
+              Foto de Perfil
+              <span className='text-xs text-muted-foreground'>Clique ou arraste para alterar sua foto de perfil</span>
+            </CardHeader>
+            <CardContent className='flex flex-col gap-3 justify-center items-center'>
+              <ImageDropzone
+                setFile={setFile}
+                initialImage={userLocal?.photoUrl}
+              />
+
+              <Button className='w-[90%] px-10' onClick={() => handleSaveAvatar(file)}>
+                <Save className="w-4 h-4 mr-2" />
+                Salvar
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle>Estatísticas da Conta</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-primary/10 rounded-lg">
+                  <p className="text-2xl font-bold text-primary">15</p>
+                  <p className="text-sm text-muted-foreground">Dias de uso</p>
+                </div>
+                <div className="text-center p-4 bg-emerald-500/10 rounded-lg">
+                  <p className="text-2xl font-bold text-emerald-400">12</p>
+                  <p className="text-sm text-muted-foreground">Receitas</p>
+                </div>
+                <div className="text-center p-4 bg-red-500/10 rounded-lg">
+                  <p className="text-2xl font-bold text-red-400">8</p>
+                  <p className="text-sm text-muted-foreground">Despesas</p>
+                </div>
+                <div className="text-center p-4 bg-blue-500/10 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-400">
+                    {isPremium ? "∞" : "42"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {isPremium ? "Transações" : "Restantes"}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Estatísticas do Usuário */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle>Estatísticas da Conta</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-primary/10 rounded-lg">
-                <p className="text-2xl font-bold text-primary">15</p>
-                <p className="text-sm text-muted-foreground">Dias de uso</p>
-              </div>
-              <div className="text-center p-4 bg-emerald-500/10 rounded-lg">
-                <p className="text-2xl font-bold text-emerald-400">12</p>
-                <p className="text-sm text-muted-foreground">Receitas</p>
-              </div>
-              <div className="text-center p-4 bg-red-500/10 rounded-lg">
-                <p className="text-2xl font-bold text-red-400">8</p>
-                <p className="text-sm text-muted-foreground">Despesas</p>
-              </div>
-              <div className="text-center p-4 bg-blue-500/10 rounded-lg">
-                <p className="text-2xl font-bold text-blue-400">
-                  {isPremium ? "∞" : "42"}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {isPremium ? "Transações" : "Restantes"}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </PrivateLayout>
   );

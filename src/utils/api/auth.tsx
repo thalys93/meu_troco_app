@@ -50,29 +50,37 @@ export const createWithEmail = async (data: SignUpForm) => {
 
 export const loginWithGoogle = async () => {
     const result = await signInWithPopup(AuthProvider, GoogleProvider);
+
     if (result.user) {
         const user = result.user;
+        const userDocRef = doc(FireStore, "users", user.uid);
+        const userDocSnap = await getDoc(userDocRef);
+                
+        if (!userDocSnap.exists()) {
+            const userToSet: User = {
+                firstName: "",
+                lastName: "",
+                email: user.email,
+                displayName: user.displayName,
+                accountType: AccountTypes.BASIC,
+                provider: AccountProviders.GOOGLE,
+                createdAt: new Date(),
+                fullName: "",
+                photoUrl: user.photoURL,
+                uid: user.uid,
+                updatedAt: new Date(),
+            };
 
-        const userToSet: User = {
-            firstName: "",
-            lastName: "",
-            email: user.email,
-            displayName: user.displayName,
-            accountType: AccountTypes.BASIC,
-            provider: AccountProviders.GOOGLE,
-            createdAt: new Date(),
-            fullName: "",
-            photoUrl: user.photoURL,
-            uid: user.uid,
-            updatedAt: new Date()
+            await setDoc(userDocRef, userToSet);
         }
 
-        await setDoc(doc(FireStore, "users", result.user.uid), userToSet);
+        return {
+            status: 200,
+            uid: user.uid,
+        };
     }
-    return {
-        status: 200,
-        uid: result.user.uid
-    }
+
+    throw new Error("Erro ao autenticar com o Google.");
 }
 
 export const useLoginWithGoogle = () => {

@@ -11,6 +11,7 @@ import { Separator } from '@radix-ui/react-select';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/use-auth';
 import { useUser } from '@/hooks/use-user';
+import AvatarTrigger from './AvatarTrigger';
 
 const AppSidebar = () => {
   const [open, setOpen] = React.useState(false);
@@ -65,19 +66,8 @@ const AppSidebar = () => {
 
         <SidebarFooter>
           <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
-            <DropdownMenuTrigger className='flex items-center gap-2 p-2 rounded w-full'>
-              <Avatar>
-                <AvatarFallback>{user?.firstName.charAt(0) + user?.lastName.charAt(0)}</AvatarFallback>
-                <AvatarImage src={user?.photoUrl} alt={user?.displayName} />
-              </Avatar>
-
-              <div className='flex flex-col justify-start items-start'>
-                <p className="text-sm font-medium leading-none">{user?.displayName}</p>
-                <p className="text-xs text-muted-foreground my-1">{user?.email}</p>
-              </div>
-
-              {!open ? <ChevronDown className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" /> :
-                <ChevronUp className="ml-auto h-4 w-4 shrink-0 text-muted-foreground" />}
+            <DropdownMenuTrigger>
+              <AvatarTrigger open={open} user={user} canChange={false}/>
             </DropdownMenuTrigger>
 
             <DropdownMenuContent className='flex flex-1 flex-col w-52'>

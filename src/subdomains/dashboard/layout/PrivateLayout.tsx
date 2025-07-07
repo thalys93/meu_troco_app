@@ -13,12 +13,10 @@ function PrivateLayout({ children }: { children: React.ReactNode }) {
     const isMobile = useIsMobile()
     const { handleAddUser } = useUser();
     const { uid } = useUserStore();
-    const { data, refetch } = useGetUserData(uid);
+    const { data } = useGetUserData(uid);
 
-    React.useEffect(() => {        
-        refetch()            
-
-        if (uid) {
+    React.useEffect(() => {                
+        if (uid) {                      
             handleAddUser(data as User)
         }
     }, [uid, data])

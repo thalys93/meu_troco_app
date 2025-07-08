@@ -5,10 +5,12 @@ import TransactionList from '@/components/TransactionList';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { TrendingDown } from 'lucide-react';
 import PrivateLayout from '../../layout/PrivateLayout';
+import { useUserTransactions } from '@/utils/api/transation';
 
 const ExpensesPage = () => {
-  const { transactions } = useFinanceData();
-  const expenseTransactions = transactions.filter(t => t.type === 'expense');
+  const {data: transactions, isLoading} = useUserTransactions()
+  const expenseTransactions = transactions?.filter(t => t?.type === 'despesa');
+  const transactionsList = expenseTransactions  
 
   return (
     <PrivateLayout>
@@ -23,12 +25,13 @@ const ExpensesPage = () => {
         </div>
 
         {/* Add Expense Form */}
-        <TransactionForm type="expense" />
+        <TransactionForm type="despesa" />
 
         {/* Expense History */}
         <TransactionList
-          transactions={expenseTransactions}
+          transactions={transactionsList}
           title="Histórico de Despesas"
+          isLoading={isLoading}
           showAll={true}
         />
       </div>

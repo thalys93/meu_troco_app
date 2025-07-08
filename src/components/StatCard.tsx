@@ -20,7 +20,7 @@ const StatCard = ({ title, value, icon: Icon, trend, trendDirection, className }
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
-        <Icon className="h-5 w-5 text-primary" />
+        <Icon className={cn("h-5 w-5 text-primary", trendDirection === 'up' ? "text-emerald-400" : "text-red-400")} />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold text-foreground">{value}</div>

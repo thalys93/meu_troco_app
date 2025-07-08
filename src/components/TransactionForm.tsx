@@ -1,3 +1,5 @@
+/* eslint-disable react-hooks/exhaustive-deps */
+/* eslint-disable @typescript-eslint/no-unused-expressions */
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,124 +7,209 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useFinanceData } from '@/hooks/useFinanceData';
 import { toast } from '@/hooks/use-toast';
+import { useForm } from 'react-hook-form';
+import { Form } from './ui/form';
+import { Transaction, useCreateTransaction, useEditTransaction, useUserTransaction, useUserTransactions } from '@/utils/api/transation';
+import { Loader2 } from 'lucide-react';
+import { useParams } from 'react-router-dom';
+import useUserStore from '@/store/UserStore';
 
 interface TransactionFormProps {
-  type: 'income' | 'expense';
+  type: 'receita' | 'despesa';
+}
+
+const initialValues = {
+  value: 0,
+  date: new Date().toISOString().split('T')[0],
+  description: '',
+  category: '',
+  type: ''
 }
 
 const TransactionForm = ({ type }: TransactionFormProps) => {
-  const [amount, setAmount] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const { addTransaction } = useFinanceData();
+  const [category, setCategory] = useState<string>('');
+  const transactionForm = useForm({
+    defaultValues: initialValues
+  })
+
+  const { id } = useParams();
+  const { uid } = useUserStore();
+  const { data: transaction, isLoading, refetch: refetchTransaction } = useUserTransaction(uid, id)
+
+  const { mutate: create, isPending } = useCreateTransaction();
+  const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(id);
+  const { refetch: refetchUserTransactions } = useUserTransactions()
 
   const incomeCategories = [
-    'Salary', 'Freelance', 'Business', 'Investments', 'Side Job', 'Other'
+    'Salário', 'Freelancer', 'Negócios', 'Investimentos', 'Trabalho Paralelo', 'Outro'
   ];
 
   const expenseCategories = [
-    'Housing', 'Food', 'Transportation', 'Utilities', 'Healthcare', 
-    'Entertainment', 'Shopping', 'Education', 'Travel', 'Other'
+    'Moradia', 'Alimentação', 'Transporte', 'Serviços', 'Saúde',
+    'Entretenimento', 'Compras', 'Educação', 'Viagem', 'Outro'
   ];
 
-  const categories = type === 'income' ? incomeCategories : expenseCategories;
+  const categories = type === 'receita' ? incomeCategories : expenseCategories;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!amount || !description || !category || !date) {
+  React.useEffect(() => {
+    refetchTransaction()
+  }, [id])
+
+  React.useEffect(() => {
+    if (!id) return
+    if (id && transaction) {
+      transactionForm.reset(transaction)
+      setCategory(transaction.category)
+    }
+  }, [id])
+
+  React.useEffect(() => {
+    if (!type) return
+    transactionForm.setValue('type', type)
+  }, [type])
+
+  const handleCreate = async (data: Transaction) => {
+    event?.preventDefault();
+    const validations = {
+      value: data.value > 0,
+      category: data.category !== '',
+      date: data.date !== '',
+      description: data.description !== ''
+    }
+
+    const isValid = Object.values(validations).every(Boolean);
+
+    if (!isValid) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all fields",
+        title: "Informações Faltando",
+        description: "Por favor, preencha todos os campos",
         variant: "destructive",
       });
       return;
     }
 
-    const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      toast({
-        title: "Invalid Amount",
-        description: "Please enter a valid positive amount",
-        variant: "destructive",
-      });
-      return;
-    }
+    create(data, {
+      onSuccess: () => {
+        toast({
+          title: 'Sucesso!',
+          description: `${type === 'receita' ? 'Receita' : 'Gasto'} adicionado com sucesso!`,
+        });
+        transactionForm.reset();
+        setCategory('');
+        refetchUserTransactions();
+      },
+      onError: (error) => {
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível salvar a transação',
+          variant: 'destructive',
+        });
 
-    addTransaction({
-      amount: numAmount,
-      description,
-      category,
-      date,
-      type
+        console.log(error)
+      }
     });
-
-    toast({
-      title: "Success!",
-      description: `${type === 'income' ? 'Income' : 'Expense'} added successfully`,
-    });
-
-    // Reset form
-    setAmount('');
-    setDescription('');
-    setCategory('');
-    setDate(new Date().toISOString().split('T')[0]);
   };
+
+  const handleEdit = async (data: Transaction) => {
+    event?.preventDefault();
+    const validations = {
+      value: data.value > 0,
+      category: data.category !== '',
+      date: data.date !== '',
+      description: data.description !== ''
+    }
+
+    const isValid = Object.values(validations).every(Boolean);
+
+    const dataToEdit: Transaction = {
+      category: data.category,
+      date: data.date,
+      description: data.description,
+      type: data.type,
+      value: data.value      
+    }
+
+    if (!isValid) {
+      toast({
+        title: "Informações Faltando",
+        description: "Por favor, preencha todos os campos",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    edit(dataToEdit, {
+      onSuccess: () => {
+        toast({
+          title: 'Sucesso!',
+          description: `${type === 'receita' ? 'Receita' : 'Gasto'} Editado com sucesso!`,
+        });
+        setCategory('');
+        refetchUserTransactions();
+        refetchTransaction();        
+        transactionForm.reset();
+      },
+      onError: (error) => {
+        toast({
+          title: 'Erro',
+          description: 'Não foi possível salvar a transação',
+          variant: 'destructive',
+        });
+
+        console.log(error)
+      }
+    });
+  }
 
   return (
     <Card className="glass-card">
       <CardHeader>
         <CardTitle className="text-xl font-semibold">
-          Add New {type === 'income' ? 'Income' : 'Expense'}
+          {id ? "Editar" : "Adicionar Nova" } {type === 'receita' ? 'Receita' : 'Despesa'}
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <Form form={transactionForm} onSubmit={id ? handleEdit : handleCreate} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="amount">Amount ($)</Label>
+              <Label htmlFor="amount">Valor ($)</Label>
               <Input
-                id="amount"
+                name="value"
                 type="number"
                 step="0.01"
                 placeholder="0.00"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                control={transactionForm.control}
                 className="bg-background/50"
               />
             </div>
-            
+
             <div className="space-y-2">
-              <Label htmlFor="date">Date</Label>
+              <Label htmlFor="date">Data</Label>
               <Input
-                id="date"
+                name="date"
                 type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
+                control={transactionForm.control}
                 className="bg-background/50"
               />
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Descrição</Label>
             <Input
-              id="description"
-              placeholder={`Enter ${type} description`}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              name="description"
+              placeholder={`Digite a descrição da ${type}`}
+              control={transactionForm.control}
               className="bg-background/50"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Category</Label>
-            <Select value={category} onValueChange={setCategory}>
+            <Label htmlFor="category">Categoria</Label>
+            <Select value={category} onValueChange={(value) => { setCategory(value), transactionForm.setValue('category', value) }}>
               <SelectTrigger className="bg-background/50">
-                <SelectValue placeholder="Select a category" />
+                <SelectValue placeholder="Selecione uma categoria" />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
@@ -134,13 +221,15 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
             </Select>
           </div>
 
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
+            disabled={isPending}
             className="w-full bg-primary hover:bg-primary/90"
           >
-            Add {type === 'income' ? 'Income' : 'Expense'}
+            {isPending && <Loader2 className='animate-spin' />}
+            {id ? 'Editar' : 'Adicionar'} {type === 'receita' ? 'Receita' : 'Despesa'}
           </Button>
-        </form>
+        </Form>
       </CardContent>
     </Card>
   );

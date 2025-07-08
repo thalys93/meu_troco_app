@@ -12,6 +12,7 @@ import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/use-auth';
 import { useUser } from '@/hooks/use-user';
 import AvatarTrigger from './AvatarTrigger';
+import { BankIcon } from '@phosphor-icons/react';
 
 const AppSidebar = () => {
   const [open, setOpen] = React.useState(false);
@@ -20,6 +21,7 @@ const AppSidebar = () => {
 
   const navigation = [
     { name: 'Home', href: '/dashboard', icon: Home },
+    { name: "Transações", href: "/dashboard/transactions", icon: BankIcon},
     { name: 'Receitas', href: '/dashboard/income', icon: TrendingUp },
     { name: 'Despesas', href: '/dashboard/expenses', icon: TrendingDown },
     // { name: 'Premium', href: '/pricing', icon: Crown },

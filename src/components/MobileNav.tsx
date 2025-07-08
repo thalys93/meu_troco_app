@@ -9,6 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/hooks/use-auth';
 import { useUser } from '@/hooks/use-user';
+import { BankIcon } from '@phosphor-icons/react';
 
 const MobileNav = () => {
   const location = useLocation();
@@ -17,9 +18,9 @@ const MobileNav = () => {
   const {user , handleLogout} = useUser()
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },    
     { name: 'Receitas', href: '/dashboard/income', icon: TrendingUp },
-    { name: 'Despesas', href: '/dashboard/expenses', icon: TrendingDown },    
+    { name: 'Despesas', href: '/dashboard/expenses', icon: TrendingDown },        
   ];
 
   return (
@@ -60,6 +61,13 @@ const MobileNav = () => {
               <DropdownMenuItem>
                 <User className="w-4 h-4 mr-2" />
                 <span>Perfil</span>
+              </DropdownMenuItem>
+            </NavLink>
+
+            <NavLink to="/dashboard/transactions">
+              <DropdownMenuItem>
+                <BankIcon className="w-4 h-4 mr-2" />
+                <span>Transações</span>
               </DropdownMenuItem>
             </NavLink>
             <DropdownMenuItem onClick={(e) => {e.preventDefault(), setTheme(theme === 'light' ? 'dark' : 'light')}}>

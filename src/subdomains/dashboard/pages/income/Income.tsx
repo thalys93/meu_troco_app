@@ -5,10 +5,13 @@ import TransactionList from '@/components/TransactionList';
 import { useFinanceData } from '@/hooks/useFinanceData';
 import { TrendingUp } from 'lucide-react';
 import PrivateLayout from '../../layout/PrivateLayout';
+import { useUserTransactions } from '@/utils/api/transation';
 
 const IncomePage = () => {
-  const { transactions } = useFinanceData();
-  const incomeTransactions = transactions.filter(t => t.type === 'income');
+  const {data: transactions, isLoading} = useUserTransactions()
+  const incomeTransactions = transactions?.filter(t => t?.type === 'receita');
+  const transactionsList = incomeTransactions  
+
 
   return (
     <PrivateLayout>
@@ -23,11 +26,12 @@ const IncomePage = () => {
         </div>
 
         {/* Add Income Form */}
-        <TransactionForm type="income" />
+        <TransactionForm type="receita" />
 
         {/* Income History */}
         <TransactionList
-          transactions={incomeTransactions}
+          transactions={transactionsList}
+          isLoading={isLoading}
           title="Histórico de Receitas"
           showAll={true}
         />

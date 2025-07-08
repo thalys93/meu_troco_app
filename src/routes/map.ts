@@ -6,6 +6,7 @@ import ExpensesPage from "@/subdomains/dashboard/pages/expenses/Expenses";
 import IncomePage from "@/subdomains/dashboard/pages/income/Income";
 import PaymentsPage from "@/subdomains/dashboard/pages/payments/Payments";
 import ProfilePage from "@/subdomains/dashboard/pages/profile/Profile";
+import TransactionsPage from "@/subdomains/dashboard/pages/transactions/Transactions";
 import { ReactElement } from "react";
 
 
@@ -34,9 +35,12 @@ export const DashboardRoutes: RoutesGroup = {
     private: [
         { path: "", element: DashboardPage },
         { path: 'income', element: IncomePage },
+        { path: 'income/:id', element: IncomePage },
         { path: 'expenses', element: ExpensesPage },
-        { path: 'payments', element: PaymentsPage },
+        { path: 'expenses/:id', element: ExpensesPage },
+        { path: 'payments', element: PaymentsPage },        
         { path: 'profile', element: ProfilePage },
+        { path: 'transactions', element: TransactionsPage},
     ]
 }
 

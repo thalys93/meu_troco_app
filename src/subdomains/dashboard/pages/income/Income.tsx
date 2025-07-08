@@ -1,8 +1,6 @@
 
-import React from 'react';
 import TransactionForm from '@/components/TransactionForm';
 import TransactionList from '@/components/TransactionList';
-import { useFinanceData } from '@/hooks/useFinanceData';
 import { TrendingUp } from 'lucide-react';
 import PrivateLayout from '../../layout/PrivateLayout';
 import { useUserTransactions } from '@/utils/api/transation';
@@ -33,7 +31,7 @@ const IncomePage = () => {
           transactions={transactionsList}
           isLoading={isLoading}
           title="Histórico de Receitas"
-          showAll={true}
+          limit={5}          
         />
       </div>
     </PrivateLayout>

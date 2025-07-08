@@ -14,13 +14,14 @@ import { Transaction, useCreateTransaction, useEditTransaction, useUserTransacti
 import { Loader2 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import useUserStore from '@/store/UserStore';
+import { useCategories } from '@/hooks/use-categories';
 
 interface TransactionFormProps {
   type: 'receita' | 'despesa';
 }
 
 const initialValues = {
-  value: 0,
+  value: null,
   date: new Date().toISOString().split('T')[0],
   description: '',
   category: '',
@@ -36,19 +37,11 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   const { id } = useParams();
   const { uid } = useUserStore();
   const { data: transaction, isLoading, refetch: refetchTransaction } = useUserTransaction(uid, id)
+  const { expenseCategories, incomeCategories } = useCategories()
 
   const { mutate: create, isPending } = useCreateTransaction();
   const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(id);
   const { refetch: refetchUserTransactions } = useUserTransactions()
-
-  const incomeCategories = [
-    'Salário', 'Freelancer', 'Negócios', 'Investimentos', 'Trabalho Paralelo', 'Outro'
-  ];
-
-  const expenseCategories = [
-    'Moradia', 'Alimentação', 'Transporte', 'Serviços', 'Saúde',
-    'Entretenimento', 'Compras', 'Educação', 'Viagem', 'Outro'
-  ];
 
   const categories = type === 'receita' ? incomeCategories : expenseCategories;
 
@@ -58,11 +51,10 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
 
   React.useEffect(() => {
     if (!id) return
-    if (id && transaction) {
-      transactionForm.reset(transaction)
-      setCategory(transaction.category)
-    }
-  }, [id])
+    if (!transaction) return
+    transactionForm.reset(transaction)
+    setCategory(transaction.category)
+  }, [id, transaction])
 
   React.useEffect(() => {
     if (!type) return
@@ -127,7 +119,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
       date: data.date,
       description: data.description,
       type: data.type,
-      value: data.value      
+      value: data.value
     }
 
     if (!isValid) {
@@ -147,7 +139,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
         });
         setCategory('');
         refetchUserTransactions();
-        refetchTransaction();        
+        refetchTransaction();
         transactionForm.reset();
       },
       onError: (error) => {
@@ -166,7 +158,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
     <Card className="glass-card">
       <CardHeader>
         <CardTitle className="text-xl font-semibold">
-          {id ? "Editar" : "Adicionar Nova" } {type === 'receita' ? 'Receita' : 'Despesa'}
+          {id ? "Editar" : "Adicionar Nova"} {type === 'receita' ? 'Receita' : 'Despesa'}
         </CardTitle>
       </CardHeader>
       <CardContent>

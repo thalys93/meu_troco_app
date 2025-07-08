@@ -2,19 +2,116 @@ import React from 'react'
 import PrivateLayout from '../../layout/PrivateLayout'
 import TransactionList from '@/components/TransactionList'
 import { useUserTransactions } from '@/utils/api/transation'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useDashboardStats } from '@/hooks/use-dashboard'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useCategories } from '@/hooks/use-categories'
+import { Calendar, Grid, Grid2X2, Tag } from 'lucide-react'
 
 function TransactionsPage() {
     const { data: transactions, isLoading } = useUserTransactions()
+    const { incomeLength, expenseLength } = useDashboardStats()
+    const { allCategories } = useCategories()
+    const [startDate, setStartDate] = React.useState<string>('');
+    const [endDate, setEndDate] = React.useState<string>('');
+    const [selectedCategory, setSelectedCategory] = React.useState<string>('Todos')
+
+    const filteredTransactions = React.useMemo(() => {
+        if (!transactions) return [];
+
+        return transactions.filter((t) => {
+            const transactionDate = new Date(t.date);
+
+            const matchStartDate = startDate ? transactionDate >= new Date(startDate) : true;
+            const matchEndDate = endDate ? transactionDate <= new Date(endDate) : true;
+
+            const matchCategory =
+                !selectedCategory || selectedCategory === 'Todos'
+                    ? true
+                    : t.category === selectedCategory;
+
+            return matchStartDate && matchEndDate && matchCategory;
+        }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }, [transactions, startDate, endDate, selectedCategory]);
 
     return (
         <PrivateLayout>
             <div className="container mx-2 md:mx-auto my-20 md:my-12 md:pl-0 mt-10 space-y-6">
+                <Card className='glass-card'>
+                    <CardHeader>
+                        <CardTitle>Resumo das Transações</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className={cn('grid grid-cols-2 md:grid-cols-2 gap-4 select-none', isLoading && "animate_pulse")}>
+                            <div className="text-center p-4 bg-emerald-500/10 rounded-lg">
+                                <p className="text-2xl font-bold text-emerald-400">{incomeLength}</p>
+                                <p className="text-sm text-muted-foreground">Receitas</p>
+                            </div>
+                            <div className="text-center p-4 bg-red-500/10 rounded-lg">
+                                <p className="text-2xl font-bold text-red-400">{expenseLength}</p>
+                                <p className="text-sm text-muted-foreground">Despesas</p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <TransactionList
-                    transactions={transactions}
+                    transactions={filteredTransactions}
                     isLoading={isLoading}
                     title="Todas as Transações"
-                    showAll={true}
                 />
+
+                <Card className='glass-card'>
+                    <CardContent className='py-3'>
+                        <div className='grid grid-cols-1 md:grid-cols-3 gap-4 items-center'>
+                            <div className='space-y-2'>
+                                <Label className='flex flex-row gap-1 items-center'>
+                                    <Calendar className='h-4' /> De
+                                </Label>
+                                <Input
+                                    type='date'
+                                    name='de'
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className='bg-background/50 h-10 border-input'
+                                />
+                            </div>
+
+                            <div className='space-y-2'>
+                                <Label className='flex flex-row gap-1 items-center'>
+                                    <Calendar className='h-4' /> Até
+                                </Label>
+                                <Input
+                                    type='date'
+                                    name='ate'
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className='bg-background/50 h-10 border-input'
+                                />
+                            </div>
+
+                            <div className='space-y-2'>
+                                <Label className='flex flex-row gap-1 items-center'><Tag className='h-4' /> Categorias</Label>
+                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                    <SelectTrigger className='h-10 bg-background/50'>
+                                        <SelectValue placeholder='Selecione uma categoria' />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {allCategories.map((cat) => (
+                                            <SelectItem key={cat} value={cat}>
+                                                {cat}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </PrivateLayout>
     )

@@ -37,12 +37,14 @@ const editTransaction = async (id: string, data: Transaction) => {
 export const useDeleteTransaction = () => {
     return useMutation({
         mutationFn: (id: string) => deleteTransaction(id),
+        retry: false
     });
 }
 
 export const useEditTransaction = (id: string) => {
     return useMutation({
         mutationFn: (data: Transaction) => editTransaction(id, data),
+        retry: false
     });
 }
 
@@ -67,6 +69,7 @@ export const useUserTransaction = (uid: string, id: string) => {
         queryKey: ['transaction', uid, id],
         queryFn: () => getUserTransaction(uid, id),
         enabled: !!uid && !!id,
+        retry: false
     });
 };
 
@@ -89,6 +92,7 @@ export const useUserTransactions = () => {
         queryKey: ["transactions", uid],
         queryFn: () => getUserTransactions(uid),
         enabled: !!uid,
+        retry: false
     })
 }
 
@@ -97,5 +101,6 @@ export const useCreateTransaction = () => {
 
     return useMutation({
         mutationFn: (data: Transaction) => createTransaction(data, uid),
+        retry: false
     });
 };

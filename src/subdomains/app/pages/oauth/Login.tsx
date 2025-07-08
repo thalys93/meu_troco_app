@@ -37,12 +37,14 @@ const LoginPage = () => {
         setUid(uid)
         navigate("/dashboard", { replace: true });
       },
-      onError: () => {
+      onError: (erro) => {
         toast({
           title: "Erro ao fazer login",
           description: "Ocorreu um erro ao fazer o login, verifique se suas credenciais estão corretas.",
           variant: "destructive"
         })
+
+        console.log(erro)
       }
     })
   }

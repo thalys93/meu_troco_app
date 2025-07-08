@@ -4,6 +4,9 @@ export const useDashboardStats = () => {
     const incomeTransactions = transactions.filter((t) => t.type === "receita");
     const expenseTransactions = transactions.filter((t) => t.type === "despesa");
 
+    const incomeLength = incomeTransactions.length;
+    const expenseLength = expenseTransactions.length;
+
     const totalIncome = incomeTransactions.reduce((acc, curr) => acc + curr.value, 0);
     const totalExpense = expenseTransactions.reduce((acc, curr) => acc + curr.value, 0);
     const totalBalance = totalIncome - totalExpense;
@@ -27,5 +30,7 @@ export const useDashboardStats = () => {
         isBalancePositive: totalBalance >= 0,
         isIncomePositive: totalIncome >= 0,
         isExpensePositive: totalExpense >= 0,
+        incomeLength,
+        expenseLength        
     };
 }

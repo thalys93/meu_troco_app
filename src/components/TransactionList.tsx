@@ -9,18 +9,18 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import DeleteDialog from './DeleteDialog';
 import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import { ScrollArea } from './ui/scroll-area';
 
 interface TransactionListProps {
   transactions: Transaction[];
   title?: string;
-  showAll?: boolean;
   isLoading: boolean
+  limit?: number
 }
 
-const TransactionList = ({ transactions, title = "Transações Recentes", showAll = false, isLoading }: TransactionListProps) => {
-  const displayTransactions = showAll ? transactions : transactions?.slice(0, 5);
+const TransactionList = ({ transactions, title = "Transações Recentes", isLoading, limit }: TransactionListProps) => {
+  const displayTransactions = limit ? transactions?.slice(0, limit) : transactions;
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction>()
-
   const { mutate, isPending } = useDeleteTransaction()
   const { refetch } = useUserTransactions()
 
@@ -72,8 +72,8 @@ const TransactionList = ({ transactions, title = "Transações Recentes", showAl
       case 'receita':
         return 'income'
       case 'despesa':
-        return 'expense'
-    }    
+        return 'expenses'
+    }
   }
 
   return (
@@ -88,7 +88,7 @@ const TransactionList = ({ transactions, title = "Transações Recentes", showAl
             <span className='text-muted-foreground text-sm select-none'>Aguarde Carregando</span>
           </div>
         ) : (
-          <>
+          <ScrollArea className='max-h-[350px] overflow-auto'>
             {displayTransactions?.length === 0 ? (
               <p className="text-muted-foreground text-center py-8">
                 Nenhuma transação encontrada
@@ -156,7 +156,7 @@ const TransactionList = ({ transactions, title = "Transações Recentes", showAl
                 </div>
               ))
             )}
-          </>
+          </ScrollArea>
         )}
       </CardContent>
     </Card>

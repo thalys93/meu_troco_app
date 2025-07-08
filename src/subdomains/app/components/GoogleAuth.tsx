@@ -4,7 +4,7 @@ import { GoogleLogoIcon } from '@phosphor-icons/react'
 
 function GoogleAuth() {
     const mutate = useLoginWithGoogle();
-    async function handleLogin() {mutate.mutate();}
+    async function handleLogin() { mutate.mutate(); }
     return (
         <Button variant='outline' onClick={handleLogin} className='bg-emerald-500 border-0'>
             <GoogleLogoIcon className='scale-150 text-white' />

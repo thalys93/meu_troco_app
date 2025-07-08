@@ -32,7 +32,7 @@ function DeleteDialog({ deleteFunction, title, description, itemDetails, trigger
 
                 </DialogDescription>
                 <Button variant='outline'>
-                    {itemDetails?.category} - ( {itemDetails?.description} ) - R$ {itemDetails?.value}
+                    {itemDetails?.description}
                 </Button>
 
                 <DialogFooter>

@@ -23,6 +23,7 @@ const DashboardPage = () => {
   } = useDashboardStats()    
 
 
+
   const getCurrentMonth = () => {
     return new Date().toLocaleDateString('pt-BR', {
       month: 'long',
@@ -73,7 +74,7 @@ const DashboardPage = () => {
         <TransactionList
           transactions={transactions}
           isLoading={isLoading}
-          title="Transações Recentes"
+          title="Transações Recentes"          
         />
       </div>
     </PrivateLayout>

@@ -49,39 +49,45 @@ export const createWithEmail = async (data: SignUpForm) => {
 }
 
 export const loginWithGoogle = async () => {
-    const result = await signInWithPopup(AuthProvider, GoogleProvider);
+    try {
+        const result = await signInWithPopup(AuthProvider, GoogleProvider);
 
-    if (result.user) {
-        const user = result.user;
-        const userDocRef = doc(FireStore, "users", user.uid);
-        const userDocSnap = await getDoc(userDocRef);
-                
-        if (!userDocSnap.exists()) {
-            const userToSet: User = {
-                firstName: "",
-                lastName: "",
-                email: user.email,
-                displayName: user.displayName,
-                accountType: AccountTypes.BASIC,
-                provider: AccountProviders.GOOGLE,
-                createdAt: new Date(),
-                fullName: "",
-                photoUrl: user.photoURL,
+        if (result.user) {
+            const user = result.user;
+            const userDocRef = doc(FireStore, "users", user.uid);
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (!userDocSnap.exists()) {
+                const userToSet: User = {
+                    firstName: "",
+                    lastName: "",
+                    email: user.email,
+                    displayName: user.displayName,
+                    accountType: AccountTypes.BASIC,
+                    provider: AccountProviders.GOOGLE,
+                    createdAt: new Date(),
+                    fullName: "",
+                    photoUrl: user.photoURL,
+                    uid: user.uid,
+                    updatedAt: new Date(),
+                };
+
+                await setDoc(userDocRef, userToSet);
+            }
+
+            return {
+                status: 200,
                 uid: user.uid,
-                updatedAt: new Date(),
             };
-
-            await setDoc(userDocRef, userToSet);
         }
 
-        return {
-            status: 200,
-            uid: user.uid,
-        };
+        throw new Error("Usuário não encontrado.");
+    } catch (err) {
+        console.error("Erro no loginWithGoogle:", err);
+        throw err;
     }
+};
 
-    throw new Error("Erro ao autenticar com o Google.");
-}
 
 export const useLoginWithGoogle = () => {
     const navigation = useNavigate();
@@ -97,7 +103,7 @@ export const useLoginWithGoogle = () => {
 
             setUid(uid)
             navigation("/dashboard", { replace: true });
-        }
+        },
     })
 }
 

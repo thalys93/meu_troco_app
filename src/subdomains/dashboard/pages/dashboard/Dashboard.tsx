@@ -19,10 +19,8 @@ const DashboardPage = () => {
     totalBalancePercentage, 
     isBalancePositive, 
     isExpensePositive, 
-    isIncomePositive 
+    isIncomePositive
   } = useDashboardStats()    
-
-
 
   const getCurrentMonth = () => {
     return new Date().toLocaleDateString('pt-BR', {

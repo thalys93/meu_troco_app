@@ -10,6 +10,7 @@ import DeleteDialog from './DeleteDialog';
 import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { ScrollArea } from './ui/scroll-area';
+import useUserStore from '@/store/UserStore';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -20,6 +21,7 @@ interface TransactionListProps {
 
 const TransactionList = ({ transactions, title = "Transações Recentes", isLoading, limit }: TransactionListProps) => {
   const displayTransactions = limit ? transactions?.slice(0, limit) : transactions;
+  const { uid } = useUserStore();
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction>()
   const { mutate, isPending } = useDeleteTransaction()
   const { refetch } = useUserTransactions()
@@ -38,7 +40,7 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
   };
 
   const handleDelete = (id: string) => {
-    mutate(id, {
+    mutate({ uid, id }, {
       onSuccess: () => {
         toast({
           title: "Transação excluida",
@@ -77,89 +79,99 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
   }
 
   return (
-    <Card className="glass-card">
-      <CardHeader>
-        <CardTitle className="text-lg font-semibold">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {isLoading ? (
-          <div className='flex items-center justify-center flex-col gap-2'>
-            <Loader2 className='animate-spin' />
-            <span className='text-muted-foreground text-sm select-none'>Aguarde Carregando</span>
-          </div>
-        ) : (
-          <ScrollArea className='max-h-[350px] overflow-auto'>
-            {displayTransactions?.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8">
-                Nenhuma transação encontrada
-              </p>
-            ) : (
-              displayTransactions?.map((transaction) => (
-                <div key={transaction?.id} className={cn("flex items-center justify-between p-3 rounded-lg hover:bg-accent/20 transition-colors", isPendingTransaction(transaction.id) && "pointer-events-none animate_pulse")}>
-                  <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "w-10 h-10 rounded-full flex items-center justify-center",
-                      transaction.type === 'receita' ? "bg-emerald-500/20" : "bg-red-500/20"
-                    )}>
-                      {transaction.type === 'receita' ? (
-                        <TrendingUp className="w-5 h-5 text-emerald-400" />
-                      ) : (
-                        <TrendingDown className="w-5 h-5 text-red-400" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium">{transaction.description}</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="secondary" className="text-xs">
-                          {transaction.category}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(transaction.date)}
-                        </span>
+    <>
+      <Card className="glass-card">
+        <CardHeader>
+          <CardTitle className="text-lg font-semibold">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {isLoading ? (
+            <div className='flex items-center justify-center flex-col gap-2'>
+              <Loader2 className='animate-spin' />
+              <span className='text-muted-foreground text-sm select-none'>Aguarde Carregando</span>
+            </div>
+          ) : (
+            <ScrollArea className='max-h-[350px] overflow-auto'>
+              {displayTransactions?.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8">
+                  Nenhuma transação encontrada
+                </p>
+              ) : (
+                displayTransactions?.map((transaction) => (
+                  <div key={transaction?.id} className={cn("flex items-center justify-between p-3 rounded-lg hover:bg-accent/20 transition-colors", isPendingTransaction(transaction.id) && "pointer-events-none animate_pulse")}>
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-10 h-10 rounded-full flex items-center justify-center",
+                        transaction.type === 'receita' ? "bg-emerald-500/20" : "bg-red-500/20"
+                      )}>
+                        {transaction.type === 'receita' ? (
+                          <TrendingUp className="w-5 h-5 text-emerald-400" />
+                        ) : (
+                          <TrendingDown className="w-5 h-5 text-red-400" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium">{transaction.description}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="secondary" className="text-xs">
+                            {transaction.category}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {formatDate(transaction.date)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className='flex flex-row gap-2 items-center'>
-                    <div className={cn(
-                      "font-semibold",
-                      transaction.type === 'receita' ? "text-emerald-400" : "text-red-400"
-                    )}>
-                      {formatAmount(transaction.value, transaction.type)}
-                    </div>
+                    <div className='flex flex-row gap-2 items-center'>
+                      <div className={cn(
+                        "font-semibold",
+                        transaction.type === 'receita' ? "text-emerald-400" : "text-red-400"
+                      )}>
+                        {formatAmount(transaction.value, transaction.type)}
+                      </div>
 
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button size='icon' variant='ghost'>
-                          <EllipsisVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuLabel className='select-none'>Ações</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={(e) => handleOpenDialog(e, transaction)}>
-                          <DeleteDialog
-                            deleteFunction={() => handleDelete(selectedTransaction!.id)}
-                            trigger={<div className='flex flex-row items-center gap-2'> <Trash className='h-4 w-4' /> Excluir</div>}
-                            title="Excluir Transação"
-                            description="Tem certeza que deseja excluir essa transação?"
-                            itemDetails={selectedTransaction!}
-                          />
-                        </DropdownMenuItem>
-                        <Link to={`/dashboard/${isIncome(transaction.type)}/${transaction.id}`}>
-                          <DropdownMenuItem className='flex flex-row items-center gap-2'>
-                            <Pen className='h-4 w-4' /> Editar
+                      <DropdownMenu>
+                        <DropdownMenuTrigger>
+                          <Button size='icon' variant='ghost'>
+                            <EllipsisVertical className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent>
+                          <DropdownMenuLabel className='select-none'>Ações</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => setSelectedTransaction(transaction)}>
+                            <div className='flex flex-row items-center gap-2'>
+                              <Trash className='h-4 w-4' /> Excluir
+                            </div>
                           </DropdownMenuItem>
-                        </Link>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+
+                          <Link to={`/dashboard/${isIncome(transaction.type)}/${transaction.id}`}>
+                            <DropdownMenuItem className='flex flex-row items-center gap-2'>
+                              <Pen className='h-4 w-4' /> Editar
+                            </DropdownMenuItem>
+                          </Link>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </div>
-                </div>
-              ))
-            )}
-          </ScrollArea>
-        )}
-      </CardContent>
-    </Card>
+                ))
+              )}
+
+            </ScrollArea>
+          )}
+        </CardContent>
+      </Card>
+      {selectedTransaction && (
+        <DeleteDialog
+          open={!!selectedTransaction}
+          onOpenChange={(open) => setSelectedTransaction(open ? selectedTransaction : null)}
+          deleteFunction={() => handleDelete(selectedTransaction!.id)}
+          title="Excluir Transação"
+          description="Tem certeza que deseja excluir essa transação?"
+          itemDetails={selectedTransaction!}
+        />
+      )}
+    </>
   );
 };
 

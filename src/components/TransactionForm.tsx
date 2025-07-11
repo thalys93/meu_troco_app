@@ -40,7 +40,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   const { expenseCategories, incomeCategories } = useCategories()
 
   const { mutate: create, isPending } = useCreateTransaction();
-  const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(id);
+  const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(uid, id);
   const { refetch: refetchUserTransactions } = useUserTransactions()
 
   const categories = type === 'receita' ? incomeCategories : expenseCategories;
@@ -87,7 +87,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
           title: 'Sucesso!',
           description: `${type === 'receita' ? 'Receita' : 'Gasto'} adicionado com sucesso!`,
         });
-        transactionForm.reset();
+        transactionForm.reset(initialValues);
         setCategory('');
         refetchUserTransactions();
       },
@@ -140,7 +140,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
         setCategory('');
         refetchUserTransactions();
         refetchTransaction();
-        transactionForm.reset();
+        transactionForm.reset(initialValues);
       },
       onError: (error) => {
         toast({

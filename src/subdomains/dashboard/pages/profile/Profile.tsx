@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Lock, Save, Crown, ArrowRight, LockIcon } from 'lucide-react';
+import { User, Mail, Lock, Save, Crown, ArrowRight, LockIcon, Construction } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import PrivateLayout from '../../layout/PrivateLayout';
@@ -22,6 +22,7 @@ import AvatarTrigger from '@/components/AvatarTrigger';
 import ImageDropzone from '@/components/Dropzone';
 import axios from "axios";
 import { api } from '@/utils/api/api';
+import { useDashboardStats } from '@/hooks/use-dashboard';
 
 const initialNameForm = {
   name: "",
@@ -42,6 +43,21 @@ const ProfilePage = () => {
   const { refetch } = useGetUserData(uid);
   const [file, setFile] = React.useState<File | null>(null);
 
+  const { 
+      expensePercentage, 
+      formatCurrency, 
+      incomePercentage, 
+      totalBalance, 
+      totalExpense, 
+      totalIncome, 
+      totalBalancePercentage, 
+      isBalancePositive, 
+      isExpensePositive, 
+      isIncomePositive,
+      userJoinedTime,
+      getDaysSinceUserCreated
+    } = useDashboardStats()       
+
   const nameForm = useForm({
     defaultValues: initialNameForm
   })
@@ -60,7 +76,7 @@ const ProfilePage = () => {
   const handleSaveProfile = async (data: typeof initialNameForm) => {
     const { name } = data;
     const firstName = name.trim().split(" ")[0] || "";
-    const lastName = name.trim().split(" ").slice(1).join(" ") || "";
+    const lastName = name.trim().split(" ").slice(1).join(" ") || "";    
     try {
       const userRef = doc(FireStore, "users", userLocal.uid);
 
@@ -383,23 +399,32 @@ const ProfilePage = () => {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-primary/10 rounded-lg">
-                  <p className="text-2xl font-bold text-primary">15</p>
+                  <p className="text-2xl font-bold text-primary">{getDaysSinceUserCreated(userJoinedTime)}</p>
                   <p className="text-sm text-muted-foreground">Dias de uso</p>
                 </div>
                 <div className="text-center p-4 bg-emerald-500/10 rounded-lg">
-                  <p className="text-2xl font-bold text-emerald-400">12</p>
+                  <p className="text-2xl font-bold text-emerald-400">{totalIncome}</p>
                   <p className="text-sm text-muted-foreground">Receitas</p>
                 </div>
                 <div className="text-center p-4 bg-red-500/10 rounded-lg">
-                  <p className="text-2xl font-bold text-red-400">8</p>
+                  <p className="text-2xl font-bold text-red-400">{totalExpense}</p>
                   <p className="text-sm text-muted-foreground">Despesas</p>
                 </div>
-                <div className="text-center p-4 bg-blue-500/10 rounded-lg">
+                {/* <div className="text-center p-4 bg-blue-500/10 rounded-lg">
                   <p className="text-2xl font-bold text-blue-400">
                     {isPremium ? "∞" : "42"}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {isPremium ? "Transações" : "Restantes"}
+                  </p>
+                </div> */}
+                <div className="text-center p-4 bg-yellow-500/10 rounded-lg select-none">
+                  <p className="text-2xl font-bold text-yellow-400 flex items-center justify-center my-1">
+                    {/* {isPremium ? "∞" : "42"} */}
+                    <Construction/>                    
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {isPremium ? "Em Breve" : "Restantes"}
                   </p>
                 </div>
               </div>

@@ -4,25 +4,27 @@ import { Button } from './ui/button'
 import { Transaction } from '@/utils/api/transation'
 
 interface DialogProps {
-
-    trigger: React.ReactNode
+    open: boolean
+    onOpenChange: (open: boolean) => void
     deleteFunction: () => void
     title: string
     description: string
     itemDetails: Transaction
 }
 
-function DeleteDialog({ deleteFunction, title, description, itemDetails, trigger }: DialogProps) {
+function DeleteDialog({ deleteFunction, title, description, itemDetails, open, onOpenChange }: DialogProps) {
 
-    const onClose = () => {
-        deleteFunction()
-    }
+    const handleCancel = () => {
+        onOpenChange(false);        
+    };
+
+    const handleConfirmDelete = () => {
+        deleteFunction();        
+        onOpenChange(false);
+    };    
 
     return (
-        <Dialog>
-            <DialogTrigger>
-                {trigger}
-            </DialogTrigger>
+        <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent >
                 <DialogHeader>
                     <DialogTitle>{title}</DialogTitle>
@@ -37,17 +39,13 @@ function DeleteDialog({ deleteFunction, title, description, itemDetails, trigger
 
                 <DialogFooter>
                     <div className='flex flex-col-reverse md:flex-row gap-1'>
-                        <DialogClose>
-                            <Button type="button" variant="outline">
-                                Cancelar
-                            </Button>
-                        </DialogClose>
+                        <Button type="button" variant="outline" onClick={handleCancel}>
+                            Cancelar
+                        </Button>
 
-                        <DialogClose>
-                            <Button type="button" variant='destructive' onClick={onClose}>
-                                Excluir
-                            </Button>
-                        </DialogClose>
+                        <Button type="button" variant='destructive' onClick={handleConfirmDelete}>
+                            Excluir
+                        </Button>
                     </div>
                 </DialogFooter>
             </DialogContent>

@@ -13,22 +13,21 @@ export interface Transaction {
 }
 
 const createTransaction = async (data: Transaction, uid: string) => {
-    const ref = collection(FireStore, 'transactions');
+    const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
     const docRef = await addDoc(ref, {
         ...data,
-        createdAt: new Date(),
-        userId: uid,
+        createdAt: new Date(),        
     });
     return docRef.id;
 }
 
-const deleteTransaction = async (id: string) => {
-    const ref = doc(FireStore, 'transactions', id);
+const deleteTransaction = async (uid: string, id: string) => {
+    const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
     await deleteDoc(ref);
 }
 
-const editTransaction = async (id: string, data: Transaction) => {
-    const ref = doc(FireStore, 'transactions', id);
+const editTransaction = async (uid: string, id: string, data: Transaction) => {
+    const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
     await updateDoc(ref, {
         ...data
     });
@@ -36,28 +35,24 @@ const editTransaction = async (id: string, data: Transaction) => {
 
 export const useDeleteTransaction = () => {
     return useMutation({
-        mutationFn: (id: string) => deleteTransaction(id),
+        mutationFn: ({ uid, id }: { uid: string; id: string }) => deleteTransaction(uid, id),
         retry: false
     });
 }
 
-export const useEditTransaction = (id: string) => {
+export const useEditTransaction = (uid: string, id: string) => {
     return useMutation({
-        mutationFn: (data: Transaction) => editTransaction(id, data),
+        mutationFn: (data: Transaction) => editTransaction(uid, id, data),
         retry: false
     });
 }
 
 export const getUserTransaction = async (uid: string, id: string): Promise<Transaction | null> => {
-    const ref = doc(FireStore, 'transactions', id);
+    const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
     const docSnap = await getDoc(ref);
     if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.userId !== uid) {
-            throw new Error("Você não tem permissão para acessar essa transação.");
-        }
         return {
-            ...(data as Transaction),
+            ...(docSnap.data() as Transaction),
             id: docSnap.id,
         };
     }
@@ -69,22 +64,19 @@ export const useUserTransaction = (uid: string, id: string) => {
         queryKey: ['transaction', uid, id],
         queryFn: () => getUserTransaction(uid, id),
         enabled: !!uid && !!id,
-        retry: false
+        retry: false,
     });
 };
 
 export const getUserTransactions = async (uid: string): Promise<Transaction[]> => {
-    const ref = collection(FireStore, "transactions");
-    const q = query(ref, where("userId", "==", uid));
-
-    const snapshot = await getDocs(q);
+    const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
+    const snapshot = await getDocs(ref);
 
     return snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
     })) as Transaction[];
 };
-
 export const useUserTransactions = () => {
     const { uid } = useUserStore();
 
@@ -92,9 +84,9 @@ export const useUserTransactions = () => {
         queryKey: ["transactions", uid],
         queryFn: () => getUserTransactions(uid),
         enabled: !!uid,
-        retry: false
-    })
-}
+        retry: false,
+    });
+};
 
 export const useCreateTransaction = () => {
     const { uid } = useUserStore();

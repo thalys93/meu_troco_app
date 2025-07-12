@@ -15,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
 import { passwordRules } from '@/utils/helpers/formRules'
 import useUserStore from '@/store/UserStore'
+import { useTranslation } from 'react-i18next'
 
 const initialValues: SignUpForm = {
     firstName: "",
@@ -31,7 +32,8 @@ function RegisterPage() {
         resolver: zodResolver(SignUpSchema)
     })
 
-    const {setUid} = useUserStore()
+    const { setUid } = useUserStore()
+    const { t } = useTranslation();
 
     const handleCreate = useCreateWithEmail();
     const handleLogin = useLoginWithEmail();
@@ -41,8 +43,8 @@ function RegisterPage() {
     const handleSubmit = (data: SignUpForm) => {
         if (data.checkedTerms === false) {
             toast({
-                title: "Atenção",
-                description: "Por favor, aceite os termos e condições.",
+                title: t('toast.warningTitle'),
+                description: t('toast.SignInwarningDescription'),
                 variant: "info"
             })
             return;
@@ -50,8 +52,8 @@ function RegisterPage() {
 
         if (data.password !== data.confirmPassword) {
             toast({
-                title: "Atenção",
-                description: "As senhas devem ser iguais.",
+                title: t('toast.warningTitle'),
+                description: t('toast.passwordDescription'),
                 variant: "info"
             })
             return;
@@ -65,18 +67,18 @@ function RegisterPage() {
         }, {
             onSuccess: () => {
                 toast({
-                    title: "Parabéns",
-                    description: "Cadastro realizado com sucesso.",
+                    title: t('toast.success'),
+                    description: t('toast.successSignIn'),
                 })
 
                 handleLogin.mutate({
                     email: data.email,
                     password: data.password
                 }, {
-                    onSuccess: ({uid}) => {
+                    onSuccess: ({ uid }) => {
                         toast({
-                            title: "Bem-vindo!",
-                            description: " Vocé fez login com sucesso.",
+                            title: t('toast.welcome'),
+                            description: t('toast.loginSuccess'),
                         })
 
                         setUid(uid)
@@ -85,8 +87,8 @@ function RegisterPage() {
 
                     onError: () => {
                         toast({
-                            title: "Erro ao fazer login",
-                            description: "Ocorreu um erro ao fazer o login.",
+                            title: t('toast.errorLogin'),
+                            description: t('toast.errorLoginDescription'),
                             variant: "destructive"
                         })
                         navigate("/oauth/login")
@@ -95,8 +97,8 @@ function RegisterPage() {
             },
             onError: () => {
                 toast({
-                    title: "Erro ao cadastrar",
-                    description: "Ocorreu um erro ao cadastrar, tente novamente mais tarde.",
+                    title: t('toast.errorSignIn'),
+                    description: t('toast.errorSignInDescription'),
                     variant: "destructive"
                 })
             }
@@ -114,11 +116,11 @@ function RegisterPage() {
 
         return (
             <ul className='text-sm mt-2 space-y-1 grid grid-cols-2'>
-                <li className={checks.upper ? "text-green-500" : "text-red-500"}>1 letra maiúscula</li>
-                <li className={checks.lower ? "text-green-500" : "text-red-500"}>1 letra minúscula</li>
-                <li className={checks.number ? "text-green-500" : "text-red-500"}>1 número</li>
-                <li className={checks.special ? "text-green-500" : "text-red-500"}>1 caractere especial</li>
-                <li className={checks.minLength ? "text-green-500" : "text-red-500"}>8 ou mais caracteres</li>
+                <li className={checks.upper ? "text-green-500" : "text-red-500"}>1 {t('passwordChecklist.upperLetters')}</li>
+                <li className={checks.lower ? "text-green-500" : "text-red-500"}>1 {t('passwordChecklist.lowLetters')}</li>
+                <li className={checks.number ? "text-green-500" : "text-red-500"}>1 {t('passwordChecklist.numbers')}</li>
+                <li className={checks.special ? "text-green-500" : "text-red-500"}>1 {t('passwordChecklist.specialCaracters')}</li>
+                <li className={checks.minLength ? "text-green-500" : "text-red-500"}>8 {t('passwordChecklist.moreCaracters')}</li>
             </ul>
         )
     }
@@ -133,21 +135,21 @@ function RegisterPage() {
                                 <User className="w-8 h-8 text-primary" />
                             </div>
                         </div>
-                        <h1 className="text-3xl font-bold tracking-tight">Novo Usuário</h1>
-                        <p className="text-muted-foreground mt-2">Crie sua conta para continuar</p>
+                        <h1 className="text-3xl font-bold tracking-tight">{t('signIn.title')}</h1>
+                        <p className="text-muted-foreground mt-2">{t('signIn.description')}</p>
                     </div>
 
                     <Card className="glass-card">
                         <CardHeader className="space-y-2 mb-0 pb-0">
                             <CardTitle className="text-2xl font-semibold">Sign In</CardTitle>
                             <CardDescription>
-                                Insira seus dados para criar sua conta
+                                {t('signIn.cardDescription')}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
                             <Form form={signInForm} onSubmit={handleSubmit} className="grid grid-cols-2 space-y-4 items-center justify-center gap-3">
                                 <div className='col-span-2 md:col-span-1 mt-auto space-y-2 md:mt-4'>
-                                    <Label htmlFor='lastName'>Nome</Label>
+                                    <Label htmlFor='lastName'>{t('signIn.nameLabel')}</Label>
                                     <Input
                                         leftIcon={<AlignLeft className='w-5 h-5' />}
                                         type="text"
@@ -160,7 +162,7 @@ function RegisterPage() {
                                 </div>
 
                                 <div className='col-span-2 md:col-span-1 mt-auto space-y-2'>
-                                    <Label htmlFor='lastName'>Sobre Nome</Label>
+                                    <Label htmlFor='lastName'>{t('signIn.lastNameLabel')}</Label>
                                     <Input
                                         leftIcon={<AlignLeft className='w-5 h-5' />}
                                         type="text"
@@ -173,12 +175,12 @@ function RegisterPage() {
                                 </div>
 
                                 <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="email">E-mail</Label>
+                                    <Label htmlFor="email">{t('login.emailInput')}</Label>
                                     <Input
                                         leftIcon={<Mail className='w-5 h-5' />}
                                         type="email"
                                         name="email"
-                                        placeholder="john@example.com"
+                                        placeholder={t('login.emailPlaceholder')}
                                         control={signInForm.control}
                                         className="bg-background/50"
                                         required
@@ -186,12 +188,12 @@ function RegisterPage() {
                                 </div>
 
                                 <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="password">Senha</Label>
+                                    <Label htmlFor="password">{t('login.passwordInput')}</Label>
                                     <PasswordInput
                                         leftIcon={<Lock className='w-5 h-5' />}
                                         type="password"
                                         name="password"
-                                        placeholder="Digite sua Senha"
+                                        placeholder={t('login.passwordPlaceholder')}
                                         control={signInForm.control}
                                         className="bg-background/50"
                                         required
@@ -199,12 +201,12 @@ function RegisterPage() {
                                 </div>
 
                                 <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="password">Confirme sua Senha</Label>
+                                    <Label htmlFor="password">{t('signIn.confirmPasswordLabel')}</Label>
                                     <PasswordInput
                                         leftIcon={<Lock className='w-5 h-5' />}
                                         type="password"
                                         name="confirmPassword"
-                                        placeholder="Confirme sua Senha"
+                                        placeholder={t('signIn.confirmPasswordLabel')}
                                         control={signInForm.control}
                                         className="bg-background/50"
                                         required
@@ -212,20 +214,20 @@ function RegisterPage() {
                                 </div>
 
                                 <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="password" className='text-foreground'>A Senha deve ter:</Label>
+                                    <Label htmlFor="password" className='text-foreground'>{t('signIn.passwordCheckListTitle')}</Label>
                                     <PasswordChecklist password={passwordValue} />
                                 </div>
 
                                 <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="password">Termos de Uso</Label>
+                                    <Label htmlFor="password">{t('footer.terms_of_use')}</Label>
                                     <div className="flex items-center space-x-2 py-2">
                                         <Checkbox
                                             name="checkedTerms"
                                             onCheckedChange={(checked) => signInForm.setValue("checkedTerms", checked ? true : false)}
                                         />
                                         <span className="text-sm text-muted-foreground">
-                                            Aceito os <Link to="#" className='text-primary hover:underline transition-all'>termos de uso</Link> e {" "}
-                                            <Link to="#" className='text-primary hover:underline transition-all'>politica de privacidade</Link>
+                                            {t('signIn.termsOfUser_2')} <Link to="#" className='text-primary hover:underline transition-all'>{t('signIn.termsOfUse')}</Link> {t('signIn.and')} {" "}
+                                            <Link to="#" className='text-primary hover:underline transition-all'>{t('signIn.privacyPolicy')}</Link>
                                         </span>
                                     </div>
                                 </div>
@@ -242,7 +244,7 @@ function RegisterPage() {
                                     className="w-full bg-primary hover:bg-primary/90 col-span-2"
                                     disabled={handleCreate.isPending}
                                 >
-                                    {handleCreate.isPending ? 'Carregando...' : 'Cadastrar'}
+                                    {handleCreate.isPending ? t('login.submitLoading') : t('signIn.createAccount')}
                                 </Button>
                             </Form>
                         </CardContent>

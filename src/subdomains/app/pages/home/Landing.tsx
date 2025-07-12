@@ -12,37 +12,39 @@ import {
 import { useNavigate } from 'react-router-dom';
 import PricingCard from '@/components/PricingCard';
 import PublicLayout from '@/subdomains/app/layout/PublicLayout';
+import { useTranslation } from 'react-i18next';
 
 const LandingPage = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const features = [
     {
       icon: TrendingUp,
-      title: "Acompanhamento de despesas e receitas",
-      description: "Registre e monitore todas suas transações financeiras"
+      title: t('features.title_1'),
+      description: t('features.description_1')
     },
     {
       icon: Zap,
-      title: "Registro rápido de transações",
-      description: "Adicione receitas e despesas em segundos"
+      title: t('features.title_2'),
+      description: t('features.description_2')
     },
     {
       icon: PieChart,
-      title: "Resumo do mês atual",
-      description: "Visualize sua situação financeira de forma clara"
+      title: t('features.title_3'),
+      description: t('features.description_3')
     },
     {
       icon: Smartphone,
-      title: "Interface responsiva e intuitiva",
-      description: "Acesse de qualquer dispositivo com facilidade"
+      title: t('features.title_4'),
+      description: t('features.description_4')
     }
   ];
 
   const benefits = [
-    "100% online - acesse de qualquer lugar",
-    "Interface simples e segura",
-    "Sem complicações desnecessárias",
-    "Ideal para uso pessoal"
+    t('benefits.text_1'),
+    t('benefits.text_2'),
+    t('benefits.text_3'),
+    t('benefits.text_4')
   ];
 
   const pricingPlans = [
@@ -103,25 +105,25 @@ const LandingPage = () => {
   };
 
   return (
-    <PublicLayout type='full'>      
+    <PublicLayout type='full'>
       <section id="hero" className="container mx-auto px-4 py-20 text-center">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">
             <div className="inline-flex items-center justify-center w-24 h-24 bg-primary/20 rounded-2xl mb-6 group">
-              <img src="/favicon.png" className='rounded-2xl group-hover:scale-110 transition-all'/>
+              <img src="/favicon.png" className='rounded-2xl group-hover:scale-110 transition-all' />
             </div>
             <h1 className="text-5xl md:text-7xl font-bold mb-4 bg-gradient-to-r from-primary to-emerald-300 bg-clip-text text-transparent">
               Meu Troco
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground mb-8">
-              Seu dinheiro sob controle, do seu jeito.
+              {t('footer.description')}
             </p>
             <Button
               size="lg"
               className="text-lg px-8 py-4 h-auto"
               onClick={() => navigate('oauth/login')}
             >
-              Comece agora
+              {t('buttons.start_now')}
             </Button>
           </div>
         </div>
@@ -130,13 +132,10 @@ const LandingPage = () => {
       <section id="sobre" className="container mx-auto px-4 py-16">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Controle financeiro sem complicação
+            {t('landing.about_title')}
           </h2>
           <p className="text-lg text-muted-foreground leading-relaxed">
-            O Meu Troco é o aplicativo perfeito para quem quer manter suas finanças organizadas
-            de forma simples e eficiente. Com uma interface intuitiva e recursos essenciais,
-            você pode acompanhar seus gastos, visualizar suas contas mensais e manter tudo
-            sob controle com total segurança.
+            {t('landing.about.description')}
           </p>
         </div>
       </section>
@@ -144,7 +143,7 @@ const LandingPage = () => {
       <section id="funcionalidades" className="container mx-auto px-4 py-16">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            Funcionalidades
+            {t('features.title')}
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((feature, index) => (
@@ -166,7 +165,7 @@ const LandingPage = () => {
         </div>
       </section>
 
-      
+
       {/* <section id="precos" className="container mx-auto px-4 py-16 bg-muted/30">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
@@ -197,7 +196,7 @@ const LandingPage = () => {
       <section id="beneficios" className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto group">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            Por que usar o <b className='group-hover:text-emerald-400 transition-all duration-300'>Meu Troco</b>?
+            {t('benefits.why_use')} <b className='group-hover:text-emerald-400 transition-all duration-300'>Meu Troco</b>?
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div className="space-y-4">
@@ -220,17 +219,17 @@ const LandingPage = () => {
       <section className="container mx-auto px-4 py-20">
         <div className="max-w-4xl mx-auto text-center group">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Chega de <b className='group-hover:text-emerald-400 transition-all'>planilhas</b>. Mantenha seu <b className='group-hover:text-emerald-400 transition-all'>dinheiro</b> organizado com facilidade.
+            {t('callToAction.stop')} <b className='group-hover:text-emerald-400 transition-all'>{t('callToAction.spreadsheets')}</b>. {t('callToAction.keepYour')} <b className='group-hover:text-emerald-400 transition-all'>{t('callToAction.money')}</b> {t('callToAction.organized')}
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Comece hoje mesmo a ter controle total sobre suas <b className='group-hover:text-emerald-400 transition-all'>finanças pessoais</b>.
+            {t('callToAction.startNow')} <b className='group-hover:text-emerald-400 transition-all'>{t('callToAction.personalFinances')}</b>.
           </p>
           <Button
             size="lg"
             className="text-lg px-8 py-4 h-auto"
             onClick={() => navigate('oauth/login')}
           >
-            Acessar o Meu Troco
+            {t('buttons.accessThePlatform')}
           </Button>
         </div>
       </section>

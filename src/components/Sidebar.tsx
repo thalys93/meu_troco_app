@@ -13,17 +13,20 @@ import { useAuth } from '@/hooks/use-auth';
 import { useUser } from '@/hooks/use-user';
 import AvatarTrigger from './AvatarTrigger';
 import { BankIcon } from '@phosphor-icons/react';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useTranslation } from 'react-i18next';
 
 const AppSidebar = () => {
   const [open, setOpen] = React.useState(false);
   const { theme } = useTheme();
   const { user, handleLogout } = useUser();
+  const { t } = useTranslation()
 
   const navigation = [
-    { name: 'Home', href: '/dashboard', icon: Home },
-    { name: "Transações", href: "/dashboard/transactions", icon: BankIcon},
-    { name: 'Receitas', href: '/dashboard/income', icon: TrendingUp },
-    { name: 'Despesas', href: '/dashboard/expenses', icon: TrendingDown },
+    { name: t('sidebar.home'), href: '/dashboard', icon: Home },
+    { name: t('sidebar.transactions'), href: "/dashboard/transactions", icon: BankIcon },
+    { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
+    { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
     // { name: 'Premium', href: '/pricing', icon: Crown },
     // { name: 'Pagamentos', href: '/payments', icon: CreditCard },    
   ];
@@ -37,6 +40,7 @@ const AppSidebar = () => {
               <DollarSign className="w-6 h-6 text-primary" />
               <span className="font-bold">Meu Troco</span>
             </div>
+            <LanguageSwitcher />
             <ThemeToggle />
           </div>
         </SidebarHeader>
@@ -69,7 +73,7 @@ const AppSidebar = () => {
         <SidebarFooter>
           <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
             <DropdownMenuTrigger>
-              <AvatarTrigger open={open} user={user} canChange={false}/>
+              <AvatarTrigger open={open} user={user} canChange={false} />
             </DropdownMenuTrigger>
 
             <DropdownMenuContent className='flex flex-1 flex-col w-52'>
@@ -79,7 +83,7 @@ const AppSidebar = () => {
               >
                 <DropdownMenuItem className='flex items-center gap-2'>
                   <User className="h-4 w-4 group-hover:text-secondary-foreground transition-all" />
-                  <span className='group-hover:text-secondary-foreground transition-all'>Perfil</span>
+                  <span className='group-hover:text-secondary-foreground transition-all'>{t('sidebar.profile')}</span>
                 </DropdownMenuItem>
               </NavLink>
 
@@ -93,7 +97,7 @@ const AppSidebar = () => {
 
                 <DropdownMenuItem className='flex items-center gap-2'>
                   <LogOut className="h-4 w-4 group-hover:text-secondary-foreground transition-all" />
-                  <span className='group-hover:text-secondary-foreground transition-all'>Sair</span>
+                  <span className='group-hover:text-secondary-foreground transition-all'>{t('sidebar.logout')}</span>
                 </DropdownMenuItem>
               </NavLink>
 

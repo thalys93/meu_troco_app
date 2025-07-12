@@ -6,21 +6,22 @@ import PrivateLayout from '../../layout/PrivateLayout';
 import { useUserTransactions } from '@/utils/api/transation';
 import { cn } from '@/lib/utils';
 import { useDashboardStats } from '@/hooks/use-dashboard';
+import { useTranslation } from 'react-i18next';
 
 const DashboardPage = () => {
   const { data: transactions = [], isLoading } = useUserTransactions();
-  const { 
-    expensePercentage, 
-    formatCurrency, 
-    incomePercentage, 
-    totalBalance, 
-    totalExpense, 
-    totalIncome, 
-    totalBalancePercentage, 
-    isBalancePositive, 
-    isExpensePositive, 
+  const {
+    expensePercentage,
+    formatCurrency,
+    incomePercentage,
+    totalBalance,
+    totalExpense,
+    totalIncome,
+    totalBalancePercentage,
+    isBalancePositive,
+    isExpensePositive,
     isIncomePositive
-  } = useDashboardStats()    
+  } = useDashboardStats()
 
   const getCurrentMonth = () => {
     return new Date().toLocaleDateString('pt-BR', {
@@ -28,6 +29,8 @@ const DashboardPage = () => {
       year: 'numeric'
     });
   };
+
+  const { t } = useTranslation();
 
   return (
     <PrivateLayout>
@@ -72,7 +75,7 @@ const DashboardPage = () => {
         <TransactionList
           transactions={transactions}
           isLoading={isLoading}
-          title="Transações Recentes"          
+          title="Transações Recentes"
         />
       </div>
     </PrivateLayout>

@@ -1,23 +1,26 @@
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
 import { Menu, X } from 'lucide-react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 function Navigation({ type }: { type: "simple" | "full" }) {
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+    const {t} = useTranslation();
 
     const location = useLocation();
 
     const isCallBack = location.pathname === "/oauth/callback"
 
     const navigationItems = [
-        { name: 'Início', href: '#hero' },
-        { name: 'Sobre', href: '#sobre' },
-        { name: 'Funcionalidades', href: '#funcionalidades' },
+        { name: t("navigation.home"), href: '#hero' },
+        { name: t("navigation.about"), href: '#sobre' },
+        { name: t("navigation.funcionalities"), href: '#funcionalidades' },
         // { name: 'Preços', href: '#precos' },
-        { name: 'Benefícios', href: '#beneficios' },
+        { name: t('navigation.benefits'), href: '#beneficios' },
     ];
 
     const scrollToSection = (href: string) => {
@@ -49,14 +52,16 @@ function Navigation({ type }: { type: "simple" | "full" }) {
                                     </button>
                                 ))}
                                 <div className="flex items-center gap-2">
+                                    <LanguageSwitcher/>
                                     <ThemeToggle />
                                     <Button onClick={() => navigate('oauth/login')}>
-                                        Entrar
+                                        {t("navigation.signIn")}
                                     </Button>
                                 </div>
                             </div>
 
                             <div className="md:hidden flex items-center gap-2">
+                                <LanguageSwitcher/>
                                 <ThemeToggle />
                                 <button
                                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -80,7 +85,7 @@ function Navigation({ type }: { type: "simple" | "full" }) {
                                         </button>
                                     ))}
                                     <Button onClick={() => navigate('oauth/login')} className="mt-4">
-                                        Entrar
+                                        {t("navigation.signIn")}
                                     </Button>
                                 </div>
                             </div>
@@ -98,9 +103,10 @@ function Navigation({ type }: { type: "simple" | "full" }) {
                                 <span className="text-xl font-bold select-none group-hover:text-emerald-400 transition-all">Meu Troco</span>
                             </div>
                             <div className="flex items-center gap-2">
+                                <LanguageSwitcher/>
                                 <ThemeToggle />
                                 <Button onClick={() => navigate(-1)} disabled={isCallBack}>                                    
-                                    Voltar
+                                    {t('navigation.back')}
                                 </Button>
                             </div>
                         </div>

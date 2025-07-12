@@ -23,14 +23,14 @@ const DashboardPage = () => {
     isIncomePositive
   } = useDashboardStats()
 
-  const getCurrentMonth = () => {
-    return new Date().toLocaleDateString('pt-BR', {
+  const getCurrentMonth = (locale: string) => {
+    return new Date().toLocaleDateString(locale, {
       month: 'long',
       year: 'numeric'
     });
   };
 
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   return (
     <PrivateLayout>
@@ -39,34 +39,34 @@ const DashboardPage = () => {
           <Calendar className="w-6 h-6 text-primary" />
           <div>
             <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">{getCurrentMonth()}</p>
+            <p className="text-muted-foreground">{getCurrentMonth(i18n.language)}</p>
           </div>
         </div>
 
         <div className={cn("grid grid-cols-1 md:grid-cols-3 gap-6", isLoading && "animate-pulse")}>
           <StatCard
-            title="Saldo Total"
+            title={t('dashboard.cardTotalTitle')}
             value={formatCurrency(totalBalance)}
             icon={Wallet}
-            trend={totalBalance > 0 ? `${isBalancePositive ? "+" : "-"}${totalBalancePercentage.toFixed(2)}% em relação ao mês passado` : ""}
+            trend={totalBalance > 0 ? `${isBalancePositive ? "+" : "-"}${totalBalancePercentage.toFixed(2)}${t('dashboard.statCardRelation')}` : ""}
             trendDirection={totalBalance > 0 ? 'up' : 'down'}
             className={totalBalance >= 0 ? "border-emerald-500/20" : "border-red-500/20"}
           />
 
           <StatCard
-            title="Total de Receitas"
+            title={t('dashboard.cardTotalIncome')}
             value={formatCurrency(totalIncome)}
             icon={TrendingUp}
-            trend={`${isIncomePositive ? "+" : "-"}${incomePercentage.toFixed(2)}% em relação ao mês passado`}
+            trend={`${isIncomePositive ? "+" : "-"}${incomePercentage.toFixed(2)}${t('dashboard.statCardRelation')}`}
             trendDirection="up"
             className="border-emerald-500/20"
           />
 
           <StatCard
-            title="Total de Despesas"
+            title={t('dashboard.cardTotalExpense')}
             value={formatCurrency(totalExpense)}
             icon={TrendingDown}
-            trend={`${isExpensePositive ? "+" : "-"}${expensePercentage.toFixed(2)}% em relação ao mês passado`}
+            trend={`${isExpensePositive ? "+" : "-"}${expensePercentage.toFixed(2)}${t('dashboard.statCardRelation')}`}
             trendDirection="down"
             className="border-red-500/20"
           />
@@ -75,7 +75,7 @@ const DashboardPage = () => {
         <TransactionList
           transactions={transactions}
           isLoading={isLoading}
-          title="Transações Recentes"
+          title={t('dashboard.listTitle')}
         />
       </div>
     </PrivateLayout>

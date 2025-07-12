@@ -15,6 +15,6 @@ export const useCategories = () => {
     return {
         incomeCategories,
         expenseCategories,
-        allCategories
+        allCategories,        
     }
 }

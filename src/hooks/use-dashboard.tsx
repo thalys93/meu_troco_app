@@ -1,11 +1,13 @@
 import { useUserTransactions } from "@/utils/api/transation"
 import { useUser } from "./use-user";
+import { useTranslation } from "react-i18next";
 export const useDashboardStats = () => {
     const { data: transactions = [] } = useUserTransactions();
     const { user } = useUser();
+    const { i18n } = useTranslation()
     const incomeTransactions = transactions.filter((t) => t.type === "receita");
     const expenseTransactions = transactions.filter((t) => t.type === "despesa");
-    const userJoinedTime = user?.createdAt;  
+    const userJoinedTime = user?.createdAt;
     const getDaysSinceUserCreated = (timestamp?: { seconds: number; nanoseconds: number }) => {
         if (!timestamp) return null;
 
@@ -30,23 +32,35 @@ export const useDashboardStats = () => {
     const expensePercentage = totalMovimentado > 0 ? (totalExpense / totalMovimentado) * 100 : 0;
     const totalBalancePercentage = totalMovimentado > 0 ? (totalBalance / totalMovimentado) * 100 : 0;
 
-    const formatCurrency = (amount: number) =>
-        `R$ ${amount.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
-
-    return {
-        totalIncome,
-        totalExpense,
-        totalBalance,
-        incomePercentage,
-        expensePercentage,
-        totalBalancePercentage,
-        formatCurrency,
-        isBalancePositive: totalBalance >= 0,
-        isIncomePositive: totalIncome >= 0,
-        isExpensePositive: totalExpense >= 0,
-        incomeLength,
-        expenseLength,
-        userJoinedTime,
-        getDaysSinceUserCreated
+    const getCurrencySymbol = (locale: string) => {        
+        switch (locale) {
+            case "pt-BR":
+                return "R$";
+            case "en-US":
+                return "$";
+            case "es":
+                return "€";
+            default:
+                return "$";
+        }                
     };
-}
+
+        const formatCurrency = (amount: number) => `${getCurrencySymbol(i18n.language)} ${amount.toLocaleString(i18n.language, { minimumFractionDigits: 2 })}`;
+
+        return {
+            totalIncome,
+            totalExpense,
+            totalBalance,
+            incomePercentage,
+            expensePercentage,
+            totalBalancePercentage,
+            formatCurrency,
+            isBalancePositive: totalBalance >= 0,
+            isIncomePositive: totalIncome >= 0,
+            isExpensePositive: totalExpense >= 0,
+            incomeLength,
+            expenseLength,
+            userJoinedTime,
+            getDaysSinceUserCreated
+        };
+    }

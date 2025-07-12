@@ -11,6 +11,8 @@ import { toast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
 import { ScrollArea } from './ui/scroll-area';
 import useUserStore from '@/store/UserStore';
+import { useTranslation } from 'react-i18next';
+import { useCategories } from '@/hooks/use-categories';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -25,6 +27,7 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction>()
   const { mutate, isPending } = useDeleteTransaction()
   const { refetch } = useUserTransactions()
+  const { t, i18n } = useTranslation()
 
   const formatAmount = (amount: number, type: 'receita' | 'despesa') => {
     const formatted = `$${amount.toLocaleString()}`;
@@ -33,7 +36,7 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString(i18n.language, {
       month: 'short',
       day: 'numeric'
     });
@@ -59,12 +62,6 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
     })
   }
 
-  const handleOpenDialog = (e: React.MouseEvent<HTMLDivElement, MouseEvent>, transaction: Transaction) => {
-    e.stopPropagation()
-    e.preventDefault()
-    setSelectedTransaction(transaction)
-  }
-
   const isPendingTransaction = (id: string) => {
     return isPending && selectedTransaction?.id === id
   }
@@ -78,6 +75,10 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
     }
   }
 
+  const { allCategories } = useCategories();
+
+  const getCategoryLabel = (category: string) => t(`categories.${category}`);
+
   return (
     <>
       <Card className="glass-card">
@@ -88,13 +89,13 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
           {isLoading ? (
             <div className='flex items-center justify-center flex-col gap-2'>
               <Loader2 className='animate-spin' />
-              <span className='text-muted-foreground text-sm select-none'>Aguarde Carregando</span>
+              <span className='text-muted-foreground text-sm select-none'>{t('transactionList.loading')}</span>
             </div>
           ) : (
             <ScrollArea className='max-h-[350px] overflow-auto'>
               {displayTransactions?.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
-                  Nenhuma transação encontrada
+                  {t('transactionList.empty')}
                 </p>
               ) : (
                 displayTransactions?.map((transaction) => (
@@ -114,7 +115,7 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
                         <p className="font-medium">{transaction.description}</p>
                         <div className="flex items-center gap-2 mt-1">
                           <Badge variant="secondary" className="text-xs">
-                            {transaction.category}
+                            {getCategoryLabel(transaction.category)}
                           </Badge>
                           <span className="text-xs text-muted-foreground">
                             {formatDate(transaction.date)}
@@ -137,17 +138,17 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuLabel className='select-none'>Ações</DropdownMenuLabel>
+                          <DropdownMenuLabel className='select-none'>{t('transactionList.actions')}</DropdownMenuLabel>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => setSelectedTransaction(transaction)}>
                             <div className='flex flex-row items-center gap-2'>
-                              <Trash className='h-4 w-4' /> Excluir
+                              <Trash className='h-4 w-4' /> {t('transactionList.delete')}
                             </div>
                           </DropdownMenuItem>
 
                           <Link to={`/dashboard/${isIncome(transaction.type)}/${transaction.id}`}>
                             <DropdownMenuItem className='flex flex-row items-center gap-2'>
-                              <Pen className='h-4 w-4' /> Editar
+                              <Pen className='h-4 w-4' /> {t('transactionList.edit')}
                             </DropdownMenuItem>
                           </Link>
                         </DropdownMenuContent>
@@ -166,8 +167,8 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
           open={!!selectedTransaction}
           onOpenChange={(open) => setSelectedTransaction(open ? selectedTransaction : null)}
           deleteFunction={() => handleDelete(selectedTransaction!.id)}
-          title="Excluir Transação"
-          description="Tem certeza que deseja excluir essa transação?"
+          title={t('dialog.deleteTitle')}
+          description={t('dialog.deleteDescription')}
           itemDetails={selectedTransaction!}
         />
       )}

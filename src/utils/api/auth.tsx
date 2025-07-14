@@ -1,7 +1,7 @@
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signOut } from "firebase/auth"
 import { AuthProvider, FireStore, GoogleProvider } from "@/utils/api/firebase"
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { doc, Firestore, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { LoginForm } from "@/types/validation/login";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
@@ -10,6 +10,7 @@ import { User } from "@/types/entities/User";
 import { AccountTypes } from "@/types/enums/AccountsTypes";
 import useUserStore from "@/store/UserStore";
 import { AccountProviders } from "@/types/enums/AccountProviders";
+import { useTranslation } from "react-i18next";
 
 export const loginWithEmail = async (data: LoginForm) => {
     const result = await signInWithEmailAndPassword(AuthProvider, data.email, data.password);
@@ -92,13 +93,14 @@ export const loginWithGoogle = async () => {
 export const useLoginWithGoogle = () => {
     const navigation = useNavigate();
     const { setUid } = useUserStore();
+    const {t} = useTranslation();
 
     return useMutation({
         mutationFn: loginWithGoogle,
         onSuccess: ({ uid }) => {
             toast({
-                title: "Bem-vindo!",
-                description: " Vocé fez login com o google com sucesso.",
+                title: t('toast.welcome'),
+                description: t('googleAuth.description'),
             })
 
             setUid(uid)

@@ -173,5 +173,6 @@
   "profile.toast.success": "Perfil actualizado",
   "profile.toast.successDescription": "¡Su información fue guardada exitosamente!",
   "profile.toast.userAuth": "Usuario no autenticado",
-  "toast.tryAgain": "Intentar otra vez."
+  "toast.tryAgain": "Intentar otra vez.",
+  "googleAuth.description": "Has iniciado sesión con Google correctamente."
 }

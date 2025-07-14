@@ -173,5 +173,6 @@
   "profile.toast.success": "Updated profile",
   "profile.toast.successDescription": "Your information was successfully saved!",
   "profile.toast.userAuth": "Unauthenticated user",
-  "toast.tryAgain": "Try again."
+  "toast.tryAgain": "Try again.",
+  "googleAuth.description": "You have successfully logged in with google."
 }

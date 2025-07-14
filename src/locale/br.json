@@ -173,5 +173,6 @@
   "profile.accountStats": "Estatísticas da Conta",
   "profile.daysOfUse": "Dias de uso",
   "default.wip": "Em Breve",
-  "premium.remaining": "Restantes"
+  "premium.remaining": "Restantes",
+  "googleAuth.description": "Você fez login com o google com sucesso."
 }

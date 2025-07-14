@@ -5,11 +5,13 @@ import TransactionList from '@/components/TransactionList';
 import { TrendingDown } from 'lucide-react';
 import PrivateLayout from '../../layout/PrivateLayout';
 import { useUserTransactions } from '@/utils/api/transation';
+import { useTranslation } from 'react-i18next';
 
 const ExpensesPage = () => {
-  const {data: transactions, isLoading} = useUserTransactions()
+  const { data: transactions, isLoading } = useUserTransactions()
   const expenseTransactions = transactions?.filter(t => t?.type === 'despesa');
-  const transactionsList = expenseTransactions  
+  const transactionsList = expenseTransactions
+  const { t } = useTranslation();
 
   return (
     <PrivateLayout>
@@ -18,8 +20,8 @@ const ExpensesPage = () => {
         <div className="flex items-center gap-3">
           <TrendingDown className="w-6 h-6 text-red-400" />
           <div>
-            <h1 className="text-3xl font-bold">Despesas</h1>
-            <p className="text-muted-foreground">Controle seus gastos</p>
+            <h1 className="text-3xl font-bold">{t('sidebar.expenses')}</h1>
+            <p className="text-muted-foreground">{t('expenses.description')}</p>
           </div>
         </div>
 
@@ -29,9 +31,9 @@ const ExpensesPage = () => {
         {/* Expense History */}
         <TransactionList
           transactions={transactionsList}
-          title="Histórico de Despesas"
+          title={t('transactionList.expensesHistory')}
           isLoading={isLoading}
-          limit={15}          
+          limit={15}
         />
       </div>
     </PrivateLayout>

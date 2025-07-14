@@ -73,9 +73,7 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
       case 'despesa':
         return 'expenses'
     }
-  }
-
-  const { allCategories } = useCategories();
+  }  
 
   const getCategoryLabel = (category: string) => t(`categories.${category}`);
 

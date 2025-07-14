@@ -15,6 +15,7 @@ import { Loader2 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import useUserStore from '@/store/UserStore';
 import { useCategories } from '@/hooks/use-categories';
+import { useTranslation } from 'react-i18next';
 
 interface TransactionFormProps {
   type: 'receita' | 'despesa';
@@ -42,8 +43,10 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   const { mutate: create, isPending } = useCreateTransaction();
   const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(uid, id);
   const { refetch: refetchUserTransactions } = useUserTransactions()
+  const { t } = useTranslation();
 
-  const categories = type === 'receita' ? incomeCategories : expenseCategories;
+  const categories = type === 'receita' ? incomeCategories : expenseCategories;        
+  const getCategoryLabel = (category: string) => t(`categories.${category}`);
 
   React.useEffect(() => {
     refetchTransaction()
@@ -74,8 +77,8 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
 
     if (!isValid) {
       toast({
-        title: "Informações Faltando",
-        description: "Por favor, preencha todos os campos",
+        title: t('transactionForm.toast.title'),
+        description: t('transactionForm.toast.description'),
         variant: "destructive",
       });
       return;
@@ -84,8 +87,8 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
     create(data, {
       onSuccess: () => {
         toast({
-          title: 'Sucesso!',
-          description: `${type === 'receita' ? 'Receita' : 'Gasto'} adicionado com sucesso!`,
+          title: t('transactionForm.toast.success'),
+          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses')} t('transactionForm.toast.successDescription')`,
         });
         transactionForm.reset(initialValues);
         setCategory('');
@@ -94,11 +97,9 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
       onError: (error) => {
         toast({
           title: 'Erro',
-          description: 'Não foi possível salvar a transação',
+          description: t('transactionForm.toast.errorDescription'),
           variant: 'destructive',
-        });
-
-        console.log(error)
+        });        
       }
     });
   };
@@ -124,8 +125,8 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
 
     if (!isValid) {
       toast({
-        title: "Informações Faltando",
-        description: "Por favor, preencha todos os campos",
+        title: t('transactionForm.toast.title'),
+        description: t('transactionForm.toast.description'),
         variant: "destructive",
       });
       return;
@@ -135,7 +136,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
       onSuccess: () => {
         toast({
           title: 'Sucesso!',
-          description: `${type === 'receita' ? 'Receita' : 'Gasto'} Editado com sucesso!`,
+          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses') } t('transactionForm.toast.editDescription')`,
         });
         setCategory('');
         refetchUserTransactions();
@@ -145,7 +146,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
       onError: (error) => {
         toast({
           title: 'Erro',
-          description: 'Não foi possível salvar a transação',
+          description: t('transactionForm.toast.errorDescription'),
           variant: 'destructive',
         });
 
@@ -154,18 +155,27 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
     });
   }
 
+  const getTranslatedType = (type: string) => {
+    switch (type) {
+      case 'receita':
+        return t('default.receipt')
+      case 'despesa':
+        return t('default.expense')
+    }
+  }
+
   return (
     <Card className="glass-card">
       <CardHeader>
         <CardTitle className="text-xl font-semibold">
-          {id ? "Editar" : "Adicionar Nova"} {type === 'receita' ? 'Receita' : 'Despesa'}
+          {id ? t('default.edit') : t('default.new')} {type === 'receita' ? t('default.receipt') : t('default.expense')}
         </CardTitle>
       </CardHeader>
       <CardContent>
         <Form form={transactionForm} onSubmit={id ? handleEdit : handleCreate} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="amount">Valor ($)</Label>
+              <Label htmlFor="amount">{t('transactionForm.form.value')} ($)</Label>
               <Input
                 name="value"
                 type="number"
@@ -177,7 +187,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="date">Data</Label>
+              <Label htmlFor="date">{t('transactionForm.form.date')}</Label>
               <Input
                 name="date"
                 type="date"
@@ -188,25 +198,25 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description">{t('transactionForm.form.description')}</Label>
             <Input
               name="description"
-              placeholder={`Digite a descrição da ${type}`}
+              placeholder={`${t('transactionForm.form.descriptionPlaceholder')} ${getTranslatedType(type)}`}
               control={transactionForm.control}
               className="bg-background/50"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="category">Categoria</Label>
+            <Label htmlFor="category">{t('transactionForm.form.category')}</Label>
             <Select value={category} onValueChange={(value) => { setCategory(value), transactionForm.setValue('category', value) }}>
               <SelectTrigger className="bg-background/50">
-                <SelectValue placeholder="Selecione uma categoria" />
+                <SelectValue placeholder={t('transactionForm.form.selectCategory')} />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
-                    {cat}
+                    {getCategoryLabel(cat)}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -219,7 +229,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
             className="w-full bg-primary hover:bg-primary/90"
           >
             {isPending && <Loader2 className='animate-spin' />}
-            {id ? 'Editar' : 'Adicionar'} {type === 'receita' ? 'Receita' : 'Despesa'}
+            {id ? t('default.edit') : t('default.add')} {type === 'receita' ? t('default.receipt') : t('default.expense')}
           </Button>
         </Form>
       </CardContent>

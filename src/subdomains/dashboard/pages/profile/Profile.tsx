@@ -23,6 +23,7 @@ import ImageDropzone from '@/components/Dropzone';
 import axios from "axios";
 import { api } from '@/utils/api/api';
 import { useDashboardStats } from '@/hooks/use-dashboard';
+import { useTranslation } from 'react-i18next';
 
 const initialNameForm = {
   name: "",
@@ -42,21 +43,14 @@ const ProfilePage = () => {
   const { uid } = useUserStore();
   const { refetch } = useGetUserData(uid);
   const [file, setFile] = React.useState<File | null>(null);
+  const { t } = useTranslation();
 
-  const { 
-      expensePercentage, 
-      formatCurrency, 
-      incomePercentage, 
-      totalBalance, 
-      totalExpense, 
-      totalIncome, 
-      totalBalancePercentage, 
-      isBalancePositive, 
-      isExpensePositive, 
-      isIncomePositive,
-      userJoinedTime,
-      getDaysSinceUserCreated
-    } = useDashboardStats()       
+  const {
+    expenseLength,
+    incomeLength,
+    userJoinedTime,
+    getDaysSinceUserCreated
+  } = useDashboardStats()
 
   const nameForm = useForm({
     defaultValues: initialNameForm
@@ -76,7 +70,7 @@ const ProfilePage = () => {
   const handleSaveProfile = async (data: typeof initialNameForm) => {
     const { name } = data;
     const firstName = name.trim().split(" ")[0] || "";
-    const lastName = name.trim().split(" ").slice(1).join(" ") || "";    
+    const lastName = name.trim().split(" ").slice(1).join(" ") || "";
     try {
       const userRef = doc(FireStore, "users", userLocal.uid);
 
@@ -89,15 +83,14 @@ const ProfilePage = () => {
       });
 
       toast({
-        title: "Perfil atualizado",
-        description: "Suas informações foram salvas com sucesso!",
+        title: t('profile.toast.success'),
+        description: t('profile.toast.successDescription'),
       });
       refetch();
-    } catch (error) {
-      console.error("Erro ao atualizar perfil:", error);
+    } catch (error) {      
       toast({
-        title: "Erro ao salvar perfil",
-        description: "Tente novamente mais tarde.",
+        title: t('profile.toast.errorTitle'),
+        description: t('profile.toast.errorDescription'),
         variant: "destructive",
       });
     }
@@ -108,7 +101,7 @@ const ProfilePage = () => {
     if (passForm.getValues('newPassword') !== passForm.getValues('confirmPassword')) {
       toast({
         title: "Erro",
-        description: "As senhas não coincidem.",
+        description: t('profile.toast.passwordDescription'),
         variant: "destructive",
       });
       return;
@@ -118,7 +111,7 @@ const ProfilePage = () => {
     if (!user || !user.email) {
       toast({
         title: "Erro",
-        description: "Usuário não autenticado",
+        description: t('profile.toast.userAuth'),
         variant: "destructive",
       })
       return;
@@ -128,8 +121,8 @@ const ProfilePage = () => {
       const credential = EmailAuthProvider.credential(user.email, data.currentPassword);
       await reauthenticateWithCredential(user, credential).catch((err) => {
         toast({
-          title: "Atenção",
-          description: "Senha Incorreta, Verifique se suas credenciais estão corretas.",
+          title: t('toast.warningTitle'),
+          description: t('profile.toast.passwordErrorDescription'),
         })
 
         return;
@@ -138,29 +131,29 @@ const ProfilePage = () => {
       await updatePassword(user, data.newPassword).catch((err) => {
         console.error("Erro ao atualizar senha:", err);
         toast({
-          title: "Erro ao alterar senha",
-          description: err.message || "Tente novamente.",
+          title: t('profile.toast.passwordErrorTitle'),
+          description: err.message || t('toast.tryAgain'),
           variant: "destructive",
         });
         return;
       });
       toast({
-        title: "Senha alterada",
-        description: "Sua senha foi alterada com sucesso!",
+        title: t('profile.toast.passwordSuccess'),
+        description: t('profile.toast.passwordSuccessDescription'),
       });
       passForm.reset();
     } catch (error) {
       console.error("Erro ao atualizar senha:", error);
       toast({
-        title: "Erro ao alterar senha",
-        description: error.message || "Tente novamente.",
+        title: t('profile.toast.passwordErrorTitle'),
+        description: error.message || t('toast.tryAgain'),
         variant: "destructive",
       });
     }
 
     toast({
-      title: "Senha alterada",
-      description: "Sua senha foi alterada com sucesso!",
+      title: t('profile.toast.passwordSuccess'),
+      description: t('profile.toast.passwordSuccessDescription'),
     });
     passForm.reset();
   };
@@ -184,15 +177,14 @@ const ProfilePage = () => {
         updatedAt: new Date(),
       });
       toast({
-        title: "Avatar atualizado",
-        description: "Seu avatar foi atualizado com sucesso!",
+        title: t('profile.toast.avatarSuccess'),
+        description: t('profile.toast.avatarSuccessDescription'),
       });
       refetch();
-    } catch (error) {
-      console.error("Erro ao atualizar avatar:", error);
+    } catch (error) {      
       toast({
-        title: "Erro ao atualizar avatar",
-        description: "Tente novamente mais tarde.",
+        title: t('profile.toast.avatarError'),
+        description: t('profile.toast.errorDescription'),
         variant: "destructive",
       });
     }
@@ -219,8 +211,8 @@ const ProfilePage = () => {
           <div className="flex items-center gap-3">
             <User className="w-6 h-6 text-primary" />
             <div>
-              <h1 className="text-3xl font-bold">Perfil</h1>
-              <p className="text-muted-foreground">Gerencie suas informações pessoais</p>
+              <h1 className="text-3xl font-bold">{t('sidebar.profile')}</h1>
+              <p className="text-muted-foreground">{t('profile.description')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -289,36 +281,36 @@ const ProfilePage = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="w-5 h-5" />
-                Informações Pessoais
+                {t('profile.personalInfo')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Form form={nameForm} onSubmit={handleSaveProfile} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Nome</Label>
+                  <Label htmlFor="name">{t('signIn.nameLabel')}</Label>
                   <Input
                     leftIcon={<User className="w-4 h-4" />}
                     type="text"
                     name="name"
                     disabled={userLocal?.provider !== AccountProviders.EMAIL}
-                    placeholder="Seu nome completo"
+                    placeholder={t('profile.form.namePlaceholder')}
                     control={nameForm.control}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">{t('login.emailInput')}</Label>
                   <Input
                     leftIcon={<Mail className="w-4 h-4" />}
                     type="email"
                     name="email"
                     control={nameForm.control}
-                    placeholder="seu.email@exemplo.com"
+                    placeholder={t('login.emailPlaceholder')}
                     disabled
                   />
                 </div>
                 <Button type="submit" className="w-full" disabled={userLocal?.provider !== AccountProviders.EMAIL}>
                   <Save className="w-4 h-4 mr-2" />
-                  Salvar Informações
+                  {t('profile.form.saveInfo')}
                 </Button>
               </Form>
             </CardContent>
@@ -328,45 +320,45 @@ const ProfilePage = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Lock className="w-5 h-5" />
-                Alterar Senha
+                {t('profile.changePass')}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <Form form={passForm} onSubmit={handleChangePassword} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">Sua Senha</Label>
+                  <Label htmlFor="newPassword">{t('profile.form.passwordLabel')}</Label>
                   <PasswordInput
                     type="password"
                     leftIcon={<LockIcon className='w-4 h-4' />}
                     name="currentPassword"
                     control={passForm.control}
-                    placeholder="Digite sua a senha"
+                    placeholder={t('profile.form.passwordPlaceholder')}
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">Nova Senha</Label>
+                  <Label htmlFor="newPassword">{t('profile.form.newPassword')}</Label>
                   <PasswordInput
                     type="password"
                     leftIcon={<LockIcon className='w-4 h-4' />}
                     name="newPassword"
                     control={passForm.control}
-                    placeholder="Digite sua nova senha"
+                    placeholder={t('profile.form.newPasswordPlaceholder')}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                  <Label htmlFor="confirmPassword">{t('profile.form.confirmPass')}</Label>
                   <PasswordInput
                     type="password"
                     leftIcon={<LockIcon className='w-4 h-4' />}
                     name="confirmPassword"
                     control={passForm.control}
-                    placeholder="Confirme sua nova senha"
+                    placeholder={t('profile.form.confirmPassPlaceholder')}
                   />
                 </div>
                 <Button type="submit" className="w-full">
                   <Lock className="w-4 h-4 mr-2" />
-                  Alterar Senha
+                  {t('profile.changePass')}
                 </Button>
               </Form>
             </CardContent>
@@ -376,8 +368,8 @@ const ProfilePage = () => {
         <div className='grid gap-6 md:grid-cols-2'>
           <Card className='glass-card '>
             <CardHeader className='flex flex-col gap-1 items-center justify-center'>
-              Foto de Perfil
-              <span className='text-xs text-muted-foreground'>Clique ou arraste para alterar sua foto de perfil</span>
+              {t('profile.avatar')}
+              <span className='text-xs text-muted-foreground'>{t('profile.avatarDescription')}</span>
             </CardHeader>
             <CardContent className='flex flex-col gap-3 justify-center items-center'>
               <ImageDropzone
@@ -387,28 +379,28 @@ const ProfilePage = () => {
 
               <Button className='w-[90%] px-10' onClick={() => handleSaveAvatar(file)}>
                 <Save className="w-4 h-4 mr-2" />
-                Salvar
+                {t('default.save')}
               </Button>
             </CardContent>
           </Card>
 
           <Card className="glass-card">
             <CardHeader>
-              <CardTitle>Estatísticas da Conta</CardTitle>
+              <CardTitle>{t('profile.accountStats')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-primary/10 rounded-lg">
                   <p className="text-2xl font-bold text-primary">{getDaysSinceUserCreated(userJoinedTime)}</p>
-                  <p className="text-sm text-muted-foreground">Dias de uso</p>
+                  <p className="text-sm text-muted-foreground">{t('profile.daysOfUse')}</p>
                 </div>
                 <div className="text-center p-4 bg-emerald-500/10 rounded-lg">
-                  <p className="text-2xl font-bold text-emerald-400">{totalIncome}</p>
-                  <p className="text-sm text-muted-foreground">Receitas</p>
+                  <p className="text-2xl font-bold text-emerald-400">{incomeLength}</p>
+                  <p className="text-sm text-muted-foreground">{t('sidebar.income')}</p>
                 </div>
                 <div className="text-center p-4 bg-red-500/10 rounded-lg">
-                  <p className="text-2xl font-bold text-red-400">{totalExpense}</p>
-                  <p className="text-sm text-muted-foreground">Despesas</p>
+                  <p className="text-2xl font-bold text-red-400">{expenseLength}</p>
+                  <p className="text-sm text-muted-foreground">{t('sidebar.expenses')}</p>
                 </div>
                 {/* <div className="text-center p-4 bg-blue-500/10 rounded-lg">
                   <p className="text-2xl font-bold text-blue-400">
@@ -421,10 +413,10 @@ const ProfilePage = () => {
                 <div className="text-center p-4 bg-yellow-500/10 rounded-lg select-none">
                   <p className="text-2xl font-bold text-yellow-400 flex items-center justify-center my-1">
                     {/* {isPremium ? "∞" : "42"} */}
-                    <Construction/>                    
+                    <Construction />
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {isPremium ? "Em Breve" : "Restantes"}
+                    {isPremium ? t('default.wip') : t('premium.remaining')}
                   </p>
                 </div>
               </div>

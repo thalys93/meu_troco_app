@@ -174,5 +174,11 @@
   "profile.toast.successDescription": "Your information was successfully saved!",
   "profile.toast.userAuth": "Unauthenticated user",
   "toast.tryAgain": "Try again.",
-  "googleAuth.description": "You have successfully logged in with google."
+  "googleAuth.description": "You have successfully logged in with google.",
+  "backoffice.totalUsersDescription": "Registered Users",
+  "backoffice.totalUsers": "Total Users",
+  "backoffice.usersPerPlan": "Users per Plan",
+  "userCard.title": "Users:",
+  "backoffice.plans": "Plans",
+  "backoffice.plans.description": "Manage my exchange signature plans"
 }

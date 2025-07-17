@@ -6,10 +6,10 @@ import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-function Navigation({ type }: { type: "simple" | "full" }) {
+function Navigation({ type, title }: { type: "simple" | "full", title?: string }) {
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-    const {t} = useTranslation();
+    const {t} = useTranslation();    
 
     const location = useLocation();
 
@@ -100,7 +100,7 @@ function Navigation({ type }: { type: "simple" | "full" }) {
                         <div className="flex items-center justify-between h-16">
                             <div className="flex items-center gap-2 cursor-pointer group" onClick={() => navigate("/")}>
                                 <img src="/favicon_big.png" className="w-8 h-8 text-primary group-hover:text-emerald-400 transition-all rounded" />
-                                <span className="text-xl font-bold select-none group-hover:text-emerald-400 transition-all">Meu Troco</span>
+                                <span className="text-xl font-bold select-none group-hover:text-emerald-400 transition-all">{title ? title : "Meu Troco"}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <LanguageSwitcher/>

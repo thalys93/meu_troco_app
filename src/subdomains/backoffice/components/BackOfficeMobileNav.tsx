@@ -1,28 +1,25 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
-
 import React from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, User, ChevronDown, ChevronUp, Moon, DoorOpen } from 'lucide-react';
+import { Home, TrendingUp, TrendingDown, User, ChevronDown, ChevronUp, Moon, DoorOpen, ShoppingBag } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from './ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTheme } from 'next-themes';
-import { useAuth } from '@/hooks/use-auth';
 import { useUser } from '@/hooks/use-user';
 import { BankIcon } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
 
-const MobileNav = () => {
+const BackOfficeMobileNav = () => {
   const location = useLocation();
   const [open, setOpen] = React.useState(false);
-  const { setTheme, theme } = useTheme()
-  const { user, handleLogout } = useUser()
-  const { t } = useTranslation();
+  const {setTheme, theme} = useTheme()
+  const {user , handleLogout} = useUser()
+  const {t} = useTranslation();
 
   const navigation = [
-    { name: t('sidebar.home'), href: '/dashboard', icon: Home },
-    { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
-    { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
+    { name: t('sidebar.home'), href: '/backoffice/home', icon: Home },
+    { name: t('sidebar.plans'), href: "/backoffice/plans", icon: ShoppingBag },    
   ];
 
   return (
@@ -50,29 +47,21 @@ const MobileNav = () => {
         <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
           <DropdownMenuTrigger>
             <Button className='flex flex-row items-center'>
-              <User className="w-5 h-5" />
-              {!open ? <ChevronDown className="text-white ml-auto h-4 w-4 shrink-0 text-muted-foreground" /> :
-                <ChevronUp className="text-white ml-auto h-4 w-4 shrink-0 text-muted-foreground" />}
+              <User className="w-5 h-5" />              
             </Button>
           </DropdownMenuTrigger>
 
           <DropdownMenuContent>
             <DropdownMenuLabel>{user?.displayName}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <NavLink to="/dashboard/profile">
+            <NavLink to="/backoffice/profile">
               <DropdownMenuItem>
                 <User className="w-4 h-4 mr-2" />
                 <span>{t('sidebar.profile')}</span>
               </DropdownMenuItem>
             </NavLink>
-
-            <NavLink to="/dashboard/transactions">
-              <DropdownMenuItem>
-                <BankIcon className="w-4 h-4 mr-2" />
-                <span>{t('sidebar.transactions')}</span>
-              </DropdownMenuItem>
-            </NavLink>
-            <DropdownMenuItem onClick={(e) => { e.preventDefault(), setTheme(theme === 'light' ? 'dark' : 'light') }}>
+            
+            <DropdownMenuItem onClick={(e) => {e.preventDefault(), setTheme(theme === 'light' ? 'dark' : 'light')}}>
               <Moon className="w-4 h-4 mr-2" />
               <span>{t('default.darkmode')}</span>
             </DropdownMenuItem>
@@ -87,4 +76,4 @@ const MobileNav = () => {
   );
 };
 
-export default MobileNav;
+export default BackOfficeMobileNav;

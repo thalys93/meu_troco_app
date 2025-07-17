@@ -11,13 +11,13 @@ interface AvatarTriggerProps {
     type?: string
 }
 
-function AvatarTrigger({ open, user }: AvatarTriggerProps) {    
+function AvatarTrigger({ open, user }: AvatarTriggerProps) {
     return (
-        <div className='flex items-center gap-2 p-2 rounded w-full'>           
-                <Avatar>
-                    <AvatarFallback>{user?.firstName.charAt(0) + user?.lastName.charAt(0)}</AvatarFallback>
-                    <AvatarImage src={user?.photoUrl} alt={user?.displayName} />
-                </Avatar>            
+        <div className='flex items-center gap-2 p-2 rounded w-full'>
+            <Avatar>                
+                <AvatarFallback>{user?.displayName.charAt(0)}</AvatarFallback>                
+                    <AvatarImage src={user?.photoUrl} alt={user?.displayName} />                
+            </Avatar>
 
             <div className='flex flex-col justify-start items-start'>
                 <p className="text-sm font-medium leading-none">{user?.displayName}</p>

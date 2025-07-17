@@ -174,5 +174,11 @@
   "profile.toast.successDescription": "¡Su información fue guardada exitosamente!",
   "profile.toast.userAuth": "Usuario no autenticado",
   "toast.tryAgain": "Intentar otra vez.",
-  "googleAuth.description": "Has iniciado sesión con Google correctamente."
+  "googleAuth.description": "Has iniciado sesión con Google correctamente.",
+  "backoffice.totalUsersDescription": "Usuarios registrados",
+  "backoffice.totalUsers": "Total de usuarios",
+  "backoffice.usersPerPlan": "Usuarios por plan",
+  "userCard.title": "Usuarios:",
+  "backoffice.plans": "Planes",
+  "backoffice.plans.description": "Administrar mis planes de firma de intercambio"
 }

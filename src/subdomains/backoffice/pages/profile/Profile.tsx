@@ -36,7 +36,7 @@ const initialPassForm = {
   confirmPassword: ""
 }
 
-const ProfilePage = () => {
+const BackOfficeProfilePage = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user: userLocal } = useUser()
@@ -46,13 +46,6 @@ const ProfilePage = () => {
   const { t } = useTranslation();
   const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    expenseLength,
-    incomeLength,
-    userJoinedTime,
-    getDaysSinceUserCreated
-  } = useDashboardStats()
-
   const nameForm = useForm({
     defaultValues: initialNameForm
   })
@@ -60,13 +53,6 @@ const ProfilePage = () => {
   const passForm = useForm({
     defaultValues: initialPassForm
   })
-
-  const userPlan = userLocal?.accountType;
-  const isPremium = {
-    "BASIC": false,
-    "ADMIN": true,
-    "PREMIUM": true
-  };
 
   const handleSaveProfile = async (data: typeof initialNameForm) => {
     const { name } = data;
@@ -88,7 +74,7 @@ const ProfilePage = () => {
         description: t('profile.toast.successDescription'),
       });
       refetch();
-    } catch (error) {      
+    } catch (error) {
       toast({
         title: t('profile.toast.errorTitle'),
         description: t('profile.toast.errorDescription'),
@@ -184,7 +170,7 @@ const ProfilePage = () => {
       });
       refetch();
       setIsLoading(false);
-    } catch (error) {      
+    } catch (error) {
       toast({
         title: t('profile.toast.avatarError'),
         description: t('profile.toast.errorDescription'),
@@ -210,7 +196,6 @@ const ProfilePage = () => {
   return (
     <PrivateLayout>
       <div className="container mx-2 md:mx-auto my-20 md:my-12 md:pl-0 mt-10 space-y-6">
-        {/* Header com Status do Plano */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <User className="w-6 h-6 text-primary" />
@@ -219,66 +204,7 @@ const ProfilePage = () => {
               <p className="text-muted-foreground">{t('profile.description')}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* <Badge
-              variant={isPremium ? "default" : "outline"}
-              className={isPremium ? "bg-primary" : "border-primary text-primary"}
-            >
-              {isPremium && <Crown className="w-3 h-3 mr-1" />}
-              {userPlan}
-            </Badge> */}
-            {/* {!isPremium && (
-              <Button onClick={handleUpgrade} size="sm" className="gap-2">
-                <Crown className="w-4 h-4" />
-                Fazer Upgrade
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            )} */}
-          </div>
         </div>
-
-        {/* Card de Status do Plano */}
-        {/* {!isPremium && (
-          <Card className="glass-card border-primary/20 bg-gradient-to-r from-primary/5 to-emerald-500/5">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Crown className="w-5 h-5 text-primary" />
-                Desbloqueie Recursos Premium
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Você está no plano <strong>{userPlan}</strong>. Faça upgrade para acessar:
-                  </p>
-                  <ul className="text-sm space-y-1">
-                    <li className="flex items-center gap-2">
-                      <Crown className="w-3 h-3 text-primary" />
-                      <span>Transações ilimitadas</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Crown className="w-3 h-3 text-primary" />
-                      <span>Relatórios avançados</span>
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Crown className="w-3 h-3 text-primary" />
-                      <span>Metas financeiras personalizadas</span>
-                    </li>
-                  </ul>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary mb-1">R$ 9,90</div>
-                  <div className="text-xs text-muted-foreground mb-3">/mês</div>
-                  <Button onClick={handleUpgrade} className="gap-2">
-                    <Crown className="w-4 h-4" />
-                    Fazer Upgrade
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )} */}
 
         <div className="grid gap-6 md:grid-cols-2">
           <Card className="glass-card">
@@ -369,7 +295,7 @@ const ProfilePage = () => {
           </Card>
         </div>
 
-        <div className='grid gap-6 md:grid-cols-2'>
+        <div className='grid gap-6 md:grid-cols-2 col-span-2'>
           <Card className='glass-card '>
             <CardHeader className='flex flex-col gap-1 items-center justify-center'>
               {t('profile.avatar')}
@@ -387,51 +313,10 @@ const ProfilePage = () => {
               </Button>
             </CardContent>
           </Card>
-
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>{t('profile.accountStats')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-primary/10 rounded-lg">
-                  <p className="text-2xl font-bold text-primary">{getDaysSinceUserCreated(userJoinedTime)}</p>
-                  <p className="text-sm text-muted-foreground">{t('profile.daysOfUse')}</p>
-                </div>
-                <div className="text-center p-4 bg-emerald-500/10 rounded-lg">
-                  <p className="text-2xl font-bold text-emerald-400">{incomeLength}</p>
-                  <p className="text-sm text-muted-foreground">{t('sidebar.income')}</p>
-                </div>
-                <div className="text-center p-4 bg-red-500/10 rounded-lg">
-                  <p className="text-2xl font-bold text-red-400">{expenseLength}</p>
-                  <p className="text-sm text-muted-foreground">{t('sidebar.expenses')}</p>
-                </div>
-                {/* <div className="text-center p-4 bg-blue-500/10 rounded-lg">
-                  <p className="text-2xl font-bold text-blue-400">
-                    {isPremium ? "∞" : "42"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {isPremium ? "Transações" : "Restantes"}
-                  </p>
-                </div> */}
-                <div className="text-center p-4 bg-yellow-500/10 rounded-lg select-none">
-                  <p className="text-2xl font-bold text-yellow-400 flex items-center justify-center my-1">
-                    {/* {isPremium ? "∞" : "42"} */}
-                    <Construction />
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {isPremium ? t('default.wip') : t('premium.remaining')}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
-
-        {/* Estatísticas do Usuário */}
       </div>
     </PrivateLayout>
   );
 };
 
-export default ProfilePage;
+export default BackOfficeProfilePage;

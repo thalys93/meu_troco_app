@@ -174,5 +174,20 @@
   "profile.daysOfUse": "Dias de uso",
   "default.wip": "Em Breve",
   "premium.remaining": "Restantes",
-  "googleAuth.description": "Você fez login com o google com sucesso."
+  "googleAuth.description": "Você fez login com o google com sucesso.",
+  "backoffice.security.sessionTitle": "Validando Sessão",
+  "backoffice.security.sessionDescription": "Aguarde, estamos validando sua sessão...",
+  "toast.successVar": "Sucesso",
+  "toast.successDescription": "Sua sessão foi validada com sucesso.",
+  "backoffice.security.toastError": "Você não tem permissão para acessar essa pagina.",
+  "sidebar.plans": "Planos",
+  "default.darkmode": "Modo Escuro",
+  "backoffice.login.description": "Digite a senha para acessar o backoffice",
+  "backoffice.login.title": "Acesso Administrativo",
+  "userCard.title": "Usuarios:",
+  "backoffice.usersPerPlan": "Usuários por Plano",
+  "backoffice.totalUsers": "Total de Usuários",
+  "backoffice.totalUsersDescription": "Usuários Cadastrados",
+  "backoffice.plans": "Planos",
+  "backoffice.plans.description": "Gerencie os planos de assinatura do meu troco"
 }

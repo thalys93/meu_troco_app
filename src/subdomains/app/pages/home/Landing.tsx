@@ -19,7 +19,7 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  const { data: plans, isLoading } = useGetPlans();
+  const { data: plans } = useGetPlans();
   const features = [
     {
       icon: TrendingUp,
@@ -50,14 +50,8 @@ const LandingPage = () => {
     t('benefits.text_4')
   ];
 
-  const handlePricingClick = (planTitle: string) => {
-    if (planTitle === "Básico") {
-      navigate('oauth/login');
-    } else {
-      // Aqui seria implementada a integração com sistema de pagamento
-      console.log(`Selecionado plano: ${planTitle}`);
-      navigate('oauth/login');
-    }
+  const handlePricingClick = (planTitle: string) => {    
+    navigate('oauth/register', { state: { plan: planTitle } });    
   };
 
   return (

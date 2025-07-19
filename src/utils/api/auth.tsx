@@ -38,7 +38,16 @@ export const createWithEmail = async (data: SignUpForm) => {
         fullName: data.firstName + data.lastName,
         photoUrl: user.photoURL,
         uid: user.uid,
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        premiumDetails: {
+            userLimits: {
+                expenses: 10,
+                incomes: 10
+            },
+            userPlan: data.selectedPlan,
+            premiumSince: null,
+            renewalDate: null
+        }
     }
 
     await setDoc(docRef, userToSet);
@@ -93,7 +102,7 @@ export const loginWithGoogle = async () => {
 export const useLoginWithGoogle = () => {
     const navigation = useNavigate();
     const { setUid } = useUserStore();
-    const {t} = useTranslation();
+    const { t } = useTranslation();
 
     return useMutation({
         mutationFn: loginWithGoogle,

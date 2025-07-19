@@ -1,21 +1,28 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react'
 import PublicLayout from '../../layout/PublicLayout'
 import { Label } from '@/components/ui/label'
 import { Input, PasswordInput } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
-import { AlertCircle, AlignLeft, DollarSign, Lock, Mail, User } from 'lucide-react'
+import { AlertCircle, AlignLeft, DollarSign, Lock, Mail, Shield, User } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useForm } from 'react-hook-form'
 import { SignUpForm, SignUpSchema } from '@/types/validation/signUp'
 import { useCreateWithEmail, useLoginWithEmail } from '@/utils/api/auth'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
 import { passwordRules } from '@/utils/helpers/formRules'
 import useUserStore from '@/store/UserStore'
 import { useTranslation } from 'react-i18next'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useGetPlans } from '@/utils/api/plans'
+import { Badge } from '@/components/ui/badge'
+import { motion } from 'framer-motion'
+import { Separator } from '@/components/ui/separator'
+import PaymentDialog from '@/subdomains/components/PaymentDialog'
 
 const initialValues: SignUpForm = {
     firstName: "",
@@ -23,7 +30,8 @@ const initialValues: SignUpForm = {
     email: "",
     password: "",
     confirmPassword: "",
-    checkedTerms: false
+    checkedTerms: false,
+    selectedPlan: "Básico"
 }
 
 function RegisterPage() {
@@ -35,12 +43,36 @@ function RegisterPage() {
     const { setUid } = useUserStore()
     const { t } = useTranslation();
 
+    const selectedPlan = signInForm.watch("selectedPlan");
+    const [preferenceId, setPreferenceId] = React.useState<string | null>(null);
+    const [amount, setAmount] = React.useState();
+    const [open, setOpen] = React.useState(false);
+
     const handleCreate = useCreateWithEmail();
     const handleLogin = useLoginWithEmail();
     const passwordValue = signInForm.watch("password");
+    const { data: plans, isError } = useGetPlans();
     const navigate = useNavigate();
+    const location = useLocation()
 
-    const handleSubmit = (data: SignUpForm) => {
+    React.useEffect(() => {
+        if (location.state.plan) {
+            signInForm.setValue("selectedPlan", location.state.plan)
+        }
+    }, [location, signInForm])
+
+    function parsePrice(price: string | number): number {
+        if (typeof price === 'number') return price;
+
+        return Number(
+            price
+                .replace(/[^\d.,]/g, '')
+                .replace(',', '.')
+                .trim()
+        );
+    }
+
+    const handleSubmit = async (data: SignUpForm) => {
         if (data.checkedTerms === false) {
             toast({
                 title: t('toast.warningTitle'),
@@ -59,11 +91,52 @@ function RegisterPage() {
             return;
         }
 
+        if (data.selectedPlan !== "Básico") {
+            const selectedPlanData = plans?.find((plan) => plan.title === data.selectedPlan);
+            if (!selectedPlanData) {
+                toast({
+                    title: 'Erro',
+                    description: 'Plano selecionado não encontrado',
+                    variant: 'destructive',
+                });
+                return;
+            }
+
+            setAmount(parsePrice(selectedPlanData.price) as any);
+
+            try {
+                console.log(selectedPlanData.price)
+                const response = await fetch('http://localhost:3000/api/v0/payments/create-preference', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: selectedPlanData.id ?? selectedPlanData.title, // opcional
+                        title: selectedPlanData.title,
+                        unit_price: parsePrice(selectedPlanData.price),
+                        amount: amount,
+                    }),
+                });
+
+                const data = await response.json();
+                setPreferenceId(data.preferenceId);
+                setOpen(true);
+            } catch (err) {
+                toast({
+                    title: 'Erro ao iniciar pagamento',
+                    description: 'Tente novamente mais tarde',
+                    variant: 'destructive',
+                });
+            }
+
+            return;
+        }
+
         handleCreate.mutate({
             firstName: data.firstName,
             lastName: data.lastName,
             email: data.email,
-            password: data.password
+            password: data.password,
+            selectedPlan: data.selectedPlan
         }, {
             onSuccess: () => {
                 toast({
@@ -218,6 +291,28 @@ function RegisterPage() {
                                     <PasswordChecklist password={passwordValue} />
                                 </div>
 
+                                <div className='col-span-2 space-y-2'>
+                                    <Select value={selectedPlan} onValueChange={(e) => signInForm.setValue("selectedPlan", e)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Plano de assinatura (opcional)" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {plans?.length && plans?.map((plan) => (
+                                                <SelectItem value={plan.title} >
+                                                    {plan.title} - {plan.price}
+                                                </SelectItem>
+                                            ))}
+
+                                            {isError && (
+                                                <div className="flex items-center space-x-2 text-destructive text-sm justify-center select-none my-5">
+                                                    <AlertCircle className="w-4 h-4" />
+                                                    <span>Falha ao obter os planos</span>
+                                                </div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
                                 <div className="col-span-2 space-y-2">
                                     <Label htmlFor="password">{t('footer.terms_of_use')}</Label>
                                     <div className="flex items-center space-x-2 py-2">
@@ -239,18 +334,44 @@ function RegisterPage() {
                                     </div>
                                 )}
 
+                                <motion.div
+                                    key={selectedPlan !== "Básico" ? "show" : "hide"}
+                                    initial={{ opacity: 0, y: 40 }}
+                                    animate={selectedPlan !== "Básico" ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+                                    transition={{ delay: 0.2, duration: 0.5, ease: 'easeOut' }}
+                                    className='flex col-span-2 justify-center items-center'
+                                >
+                                    <Badge className='flex flex-row gap-2 items-center justify-center w-full select-none' variant='secondary'>
+                                        <Shield className='w-6 h-6 my-2' />
+                                        <span> Transação 100% segura e privada</span>
+                                        <div className='h-5 w-0.5 bg-muted-foreground rounded-full select-none' />
+                                        <img src="/mercado-pago.png" className='h-10 w-10 object-contain' />
+                                    </Badge>
+                                </motion.div>
+
                                 <Button
                                     type="submit"
                                     className="w-full bg-primary hover:bg-primary/90 col-span-2"
                                     disabled={handleCreate.isPending}
                                 >
-                                    {handleCreate.isPending ? t('login.submitLoading') : t('signIn.createAccount')}
+                                    {selectedPlan !== "Básico" ? (
+                                        handleCreate.isPending ? t('login.submitLoading') : t('signIn.checkout')
+                                    ) : (
+                                        handleCreate.isPending ? t('login.submitLoading') : t('signIn.createAccount')
+                                    )}
                                 </Button>
                             </Form>
                         </CardContent>
                     </Card>
                 </div>
             </div>
+
+            <PaymentDialog
+                open={open}
+                onOpenChange={setOpen}
+                preferenceId={preferenceId}
+                amount={amount}
+            />
         </PublicLayout>
     )
 }

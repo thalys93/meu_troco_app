@@ -32,7 +32,10 @@ const initialValues = {
 const TransactionForm = ({ type }: TransactionFormProps) => {
   const [category, setCategory] = useState<string>('');
   const transactionForm = useForm({
-    defaultValues: initialValues
+    defaultValues: {
+      ...initialValues,
+      type: type
+    }
   })
 
   const { id } = useParams();
@@ -88,9 +91,9 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
       onSuccess: () => {
         toast({
           title: t('transactionForm.toast.success'),
-          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses')} t('transactionForm.toast.successDescription')`,
+          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses')} ${t('transactionForm.toast.successDescription')}`,
         });
-        transactionForm.reset(initialValues);
+        transactionForm.reset();
         setCategory('');
         refetchUserTransactions();
       },
@@ -136,12 +139,12 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
       onSuccess: () => {
         toast({
           title: 'Sucesso!',
-          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses') } t('transactionForm.toast.editDescription')`,
+          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses') } ${t('transactionForm.toast.editDescription')}`,
         });
         setCategory('');
         refetchUserTransactions();
         refetchTransaction();
-        transactionForm.reset(initialValues);
+        transactionForm.reset();
       },
       onError: (error) => {
         toast({

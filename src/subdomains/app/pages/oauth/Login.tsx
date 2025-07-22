@@ -15,6 +15,8 @@ import { useLoginWithEmail } from '@/utils/api/auth';
 import { Form } from '@/components/ui/form';
 import useUserStore from '@/store/UserStore';
 import { useTranslation } from 'react-i18next';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipArrow } from '@radix-ui/react-tooltip';
 
 const initialValues: LoginForm = {
   email: "",
@@ -115,16 +117,24 @@ const LoginPage = () => {
               </Form>
 
 
-              <div className='flex flex-row justify-center items-center gap-2 mt-5'>
+              {/* <div className='flex flex-row justify-center items-center gap-2 mt-5'>
                 <span>{t('login.accountCall')}</span>
                 <Link to="/oauth/register" className='text-primary hover:underline'>
                   {t('login.createAccount')}
                 </Link>
-              </div>
+              </div> */}
               <div className="mt-6 text-center text-sm text-muted-foreground">
                 <span className='text-muted-foreground select-none opacity-70'>{t('login.or')}</span>
                 <Separator className='my-4 h-0.5 bg-muted' />
-                <GoogleAuth />
+                <Tooltip>
+                  <TooltipTrigger>
+                    <GoogleAuth />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <span>{t('login.googleAuth')}</span>
+                    <TooltipArrow className='fill-foreground'/>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </CardContent>
           </Card>

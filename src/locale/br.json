@@ -190,5 +190,6 @@
   "backoffice.totalUsersDescription": "Usuários Cadastrados",
   "backoffice.plans": "Planos",
   "backoffice.plans.description": "Gerencie os planos de assinatura do meu troco",
-  "signIn.checkout": "Checkout"
+  "signIn.checkout": "Checkout",
+  "login.googleAuth": "Acesse com o Google"
 }

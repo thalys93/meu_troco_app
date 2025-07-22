@@ -180,5 +180,6 @@
   "backoffice.usersPerPlan": "Users per Plan",
   "userCard.title": "Users:",
   "backoffice.plans": "Plans",
-  "backoffice.plans.description": "Manage my exchange signature plans"
+  "backoffice.plans.description": "Manage my exchange signature plans",
+  "login.googleAuth": "Access with Google"
 }

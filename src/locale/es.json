@@ -180,5 +180,6 @@
   "backoffice.usersPerPlan": "Usuarios por plan",
   "userCard.title": "Usuarios:",
   "backoffice.plans": "Planes",
-  "backoffice.plans.description": "Administrar mis planes de firma de intercambio"
+  "backoffice.plans.description": "Administrar mis planes de firma de intercambio",
+  "login.googleAuth": "Acceder con Google"
 }

@@ -21,8 +21,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useGetPlans } from '@/utils/api/plans'
 import { Badge } from '@/components/ui/badge'
 import { motion } from 'framer-motion'
-import { Separator } from '@/components/ui/separator'
-import PaymentDialog from '@/subdomains/components/PaymentDialog'
 
 const initialValues: SignUpForm = {
     firstName: "",
@@ -44,9 +42,7 @@ function RegisterPage() {
     const { t } = useTranslation();
 
     const selectedPlan = signInForm.watch("selectedPlan");
-    const [preferenceId, setPreferenceId] = React.useState<string | null>(null);
     const [amount, setAmount] = React.useState();
-    const [open, setOpen] = React.useState(false);
 
     const handleCreate = useCreateWithEmail();
     const handleLogin = useLoginWithEmail();
@@ -56,8 +52,8 @@ function RegisterPage() {
     const location = useLocation()
 
     React.useEffect(() => {
-        if (location.state.plan) {
-            signInForm.setValue("selectedPlan", location.state.plan)
+        if (location?.state?.plan) {
+            signInForm.setValue("selectedPlan", location?.state?.plan)
         }
     }, [location, signInForm])
 
@@ -89,47 +85,7 @@ function RegisterPage() {
                 variant: "info"
             })
             return;
-        }
-
-        if (data.selectedPlan !== "Básico") {
-            const selectedPlanData = plans?.find((plan) => plan.title === data.selectedPlan);
-            if (!selectedPlanData) {
-                toast({
-                    title: 'Erro',
-                    description: 'Plano selecionado não encontrado',
-                    variant: 'destructive',
-                });
-                return;
-            }
-
-            setAmount(parsePrice(selectedPlanData.price) as any);
-
-            try {
-                console.log(selectedPlanData.price)
-                const response = await fetch('http://localhost:3000/api/v0/payments/create-preference', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: selectedPlanData.id ?? selectedPlanData.title, // opcional
-                        title: selectedPlanData.title,
-                        unit_price: parsePrice(selectedPlanData.price),
-                        amount: amount,
-                    }),
-                });
-
-                const data = await response.json();
-                setPreferenceId(data.preferenceId);
-                setOpen(true);
-            } catch (err) {
-                toast({
-                    title: 'Erro ao iniciar pagamento',
-                    description: 'Tente novamente mais tarde',
-                    variant: 'destructive',
-                });
-            }
-
-            return;
-        }
+        }        
 
         handleCreate.mutate({
             firstName: data.firstName,
@@ -365,13 +321,6 @@ function RegisterPage() {
                     </Card>
                 </div>
             </div>
-
-            <PaymentDialog
-                open={open}
-                onOpenChange={setOpen}
-                preferenceId={preferenceId}
-                amount={amount}
-            />
         </PublicLayout>
     )
 }

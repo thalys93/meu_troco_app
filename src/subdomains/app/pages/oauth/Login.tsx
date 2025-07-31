@@ -17,6 +17,7 @@ import useUserStore from '@/store/UserStore';
 import { useTranslation } from 'react-i18next';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TooltipArrow } from '@radix-ui/react-tooltip';
+import { cn } from '@/lib/utils';
 
 const initialValues: LoginForm = {
   email: "",
@@ -29,29 +30,28 @@ const LoginPage = () => {
   const loginForm = useForm<LoginForm>({
     defaultValues: initialValues,
   })
-  const mutate = useLoginWithEmail();
+  const login = useLoginWithEmail();
   const { setUid } = useUserStore()
+
   const handleSubmit = (data: LoginForm) => {
-    mutate.mutate(data, {
+    login.mutate(data, {
       onSuccess: ({ uid }) => {
         toast({
           title: t('toast.welcomeBack'),
           description: t('toast.loginSuccess'),
         })
-        setUid(uid)
+        setUid(uid)        
         navigate("/dashboard", { replace: true });
       },
-      onError: (erro) => {
+      onError: () => {
         toast({
           title: t('toast.errorLogin'),
           description: t('toast.errorLogin2'),
           variant: "destructive"
-        })
-
-        console.log(erro)
+        })        
       }
     })
-  }
+  }  
 
   return (
     <PublicLayout type='simple'>
@@ -100,19 +100,19 @@ const LoginPage = () => {
                   />
                 </div>
 
-                {mutate.error && (
+                {login.error && (
                   <div className="flex items-center space-x-2 text-destructive text-sm">
                     <AlertCircle className="w-4 h-4" />
-                    <span>{mutate.error.message}</span>
+                    <span>{login.error.message}</span>
                   </div>
                 )}
 
                 <Button
                   type="submit"
-                  className="w-full bg-primary hover:bg-primary/90"
-                  disabled={mutate.isPending}
+                  className={cn("w-full bg-primary hover:bg-primary/90", login.error && "bg-destructive hover:bg-destructive/90")}
+                  disabled={login.isPending}
                 >
-                  {mutate.isPending ? t('login.submitLoading') : t('login.access')}
+                  {login.isPending ? t('login.submitLoading') : t('login.access')}
                 </Button>
               </Form>
 

@@ -88,7 +88,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
       onSuccess: () => {
         toast({
           title: t('transactionForm.toast.success'),
-          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses')} t('transactionForm.toast.successDescription')`,
+          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses')} ${t('transactionForm.toast.successDescription')}`,
         });
         transactionForm.reset(initialValues);
         setCategory('');
@@ -136,7 +136,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
       onSuccess: () => {
         toast({
           title: 'Sucesso!',
-          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses') } t('transactionForm.toast.editDescription')`,
+          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses') } ${t('transactionForm.toast.editDescription')}`,
         });
         setCategory('');
         refetchUserTransactions();

@@ -11,6 +11,7 @@ import { AccountTypes } from "@/types/enums/AccountsTypes";
 import useUserStore from "@/store/UserStore";
 import { AccountProviders } from "@/types/enums/AccountProviders";
 import { useTranslation } from "react-i18next";
+import { createUser } from "../helpers/createUser";
 
 export const loginWithEmail = async (data: LoginForm) => {
     const result = await signInWithEmailAndPassword(AuthProvider, data.email, data.password);
@@ -25,33 +26,10 @@ export const loginWithEmail = async (data: LoginForm) => {
 export const createWithEmail = async (data: SignUpForm) => {
     const result = await createUserWithEmailAndPassword(AuthProvider, data.email, data.password);
     const user = result.user;
-
     const docRef = doc(FireStore, "users", user.uid);
-    const userToSet: Partial<User> = {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        displayName: data.firstName + data.lastName,
-        accountType: AccountTypes.BASIC,
-        provider: AccountProviders.EMAIL,
-        createdAt: new Date(),
-        fullName: data.firstName + data.lastName,
-        photoUrl: user.photoURL,
-        uid: user.uid,
-        updatedAt: new Date(),
-        premiumDetails: {
-            userLimits: {
-                expenses: 10,
-                incomes: 10
-            },
-            userPlan: data.selectedPlan,
-            premiumSince: null,
-            renewalDate: null
-        }
-    }
-
+    const userToSet = createUser(AccountProviders.EMAIL, user, data);
+    
     await setDoc(docRef, userToSet);
-
     return {
         message: "Cadastrado com sucesso",
         status: 201
@@ -68,20 +46,7 @@ export const loginWithGoogle = async () => {
             const userDocSnap = await getDoc(userDocRef);
 
             if (!userDocSnap.exists()) {
-                const userToSet: User = {
-                    firstName: "",
-                    lastName: "",
-                    email: user.email,
-                    displayName: user.displayName,
-                    accountType: AccountTypes.BASIC,
-                    provider: AccountProviders.GOOGLE,
-                    createdAt: new Date(),
-                    fullName: "",
-                    photoUrl: user.photoURL,
-                    uid: user.uid,
-                    updatedAt: new Date(),
-                };
-
+                const userToSet: User = createUser(AccountProviders.GOOGLE, user);
                 await setDoc(userDocRef, userToSet);
             }
 

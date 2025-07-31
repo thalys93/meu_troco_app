@@ -16,7 +16,7 @@ function AvatarTrigger({ open, user }: AvatarTriggerProps) {
         <div className='flex items-center gap-2 p-2 rounded w-full'>
             <Avatar>                
                 <AvatarFallback>{user?.displayName.charAt(0)}</AvatarFallback>                
-                    <AvatarImage src={user?.photoUrl} alt={user?.displayName} />                
+                    <AvatarImage src={user?.details.avatar} alt={user?.displayName} />                
             </Avatar>
 
             <div className='flex flex-col justify-start items-start'>

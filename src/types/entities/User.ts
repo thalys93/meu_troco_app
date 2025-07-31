@@ -1,30 +1,31 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { AccountTypes } from "@/types/enums/AccountsTypes";
 import { AccountProviders } from "../enums/AccountProviders";
+import { FirebaseTimestamp } from "../Firebase";
 
 export type User = {
     uid: string;
-    firstName: string;
-    lastName: string;
     displayName: string;
     fullName: string;
     email: string;
-    createdAt: Date | any;
+    details?: UserDetails;
+    billing?: UserBilling;
+}
+
+export type UserDetails = {
+    createdAt: FirebaseTimestamp,
+    firstName: string;
+    lastName: string;
+    avatar: string;
+    provider: AccountProviders
     updatedAt: Date;
-    photoUrl: string;
-    accountType?: AccountTypes
-    provider?: AccountProviders
-    premiumDetails?: PremiumDetails
 }
 
-export type PremiumDetails = {    
-    userPlan?: string
-    userLimits?: UserLimits
-    premiumSince?: Date
-    renewalDate?: Date
-}
-
-export type UserLimits = {
-    incomes: number;
-    expenses: number;
+export type UserBilling = {
+    accountType: AccountTypes;
+    premiumAt: Date;
+    selectedPlan: string;
+    customCategories: number;
+    maxExpenses: number;
+    maxIncomes: number;
+    renovation: Date
 }

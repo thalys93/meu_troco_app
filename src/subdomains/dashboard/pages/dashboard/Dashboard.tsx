@@ -7,6 +7,13 @@ import { useUserTransactions } from '@/utils/api/transation';
 import { cn } from '@/lib/utils';
 import { useDashboardStats } from '@/hooks/use-dashboard';
 import { useTranslation } from 'react-i18next';
+import { motion, AnimatePresence } from "framer-motion"
+import useUserStore from '@/store/UserStore';
+import { firebaseTimestampToDate } from '@/utils/helpers/getFirebaseDate';
+import { FirebaseTimestamp } from '@/types/Firebase';
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import CarouselWithThumbs, { imagesProps } from '@/components/Carousel';
+import { Button } from '@/components/ui/button';
 
 const DashboardPage = () => {
   const { data: transactions = [], isLoading } = useUserTransactions();
@@ -23,6 +30,18 @@ const DashboardPage = () => {
     isIncomePositive
   } = useDashboardStats()
 
+  const { user } = useUserStore();
+
+  const createdAt = user?.details?.createdAt;
+
+  const userCreatedDate = createdAt
+    ? firebaseTimestampToDate(createdAt)
+    : null;
+
+  const isNew = userCreatedDate
+    ? userCreatedDate.toDateString() === new Date().toDateString()
+    : false;
+
   const getCurrentMonth = (locale: string) => {
     return new Date().toLocaleDateString(locale, {
       month: 'long',
@@ -32,8 +51,45 @@ const DashboardPage = () => {
 
   const { t, i18n } = useTranslation();
 
+  const images: imagesProps[] = [
+    {
+      image: "/gifs/adding_expenses.gif",
+      description: "Despesas"
+    },
+    {
+      image: "/gifs/adding_incomes.gif",
+      description: "Receitas"
+    },
+    {
+      image: "/gifs/saving_avatar.gif",
+      description: "Avatar"
+    }
+  ]
+
   return (
     <PrivateLayout>
+      {isNew && (
+        <Dialog>
+          <DialogContent>
+            <div>
+              <DialogTitle>Boas Vindas ao Meu Troco</DialogTitle>
+              <DialogDescription>
+                <span>meu troco é uma ferramenta simples para ajudar você a gerenciar suas financas pessoais.</span>
+              </DialogDescription>
+            </div>
+
+            <CarouselWithThumbs images={images} />
+
+            <div className='flex justify-end items-end'>
+              <DialogClose>
+                <Button>
+                  <span>Entendi</span>
+                </Button>
+              </DialogClose>
+            </div>
+          </DialogContent>          
+        </Dialog>
+      )}
       <div className="container mx-2 md:mx-auto my-20 md:my-12 md:pl-0 mt-10 space-y-6">
         <div className="flex items-center gap-3">
           <Calendar className="w-6 h-6 text-primary" />

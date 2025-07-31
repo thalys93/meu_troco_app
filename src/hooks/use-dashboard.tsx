@@ -1,14 +1,15 @@
 import { useUserTransactions } from "@/utils/api/transation"
 import { useUser } from "./use-user";
 import { useTranslation } from "react-i18next";
+import { FirebaseTimestamp } from "@/types/Firebase";
 export const useDashboardStats = () => {
     const { data: transactions = [] } = useUserTransactions();
     const { user } = useUser();
     const { i18n } = useTranslation()
     const incomeTransactions = transactions.filter((t) => t.type === "receita");
     const expenseTransactions = transactions.filter((t) => t.type === "despesa");
-    const userJoinedTime = user?.createdAt;
-    const getDaysSinceUserCreated = (timestamp?: { seconds: number; nanoseconds: number }) => {
+    const userJoinedTime = user?.details.createdAt;
+    const getDaysSinceUserCreated = (timestamp?: FirebaseTimestamp) => {
         if (!timestamp) return null;
 
         const createdDate = new Date(timestamp.seconds * 1000);

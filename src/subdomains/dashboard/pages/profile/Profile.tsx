@@ -24,6 +24,7 @@ import axios from "axios";
 import { api } from '@/utils/api/api';
 import { useDashboardStats } from '@/hooks/use-dashboard';
 import { useTranslation } from 'react-i18next';
+import { FirebaseTimestamp } from '@/types/Firebase';
 
 const initialNameForm = {
   name: "",
@@ -61,7 +62,8 @@ const ProfilePage = () => {
     defaultValues: initialPassForm
   })
 
-  const userPlan = userLocal?.accountType;
+  const userPlan = userLocal?.billing.selectedPlan;
+
   const isPremium = {
     "BASIC": false,
     "ADMIN": true,
@@ -76,29 +78,36 @@ const ProfilePage = () => {
       const userRef = doc(FireStore, "users", userLocal.uid);
 
       await updateDoc(userRef, {
-        firstName,
-        lastName,
+        details: {
+          avatar: userLocal.details.avatar,
+          firstName: firstName,
+          lastName: lastName,
+          provider: userLocal.details.provider,
+          createdAt: userLocal.details.createdAt,
+          updatedAt: new Date(),
+        },
         displayName: name,
         fullName: name,
-        updatedAt: new Date(),
       });
 
       toast({
         title: t('profile.toast.success'),
         description: t('profile.toast.successDescription'),
+        variant: "success",
       });
       refetch();
-    } catch (error) {      
+    } catch (error) {
       toast({
         title: t('profile.toast.errorTitle'),
         description: t('profile.toast.errorDescription'),
         variant: "destructive",
       });
+      console.log(error)
     }
   };
 
   const handleChangePassword = async (data: typeof initialPassForm) => {
-    if (userLocal?.provider !== AccountProviders.EMAIL) return;
+    if (userLocal?.details.provider !== AccountProviders.EMAIL) return;
     if (passForm.getValues('newPassword') !== passForm.getValues('confirmPassword')) {
       toast({
         title: "Erro",
@@ -175,16 +184,23 @@ const ProfilePage = () => {
     try {
       const userRef = doc(FireStore, "users", userLocal.uid);
       await updateDoc(userRef, {
-        photoUrl: response.data.secure_url,
-        updatedAt: new Date(),
+        details: {
+          avatar: response.data.secure_url,
+          firstName: userLocal.details.firstName,
+          lastName: userLocal.details.lastName,
+          provider: userLocal.details.provider,
+          createdAt: userLocal.details.createdAt,          
+          updatedAt: new Date(),
+        }
       });
       toast({
         title: t('profile.toast.avatarSuccess'),
         description: t('profile.toast.avatarSuccessDescription'),
+        variant: "success"
       });
       refetch();
       setIsLoading(false);
-    } catch (error) {      
+    } catch (error) {
       toast({
         title: t('profile.toast.avatarError'),
         description: t('profile.toast.errorDescription'),
@@ -296,7 +312,7 @@ const ProfilePage = () => {
                     leftIcon={<User className="w-4 h-4" />}
                     type="text"
                     name="name"
-                    disabled={userLocal?.provider !== AccountProviders.EMAIL}
+                    // disabled={userLocal?.details.provider !== AccountProviders.EMAIL}
                     placeholder={t('profile.form.namePlaceholder')}
                     control={nameForm.control}
                   />
@@ -312,7 +328,9 @@ const ProfilePage = () => {
                     disabled
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={userLocal?.provider !== AccountProviders.EMAIL}>
+                <Button type="submit" className="w-full"
+                // disabled={userLocal?.details.provider !== AccountProviders.EMAIL}
+                >
                   <Save className="w-4 h-4 mr-2" />
                   {t('profile.form.saveInfo')}
                 </Button>
@@ -320,7 +338,7 @@ const ProfilePage = () => {
             </CardContent>
           </Card>
 
-          <Card className="glass-card">
+          {/* <Card className="glass-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Lock className="w-5 h-5" />
@@ -366,10 +384,8 @@ const ProfilePage = () => {
                 </Button>
               </Form>
             </CardContent>
-          </Card>
-        </div>
-
-        <div className='grid gap-6 md:grid-cols-2'>
+          </Card> */}
+          
           <Card className='glass-card '>
             <CardHeader className='flex flex-col gap-1 items-center justify-center'>
               {t('profile.avatar')}
@@ -378,7 +394,7 @@ const ProfilePage = () => {
             <CardContent className='flex flex-col gap-3 justify-center items-center'>
               <ImageDropzone
                 setFile={setFile}
-                initialImage={userLocal?.photoUrl}
+                initialImage={userLocal?.details.avatar}
               />
 
               <Button className='w-[90%] px-10' onClick={() => handleSaveAvatar(file)} disabled={isLoading}>
@@ -387,6 +403,9 @@ const ProfilePage = () => {
               </Button>
             </CardContent>
           </Card>
+        </div>
+
+        <div className='grid gap-6 md:grid-cols-2'>
 
           <Card className="glass-card">
             <CardHeader>
@@ -395,7 +414,7 @@ const ProfilePage = () => {
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
                 <div className="text-center p-4 bg-primary/10 rounded-lg">
-                  <p className="text-2xl font-bold text-primary">{getDaysSinceUserCreated(userJoinedTime)}</p>
+                  <p className="text-2xl font-bold text-primary">{getDaysSinceUserCreated(userJoinedTime as FirebaseTimestamp)}</p>
                   <p className="text-sm text-muted-foreground">{t('profile.daysOfUse')}</p>
                 </div>
                 <div className="text-center p-4 bg-emerald-500/10 rounded-lg">
@@ -427,8 +446,6 @@ const ProfilePage = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Estatísticas do Usuário */}
       </div>
     </PrivateLayout>
   );

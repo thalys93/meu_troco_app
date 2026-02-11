@@ -191,5 +191,60 @@
   "backoffice.plans": "Planos",
   "backoffice.plans.description": "Gerencie os planos de assinatura do meu troco",
   "signIn.checkout": "Checkout",
-  "login.googleAuth": "Acesse com o Google"
+  "login.googleAuth": "Acesse com o Google",
+  "landing_v2": {
+    "hero": {
+      "new": "Novo",
+      "ai_feature": "Gestão inteligente com IA",
+      "title_white": "Finanças pessoais",
+      "title_gray": "o app para todos",
+      "description": "Transforme sua relação com o dinheiro usando tecnologia de ponta. Visualizações intuitivas, segurança de nível bancário e insights poderosos.",
+      "social_proof": "+10k usuários satisfeitos"
+    },
+    "connect": {
+      "title": "Adicione tudo,",
+      "subtitle": "veja tudo.",
+      "description": "Links para bancos, carteiras digitais e corretores. Tudo em um só lugar, sincronizado em tempo real.",
+      "card_title": "Conectar Contas",
+      "connected": "Conectado"
+    },
+    "transactions": {
+      "title": "Transações,",
+      "subtitle": "do seu jeito.",
+      "income": "Receita",
+      "expense": "Despesa",
+      "transfer": "Transferência",
+      "recent_title": "Últimas Transações",
+      "view_all": "Ver todas",
+      "today": "Hoje",
+      "yesterday": "Ontem"
+    },
+    "budgeting": {
+      "title": "Orçamentos,",
+      "subtitle": "simplificados.",
+      "description": "Crie orçamentos personalizados para cada categoria e acompanhe seu progresso com alertas inteligentes antes de ultrapassar os limites.",
+      "emergency_fund": "Reserva de Emergência"
+    },
+    "security": {
+      "title": "Segurança sem concessões.",
+      "subtitle": "Transparência radical.",
+      "f1_title": "Criptografia Ponta-a-Ponta",
+      "f1_desc": "Seus dados financeiros são cifrados com AES-256 antes de saírem do seu dispositivo.",
+      "f2_title": "Sem Venda de Dados",
+      "f2_desc": "Nosso modelo de negócio é baseado em assinatura, não em vender sua privacidade.",
+      "f3_title": "Código Auditável",
+      "f3_desc": "Damos transparência total sobre como processamos seus dados e conexões."
+    },
+    "ai": {
+      "one_more_thing": "Mais uma coisa",
+      "title": "And yes, it's AI.",
+      "description": "Analise padrões de gastos, preveja fluxos de caixa futuros e receba recomendações inteligentes para economizar mais, automaticamente.",
+      "button": "Descobrir a IA"
+    },
+    "cta": {
+      "title": "Transforme sua dúvida,",
+      "subtitle": "em uma certeza.",
+      "button": "Começar Agora"
+    }
+  }
 }

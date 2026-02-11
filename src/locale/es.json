@@ -181,5 +181,60 @@
   "userCard.title": "Usuarios:",
   "backoffice.plans": "Planes",
   "backoffice.plans.description": "Administrar mis planes de firma de intercambio",
-  "login.googleAuth": "Acceder con Google"
+  "login.googleAuth": "Acceder con Google",
+  "landing_v2": {
+    "hero": {
+      "new": "Nuevo",
+      "ai_feature": "Gestión inteligente con IA",
+      "title_white": "Finanzas personales",
+      "title_gray": "la app para todos",
+      "description": "Transforma tu relación con el dinero utilizando tecnología de vanguardia. Visualizaciones intuitivas, seguridad de nivel bancario e información potente.",
+      "social_proof": "+10k usuarios satisfechos"
+    },
+    "connect": {
+      "title": "Añade cualquier cosa,",
+      "subtitle": "mira todo.",
+      "description": "Enlaces a bancos, billeteras digitales y corredores. Todo en un solo lugar, sincronizado en tiempo real.",
+      "card_title": "Conectar cuentas",
+      "connected": "Conectado"
+    },
+    "transactions": {
+      "title": "Transacciones,",
+      "subtitle": "manejadas a tu manera.",
+      "income": "Ingresos",
+      "expense": "Gastos",
+      "transfer": "Transferencia",
+      "recent_title": "Transacciones recientes",
+      "view_all": "Ver todas",
+      "today": "Hoy",
+      "yesterday": "Ayer"
+    },
+    "budgeting": {
+      "title": "Presupuesto,",
+      "subtitle": "simplificado.",
+      "description": "Crea presupuestos personalizados para cada categoría y sigue tu progreso con alertas inteligentes antes de superar los límites.",
+      "emergency_fund": "Fondo de emergencia"
+    },
+    "security": {
+      "title": "Seguridad sin compromisos.",
+      "subtitle": "Transparencia radical.",
+      "f1_title": "Cifrado de extremo a extremo",
+      "f1_desc": "Tus datos financieros se cifran con AES-256 antes de salir de tu dispositivo.",
+      "f2_title": "Sin venta de datos",
+      "f2_desc": "Nuestro modelo de negocio se basa en la suscripción, no en la venta de su privacidad.",
+      "f3_title": "Código auditable",
+      "f3_desc": "Damos total transparencia sobre cómo procesamos sus datos y conexiones."
+    },
+    "ai": {
+      "one_more_thing": "Una cosa más",
+      "title": "Y sí, es IA.",
+      "description": "Analiza patrones de gasto, predice flujos de caja futuros y recibe recomendaciones inteligentes para ahorrar más, automáticamente.",
+      "button": "Descubra la IA"
+    },
+    "cta": {
+      "title": "Convierte tu tal vez,",
+      "subtitle": "en algo seguro.",
+      "button": "Empezar ahora"
+    }
+  }
 }

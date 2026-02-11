@@ -181,5 +181,60 @@
   "userCard.title": "Users:",
   "backoffice.plans": "Plans",
   "backoffice.plans.description": "Manage my exchange signature plans",
-  "login.googleAuth": "Access with Google"
+  "login.googleAuth": "Access with Google",
+  "landing_v2": {
+    "hero": {
+      "new": "New",
+      "ai_feature": "Smart AI management",
+      "title_white": "The personal finance",
+      "title_gray": "app for everyone",
+      "description": "Transform your relationship with money using cutting-edge technology. Intuitive visualizations, bank-level security, and powerful insights.",
+      "social_proof": "+10k happy users"
+    },
+    "connect": {
+      "title": "Add anything,",
+      "subtitle": "see anything.",
+      "description": "Links to banks, digital wallets, and brokers. Everything in one place, synced in real time.",
+      "card_title": "Connect Accounts",
+      "connected": "Connected"
+    },
+    "transactions": {
+      "title": "Transactions,",
+      "subtitle": "handled your way.",
+      "income": "Income",
+      "expense": "Expense",
+      "transfer": "Transfer",
+      "recent_title": "Recent Transactions",
+      "view_all": "View all",
+      "today": "Today",
+      "yesterday": "Yesterday"
+    },
+    "budgeting": {
+      "title": "Budgeting,",
+      "subtitle": "made simple.",
+      "description": "Create personalized budgets for each category and track your progress with smart alerts before you exceed limits.",
+      "emergency_fund": "Emergency Fund"
+    },
+    "security": {
+      "title": "Uncompromising Security.",
+      "subtitle": "Radical Transparency.",
+      "f1_title": "End-to-End Encryption",
+      "f1_desc": "Your financial data is encrypted with AES-256 before it leaves your device.",
+      "f2_title": "No Data Selling",
+      "f2_desc": "Our business model is based on subscription, not selling your privacy.",
+      "f3_title": "Auditable Code",
+      "f3_desc": "We give full transparency on how we process your data and connections."
+    },
+    "ai": {
+      "one_more_thing": "One more thing",
+      "title": "And yes, it's AI.",
+      "description": "Analyze spending patterns, predict future cash flows, and receive smart recommendations to save more, automatically.",
+      "button": "Discover AI"
+    },
+    "cta": {
+      "title": "Turn your maybe,",
+      "subtitle": "into a sure thing.",
+      "button": "Start Now"
+    }
+  }
 }

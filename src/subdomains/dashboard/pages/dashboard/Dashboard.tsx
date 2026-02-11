@@ -1,19 +1,19 @@
-
-import StatCard from '@/components/StatCard';
 import TransactionList from '@/components/TransactionList';
-import { Wallet, TrendingUp, TrendingDown, Calendar, Target, Bell, BarChart3 } from 'lucide-react';
 import PrivateLayout from '../../layout/PrivateLayout';
 import { useUserTransactions } from '@/utils/api/transation';
-import { cn } from '@/lib/utils';
 import { useDashboardStats } from '@/hooks/use-dashboard';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from "framer-motion"
-import useUserStore from '@/store/UserStore';
-import { firebaseTimestampToDate } from '@/utils/helpers/getFirebaseDate';
-import { FirebaseTimestamp } from '@/types/Firebase';
+import { motion } from "framer-motion"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import CarouselWithThumbs, { imagesProps } from '@/components/Carousel';
 import { Button } from '@/components/ui/button';
+import DashboardHeader from '../../components/DashboardHeader';
+import BalanceCard from '../../components/BalanceCard';
+import QuickActions from '../../components/QuickActions';
+import StatCard from '@/components/StatCard';
+import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import useUserStore from '@/store/UserStore';
+import { firebaseTimestampToDate } from '@/utils/helpers/getFirebaseDate';
 
 const DashboardPage = () => {
   const { data: transactions = [], isLoading } = useUserTransactions();
@@ -24,47 +24,36 @@ const DashboardPage = () => {
     totalBalance,
     totalExpense,
     totalIncome,
-    totalBalancePercentage,
     isBalancePositive,
-    isExpensePositive,
-    isIncomePositive
+    isIncomePositive,
+    isExpensePositive
   } = useDashboardStats()
 
   const { user } = useUserStore();
+  const { t } = useTranslation();
 
   const createdAt = user?.details?.createdAt;
-
-  const userCreatedDate = createdAt
-    ? firebaseTimestampToDate(createdAt)
-    : null;
-
-  const isNew = userCreatedDate
-    ? userCreatedDate.toDateString() === new Date().toDateString()
-    : false;
-
-  const getCurrentMonth = (locale: string) => {
-    return new Date().toLocaleDateString(locale, {
-      month: 'long',
-      year: 'numeric'
-    });
-  };
-
-  const { t, i18n } = useTranslation();
+  const userCreatedDate = createdAt ? firebaseTimestampToDate(createdAt) : null;
+  const isNew = userCreatedDate ? userCreatedDate.toDateString() === new Date().toDateString() : false;
 
   const images: imagesProps[] = [
-    {
-      image: "/gifs/adding_expenses.gif",
-      description: "Despesas"
-    },
-    {
-      image: "/gifs/adding_incomes.gif",
-      description: "Receitas"
-    },
-    {
-      image: "/gifs/saving_avatar.gif",
-      description: "Avatar"
-    }
+    { image: "/gifs/adding_expenses.gif", description: t('sidebar.expenses') },
+    { image: "/gifs/adding_incomes.gif", description: t('sidebar.income') },
+    { image: "/gifs/saving_avatar.gif", description: t('sidebar.profile') }
   ]
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
 
   return (
     <PrivateLayout>
@@ -72,68 +61,88 @@ const DashboardPage = () => {
         <Dialog>
           <DialogContent>
             <div>
-              <DialogTitle>Boas Vindas ao Meu Troco</DialogTitle>
+              <DialogTitle>{t('dashboard.welcomeTitle')}</DialogTitle>
               <DialogDescription>
-                <span>meu troco é uma ferramenta simples para ajudar você a gerenciar suas financas pessoais.</span>
+                <span>{t('dashboard.welcomeDescription')}</span>
               </DialogDescription>
             </div>
-
             <CarouselWithThumbs images={images} />
-
             <div className='flex justify-end items-end'>
               <DialogClose>
-                <Button>
-                  <span>Entendi</span>
-                </Button>
+                <Button><span>{t('dashboard.welcomeUnderstand')}</span></Button>
               </DialogClose>
             </div>
-          </DialogContent>          
+          </DialogContent>
         </Dialog>
       )}
-      <div className="container mx-2 md:mx-auto my-20 md:my-12 md:pl-0 mt-10 space-y-6">
-        <div className="flex items-center gap-3">
-          <Calendar className="w-6 h-6 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard</h1>
-            <p className="text-muted-foreground">{getCurrentMonth(i18n.language)}</p>
+
+      <motion.div
+        className="container mx-auto max-w-5xl my-20 md:my-12 px-4 md:px-6 space-y-8"
+        initial="hidden"
+        animate="visible"
+        variants={containerVariants}
+      >
+        <motion.div variants={itemVariants}>
+          <DashboardHeader />
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <div className="space-y-6">
+            <motion.div variants={itemVariants}>
+              <BalanceCard
+                balance={totalBalance}
+                formatCurrency={formatCurrency}
+              />
+            </motion.div>
+
+            <motion.div variants={itemVariants} className="bg-card/30 p-4 rounded-3xl border border-border/40">
+              <h3 className="text-sm font-semibold text-muted-foreground mb-4 px-2 uppercase tracking-wider">{t('dashboard.quickActions')}</h3>
+              <QuickActions />
+            </motion.div>
           </div>
+
+          <motion.div
+            variants={itemVariants}
+            className="grid grid-cols-2 gap-4 h-full"
+          >
+            <StatCard
+              title={t('dashboard.cardTotalIncome')}
+              value={formatCurrency(totalIncome)}
+              icon={TrendingUp}
+              trend={`${isIncomePositive ? "+" : "-"}${incomePercentage.toFixed(1)}%`}
+              trendDirection="up"
+              className="border-emerald-500/10 shadow-none hover:shadow-sm"
+            />
+            <StatCard
+              title={t('dashboard.cardTotalExpense')}
+              value={formatCurrency(totalExpense)}
+              icon={TrendingDown}
+              trend={`${isExpensePositive ? "+" : "-"}${expensePercentage.toFixed(1)}%`}
+              trendDirection="down"
+              className="border-red-500/10 shadow-none hover:shadow-sm"
+            />
+            <div className="col-span-2 hidden md:flex items-center justify-between p-6 rounded-3xl bg-primary/5 border border-primary/10">
+              <div className="flex items-center gap-4">
+                <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                  <Wallet className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="font-semibold">{isBalancePositive ? t('dashboard.balancePositive') : t('dashboard.balanceWarning')}</p>
+                  <p className="text-sm text-muted-foreground">{t('dashboard.insightText')}</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
 
-        <div className={cn("grid grid-cols-1 md:grid-cols-3 gap-6", isLoading && "animate-pulse")}>
-          <StatCard
-            title={t('dashboard.cardTotalTitle')}
-            value={formatCurrency(totalBalance)}
-            icon={Wallet}
-            trend={totalBalance > 0 ? `${isBalancePositive ? "+" : "-"}${totalBalancePercentage.toFixed(2)}${t('dashboard.statCardRelation')}` : ""}
-            trendDirection={totalBalance > 0 ? 'up' : 'down'}
-            className={totalBalance >= 0 ? "border-emerald-500/20" : "border-red-500/20"}
+        <motion.div variants={itemVariants} className="pt-4 pb-20 md:pb-0">
+          <TransactionList
+            transactions={transactions}
+            isLoading={isLoading}
+            title={t('dashboard.listTitle')}
           />
-
-          <StatCard
-            title={t('dashboard.cardTotalIncome')}
-            value={formatCurrency(totalIncome)}
-            icon={TrendingUp}
-            trend={`${isIncomePositive ? "+" : "-"}${incomePercentage.toFixed(2)}${t('dashboard.statCardRelation')}`}
-            trendDirection="up"
-            className="border-emerald-500/20"
-          />
-
-          <StatCard
-            title={t('dashboard.cardTotalExpense')}
-            value={formatCurrency(totalExpense)}
-            icon={TrendingDown}
-            trend={`${isExpensePositive ? "+" : "-"}${expensePercentage.toFixed(2)}${t('dashboard.statCardRelation')}`}
-            trendDirection="down"
-            className="border-red-500/20"
-          />
-        </div>
-
-        <TransactionList
-          transactions={transactions}
-          isLoading={isLoading}
-          title={t('dashboard.listTitle')}
-        />
-      </div>
+        </motion.div>
+      </motion.div>
     </PrivateLayout>
   );
 };

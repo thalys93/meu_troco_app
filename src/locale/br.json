@@ -90,6 +90,14 @@
   "dashboard.cardTotalIncome": "Total de Receitas",
   "dashboard.cardTotalExpense": "Total de Despesas",
   "dashboard.listTitle": "Transações Recentes",
+  "dashboard.quickActions": "Ações rápidas",
+  "dashboard.balancePositive": "Seu saldo está positivo!",
+  "dashboard.balanceWarning": "Atenção ao saldo!",
+  "dashboard.insightText": "Continue gerenciando suas finanças com inteligência.",
+  "dashboard.welcomeGreeting": "Bem-vindo,",
+  "dashboard.welcomeTitle": "Boas vindas ao Meu Troco",
+  "dashboard.welcomeDescription": "meu troco é uma ferramenta simples para ajudar você a gerenciar suas financas pessoais.",
+  "dashboard.welcomeUnderstand": "Entendi",
   "dashboard.statCardRelation": "% em relação ao mês passado",
   "transactionList.loading": "Aguarde Carregando",
   "transactionList.empty": "Nenhuma transação encontrada",
@@ -246,5 +254,8 @@
       "subtitle": "em uma certeza.",
       "button": "Começar Agora"
     }
+  },
+  "sidebar": {
+    "settings": "Configurações"
   }
 }

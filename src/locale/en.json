@@ -91,6 +91,14 @@
   "dashboard.cardTotalTitle": "Total Balance",
   "dashboard.listTitle": "Recent Transactions",
   "dashboard.statCardRelation": "% compared to last month",
+  "dashboard.quickActions": "Quick actions",
+  "dashboard.balancePositive": "Your balance is positive!",
+  "dashboard.balanceWarning": "Watch your balance!",
+  "dashboard.insightText": "Keep managing your finances intelligently.",
+  "dashboard.welcomeGreeting": "Welcome,",
+  "dashboard.welcomeTitle": "Welcome to Meu Troco",
+  "dashboard.welcomeDescription": "meu troco is a simple tool to help you manage your personal finances.",
+  "dashboard.welcomeUnderstand": "I understand",
   "categories": {
     "Salário": "Salary",
     "Freelancer": "Freelancer",
@@ -236,5 +244,8 @@
       "subtitle": "into a sure thing.",
       "button": "Start Now"
     }
+  },
+  "sidebar": {
+    "settings": "Settings"
   }
 }

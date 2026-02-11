@@ -1,22 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
-
 import React from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, User, ChevronDown, ChevronUp, Moon, DoorOpen } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Home, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from './ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { useTheme } from 'next-themes';
-import { useAuth } from '@/hooks/use-auth';
-import { useUser } from '@/hooks/use-user';
-import { BankIcon } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
 
 const MobileNav = () => {
   const location = useLocation();
-  const [open, setOpen] = React.useState(false);
-  const { setTheme, theme } = useTheme()
-  const { user, handleLogout } = useUser()
   const { t } = useTranslation();
 
   const navigation = [
@@ -26,8 +16,8 @@ const MobileNav = () => {
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card/90 backdrop-blur-lg border-t border-border/50 px-4 py-2 md:hidden">
-      <nav className="flex justify-around items-center">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-t border-border/50 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.1)]">
+      <nav className="max-w-screen-xl mx-auto flex justify-center items-center gap-8 md:gap-16 px-4 py-3">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (
@@ -35,53 +25,17 @@ const MobileNav = () => {
               key={item.name}
               to={item.href}
               className={cn(
-                "flex flex-col items-center gap-1 px-4 py-2 rounded-lg text-xs font-medium transition-colors",
+                "flex flex-col items-center gap-1 px-6 py-2 rounded-2xl transition-all duration-300",
                 isActive
-                  ? "text-primary"
-                  : "text-muted-foreground"
+                  ? "text-primary bg-primary/5 scale-105"
+                  : "text-muted-foreground hover:bg-accent/10"
               )}
             >
-              <item.icon className={cn("w-5 h-5", isActive && "text-primary")} />
-              {item.name}
+              <item.icon className={cn("w-6 h-6 transition-transform", isActive && "scale-110")} />
+              <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider">{item.name}</span>
             </Link>
           );
         })}
-
-        <DropdownMenu modal={false} open={open} onOpenChange={setOpen}>
-          <DropdownMenuTrigger>
-            <Button className='flex flex-row items-center'>
-              <User className="w-5 h-5" />
-              {!open ? <ChevronDown className="text-white ml-auto h-4 w-4 shrink-0 text-muted-foreground" /> :
-                <ChevronUp className="text-white ml-auto h-4 w-4 shrink-0 text-muted-foreground" />}
-            </Button>
-          </DropdownMenuTrigger>
-
-          <DropdownMenuContent>
-            <DropdownMenuLabel>{user?.displayName}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <NavLink to="/dashboard/profile">
-              <DropdownMenuItem>
-                <User className="w-4 h-4 mr-2" />
-                <span>{t('sidebar.profile')}</span>
-              </DropdownMenuItem>
-            </NavLink>
-
-            <NavLink to="/dashboard/transactions">
-              <DropdownMenuItem>
-                <BankIcon className="w-4 h-4 mr-2" />
-                <span>{t('sidebar.transactions')}</span>
-              </DropdownMenuItem>
-            </NavLink>
-            <DropdownMenuItem onClick={(e) => { e.preventDefault(), setTheme(theme === 'light' ? 'dark' : 'light') }}>
-              <Moon className="w-4 h-4 mr-2" />
-              <span>{t('default.darkmode')}</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleLogout}>
-              <DoorOpen className="w-4 h-4 mr-2" />
-              <span>{t('sidebar.logout')}</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </nav>
     </div>
   );

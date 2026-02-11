@@ -3,8 +3,9 @@ import React from 'react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
 import { Languages } from 'lucide-react'
 import { useTranslation } from "react-i18next";
+import { cn } from '@/lib/utils';
 
-function LanguageSwitcher() {
+function LanguageSwitcher({ className }: { className?: string }) {
     const { i18n, t } = useTranslation();
 
     const languages = [
@@ -28,7 +29,7 @@ function LanguageSwitcher() {
 
     return (
         <DropdownMenu>
-            <DropdownMenuTrigger className='glass-effect hover:bg-emerald-700/50 transition-all p-2 rounded relative '>
+            <DropdownMenuTrigger className={cn('glass-effect hover:bg-emerald-700/50 transition-all p-2 rounded relative ', className)}>
                 <Languages className='size-4' />
             </DropdownMenuTrigger>
             <DropdownMenuContent>

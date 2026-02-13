@@ -3,7 +3,7 @@ import Navigation from '@/subdomains/app/components/Navigation';
 import Footer from '@/subdomains/app/components/Footer';
 
 
-function PublicLayout({ children, type }: { children: React.ReactNode, type: "simple" | "full" }) {    
+function PublicLayout({ children, type }: { children: React.ReactNode, type: "simple" | "full" }) {
     switch (type) {
         case "full":
             return (

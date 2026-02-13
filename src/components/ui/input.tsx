@@ -51,9 +51,9 @@ const inputVariants = cva(
   {
     variants: {
       variant: {
-        default: "border-slate-300 bg-transparent border-slate-700/50",
+        default: "border-zinc-300 bg-transparent border-zinc-700/50",
         secondary:
-          "bg-transparent text-secondary font-medium border border-slate-700 py-5",
+          "bg-transparent text-secondary font-medium border border-zinc-700 py-5",
       },
     },
     defaultVariants: {

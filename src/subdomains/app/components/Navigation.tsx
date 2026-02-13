@@ -5,11 +5,12 @@ import { Menu, X } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 
 function Navigation({ type, title }: { type: "simple" | "full", title?: string }) {
     const navigate = useNavigate();
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-    const {t} = useTranslation();    
+    const { t } = useTranslation();
 
     const location = useLocation();
 
@@ -24,9 +25,23 @@ function Navigation({ type, title }: { type: "simple" | "full", title?: string }
     ];
 
     const scrollToSection = (href: string) => {
+        if (location.pathname !== '/') {
+            navigate('/' + href);
+            return;
+        }
+
         const element = document.querySelector(href);
         if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
+            const offset = 80; // Altura do header + um pouco de respiro
+            const bodyRect = document.body.getBoundingClientRect().top;
+            const elementRect = element.getBoundingClientRect().top;
+            const elementPosition = elementRect - bodyRect;
+            const offsetPosition = elementPosition - offset;
+
+            window.scrollTo({
+                top: offsetPosition,
+                behavior: 'smooth'
+            });
         }
         setMobileMenuOpen(false);
     };
@@ -52,7 +67,7 @@ function Navigation({ type, title }: { type: "simple" | "full", title?: string }
                                     </button>
                                 ))}
                                 <div className="flex items-center gap-2">
-                                    <LanguageSwitcher/>
+                                    <LanguageSwitcher />
                                     <ThemeToggle />
                                     <Button onClick={() => navigate('oauth/login')}>
                                         {t("navigation.signIn")}
@@ -61,35 +76,45 @@ function Navigation({ type, title }: { type: "simple" | "full", title?: string }
                             </div>
 
                             <div className="md:hidden flex items-center gap-2">
-                                <LanguageSwitcher/>
+                                <LanguageSwitcher />
                                 <ThemeToggle />
                                 <button
                                     onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                    className="text-muted-foreground hover:text-primary transition-colors"
+                                    className="p-2 text-muted-foreground hover:text-primary transition-colors rounded-xl hover:bg-muted/50"
                                 >
                                     {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
                                 </button>
                             </div>
                         </div>
 
-                        {mobileMenuOpen && (
-                            <div className="md:hidden py-4 border-t border-border/50">
-                                <div className="flex flex-col space-y-4">
-                                    {navigationItems.map((item) => (
-                                        <button
-                                            key={item.name}
-                                            onClick={() => scrollToSection(item.href)}
-                                            className="text-left text-muted-foreground hover:text-primary transition-colors duration-200 font-medium py-2"
-                                        >
-                                            {item.name}
-                                        </button>
-                                    ))}
-                                    <Button onClick={() => navigate('oauth/login')} className="mt-4">
-                                        {t("navigation.signIn")}
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
+                        <AnimatePresence>
+                            {mobileMenuOpen && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    className="absolute left-4 right-4 top-[70px] md:hidden p-4 rounded-3xl border border-border/50 bg-background/95 backdrop-blur-xl shadow-2xl z-50"
+                                >
+                                    <div className="flex flex-col space-y-1">
+                                        {navigationItems.map((item) => (
+                                            <button
+                                                key={item.name}
+                                                onClick={() => scrollToSection(item.href)}
+                                                className="flex items-center w-full px-4 py-3 text-left text-muted-foreground hover:text-primary hover:bg-muted/50 transition-all duration-200 font-medium rounded-2xl"
+                                            >
+                                                {item.name}
+                                            </button>
+                                        ))}
+                                        <div className="pt-4 mt-2 border-t border-border/50">
+                                            <Button onClick={() => navigate('oauth/login')} className="w-full rounded-2xl h-12 text-base font-bold">
+                                                {t("navigation.signIn")}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </nav>
             );
@@ -103,9 +128,9 @@ function Navigation({ type, title }: { type: "simple" | "full", title?: string }
                                 <span className="text-xl font-bold select-none group-hover:text-emerald-400 transition-all">{title ? title : "Meu Troco"}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                <LanguageSwitcher/>
+                                <LanguageSwitcher />
                                 <ThemeToggle />
-                                <Button onClick={() => navigate(-1)} disabled={isCallBack}>                                    
+                                <Button onClick={() => navigate(-1)} disabled={isCallBack}>
                                     {t('navigation.back')}
                                 </Button>
                             </div>

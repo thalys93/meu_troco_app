@@ -33,7 +33,7 @@ const AppSidebar = () => {
 
   return (
     <Sidebar variant='floating'>
-      <div className={cn("flex flex-col h-full", theme == "dark" && "bg-gradient-to-br from-green-900/45 via-slate-900/50 to-slate-950/70 rounded")}>
+      <div className={cn("flex flex-col h-full", theme == "dark" && "bg-gradient-to-br from-green-900/45 via-zinc-900/50 to-zinc-950/70 rounded")}>
         <SidebarHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 px-2">

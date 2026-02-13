@@ -38,7 +38,7 @@ const MockupDashboard: React.FC<MockupDashboardProps> = ({ device, tab, onTabCha
     ];
 
     return (
-        <div className={`relative overflow-hidden bg-background text-foreground ${isDesktop ? 'rounded-2xl aspect-[16/10]' : 'rounded-[3rem] border-[8px] border-slate-900 dark:border-slate-800 aspect-[9/19]'} transition-all duration-500 shadow-2xl border border-border`}>
+        <div className={`relative overflow-hidden bg-background text-foreground ${isDesktop ? 'rounded-2xl aspect-[16/10]' : 'rounded-[3rem] border-[8px] border-zinc-900 dark:border-zinc-800 aspect-[9/19]'} transition-all duration-500 shadow-2xl border border-border`}>
             <div className="absolute inset-0 flex flex-col overflow-hidden select-none">
                 {isDesktop ? (
                     <div className="flex h-full">

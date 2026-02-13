@@ -44,7 +44,7 @@ function TransactionsPage() {
 
     return (
         <PrivateLayout>
-            <div className="container mx-2 md:mx-auto my-20 md:my-12 md:pl-0 mt-10 space-y-6">
+            <div className="container mx-auto mt-8 mb-20 md:mt-12 md:mb-12 px-4 md:px-6 space-y-6">
                 <Card className='glass-card'>
                     <CardHeader>
                         <CardTitle>{t('transactions.title')}</CardTitle>

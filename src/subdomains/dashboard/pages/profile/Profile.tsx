@@ -189,7 +189,7 @@ const ProfilePage = () => {
           firstName: userLocal.details.firstName,
           lastName: userLocal.details.lastName,
           provider: userLocal.details.provider,
-          createdAt: userLocal.details.createdAt,          
+          createdAt: userLocal.details.createdAt,
           updatedAt: new Date(),
         }
       });
@@ -225,7 +225,7 @@ const ProfilePage = () => {
 
   return (
     <PrivateLayout>
-      <div className="container mx-2 md:mx-auto my-20 md:my-12 md:pl-0 mt-10 space-y-6">
+      <div className="container mx-auto mt-8 mb-20 md:mt-12 md:mb-12 px-4 md:px-6 space-y-6">
         {/* Header com Status do Plano */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -385,7 +385,7 @@ const ProfilePage = () => {
               </Form>
             </CardContent>
           </Card> */}
-          
+
           <Card className='glass-card '>
             <CardHeader className='flex flex-col gap-1 items-center justify-center'>
               {t('profile.avatar')}

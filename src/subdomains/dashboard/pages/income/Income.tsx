@@ -7,15 +7,15 @@ import { useUserTransactions } from '@/utils/api/transation';
 import { useTranslation } from 'react-i18next';
 
 const IncomePage = () => {
-  const {data: transactions, isLoading} = useUserTransactions()
+  const { data: transactions, isLoading } = useUserTransactions()
   const incomeTransactions = transactions?.filter(t => t?.type === 'receita');
   const transactionsList = incomeTransactions
-  const {t} = useTranslation();
+  const { t } = useTranslation();
 
 
   return (
     <PrivateLayout>
-      <div className="container mx-2 md:mx-auto my-20 md:my-12 md:pl-0 mt-10 space-y-6">
+      <div className="container mx-auto mt-8 mb-20 md:mt-12 md:mb-12 px-4 md:px-6 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
           <TrendingUp className="w-6 h-6 text-emerald-400" />
@@ -33,7 +33,7 @@ const IncomePage = () => {
           transactions={transactionsList}
           isLoading={isLoading}
           title={t('transactionList.incomesHistory')}
-          limit={5}          
+          limit={5}
         />
       </div>
     </PrivateLayout>

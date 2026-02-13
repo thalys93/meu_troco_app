@@ -7,7 +7,6 @@ import { motion } from "framer-motion"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import CarouselWithThumbs, { imagesProps } from '@/components/Carousel';
 import { Button } from '@/components/ui/button';
-import DashboardHeader from '../../components/DashboardHeader';
 import BalanceCard from '../../components/BalanceCard';
 import QuickActions from '../../components/QuickActions';
 import StatCard from '@/components/StatCard';
@@ -77,14 +76,11 @@ const DashboardPage = () => {
       )}
 
       <motion.div
-        className="container mx-auto max-w-5xl my-20 md:my-12 px-4 md:px-6 space-y-8"
+        className="container mx-auto max-w-5xl mt-8 mb-20 md:mt-12 md:mb-12 px-4 md:px-6 space-y-8"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
       >
-        <motion.div variants={itemVariants}>
-          <DashboardHeader />
-        </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           <div className="space-y-6">

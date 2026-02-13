@@ -32,7 +32,7 @@ const MobileNav = () => {
               )}
             >
               <item.icon className={cn("w-6 h-6 transition-transform", isActive && "scale-110")} />
-              <span className="text-[10px] md:text-xs font-bold uppercase tracking-wider">{item.name}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">{item.name}</span>
             </Link>
           );
         })}

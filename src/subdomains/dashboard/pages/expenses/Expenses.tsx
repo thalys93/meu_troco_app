@@ -14,28 +14,8 @@ const ExpensesPage = () => {
   const { t } = useTranslation();
 
   return (
-    <PrivateLayout>
-      <div className="container mx-auto mt-8 mb-20 md:mt-12 md:mb-12 px-4 md:px-6 space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <TrendingDown className="w-6 h-6 text-red-400" />
-          <div>
-            <h1 className="text-3xl font-bold">{t('sidebar.expenses')}</h1>
-            <p className="text-muted-foreground">{t('expenses.description')}</p>
-          </div>
-        </div>
-
-        {/* Add Expense Form */}
-        <TransactionForm type="despesa" />
-
-        {/* Expense History */}
-        <TransactionList
-          transactions={transactionsList}
-          title={t('transactionList.expensesHistory')}
-          isLoading={isLoading}
-          limit={15}
-        />
-      </div>
+    <PrivateLayout>      
+        <TransactionForm type="despesa" />      
     </PrivateLayout>
   );
 };

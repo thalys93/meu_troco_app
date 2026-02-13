@@ -63,14 +63,7 @@ const DashboardHeader = () => {
                                 <User className="w-4 h-4 mr-2" />
                                 <span className="font-medium">{t('sidebar.profile')}</span>
                             </DropdownMenuItem>
-                        </NavLink>
-
-                        <NavLink to="/dashboard/transactions">
-                            <DropdownMenuItem className="rounded-xl cursor-pointer">
-                                <BankIcon className="w-4 h-4 mr-2" />
-                                <span className="font-medium">{t('sidebar.transactions')}</span>
-                            </DropdownMenuItem>
-                        </NavLink>
+                        </NavLink>                        
 
                         <NavLink to="/dashboard/settings">
                             <DropdownMenuItem className="rounded-xl cursor-pointer">

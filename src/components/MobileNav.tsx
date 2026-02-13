@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Home, TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { Bank } from '@phosphor-icons/react';
 
 const MobileNav = () => {
   const location = useLocation();
@@ -13,6 +14,7 @@ const MobileNav = () => {
     { name: t('sidebar.home'), href: '/dashboard', icon: Home },
     { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
     { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
+    { name: t('sidebar.transactions'), href: '/dashboard/transactions', icon: Bank },
   ];
 
   return (

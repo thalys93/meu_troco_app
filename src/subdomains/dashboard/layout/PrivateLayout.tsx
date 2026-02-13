@@ -32,7 +32,6 @@ function PrivateLayout({ children }: { children: React.ReactNode }) {
                 </section>
             </div>
 
-            {/* Global Navigation (Visible on all screens) */}
             <MobileNav />
         </main>
     );

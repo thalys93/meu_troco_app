@@ -260,14 +260,17 @@ const LandingPage = () => {
                 <span className="text-primary">{t('landing_v2.security.subtitle')}</span>
               </h2>
             </div>
-            <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {mockSecurityItems.map((s, i) => (
-                <div key={i} className="p-8 rounded-3xl border border-border bg-background hover:bg-muted/50 transition-colors group">
-                  <Shield className="w-10 h-10 text-primary mb-6 transition-transform group-hover:scale-110" />
-                  <h3 className="text-xl font-bold mb-4">{t(s.titleKey)}</h3>
-                  <p className="text-muted-foreground leading-relaxed">{t(s.descKey)}</p>
-                </div>
-              ))}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+              {mockSecurityItems.map((s, i) => {
+                const Icon = s.icon;
+                return (
+                  <div key={i} className="p-8 rounded-3xl border border-border bg-background hover:bg-muted/50 transition-colors group">
+                    <Icon className="w-10 h-10 text-primary mb-6 transition-transform group-hover:scale-110" />
+                    <h3 className="text-xl font-bold mb-4">{t(s.titleKey)}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{t(s.descKey)}</p>
+                  </div>
+                )
+              })}
             </div>
           </div>
           <div className="absolute inset-0 opacity-5 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '32px 32px' }} />

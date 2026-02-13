@@ -1,3 +1,5 @@
+import { Shield, Lock, Code, Rocket, MessageCircle } from 'lucide-react';
+
 export interface Bank {
     name: string;
     logo: string;
@@ -25,6 +27,7 @@ export interface BudgetItem {
 export interface SecurityItem {
     titleKey: string;
     descKey: string;
+    icon: any;
 }
 
 export const mockBanks: Bank[] = [
@@ -52,8 +55,12 @@ export const mockBudgetItems: BudgetItem[] = [
     { labelKey: 'categories.Entretenimento', icon: '🎨', val: 90 },
 ];
 
+
+
 export const mockSecurityItems: SecurityItem[] = [
-    { titleKey: 'landing_v2.security.f1_title', descKey: 'landing_v2.security.f1_desc' },
-    { titleKey: 'landing_v2.security.f2_title', descKey: 'landing_v2.security.f2_desc' },
-    { titleKey: 'landing_v2.security.f3_title', descKey: 'landing_v2.security.f3_desc' }
+    // { titleKey: 'landing_v2.security.f1_title', descKey: 'landing_v2.security.f1_desc', icon: Shield },
+    // { titleKey: 'landing_v2.security.f2_title', descKey: 'landing_v2.security.f2_desc', icon: Lock },
+    { titleKey: 'landing_v2.security.f3_title', descKey: 'landing_v2.security.f3_desc', icon: Code },
+    { titleKey: 'landing_v2.security.f4_title', descKey: 'landing_v2.security.f4_desc', icon: Rocket },
+    { titleKey: 'landing_v2.security.f5_title', descKey: 'landing_v2.security.f5_desc', icon: MessageCircle }
 ];

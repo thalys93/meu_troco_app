@@ -1,8 +1,22 @@
+import React from 'react'
 import { DollarSign, Facebook, Instagram, Twitter } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import LegalModals from '@/shared/components/LegalModals'
 
 function Footer() {
     const { t } = useTranslation();
+
+    const [legalModal, setLegalModal] = React.useState<{ isOpen: boolean, type: 'terms' | 'privacy' }>({
+        isOpen: false,
+        type: 'terms'
+    });
+
+    const openLegalModal = (e: React.MouseEvent, type: 'terms' | 'privacy') => {
+        e.preventDefault();
+        e.stopPropagation();
+        setLegalModal({ isOpen: true, type });
+    };
+
     return (
         <footer className="border-t border-border/50 py-12">
             <div className="container mx-auto px-4">
@@ -13,7 +27,7 @@ function Footer() {
                                 <DollarSign className="w-6 h-6 text-primary" />
                                 <span className="text-xl font-bold select-none">Meu Troco</span>
                             </div>
-                            <p className="text-muted-foreground">                                
+                            <p className="text-muted-foreground">
                                 {t('footer.description')}
                             </p>
                         </div>
@@ -21,10 +35,18 @@ function Footer() {
                         <div>
                             <h3 className="font-semibold mb-4">Links</h3>
                             <div className="space-y-2">
-                                <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">
+                                <a
+                                    href="#"
+                                    onClick={(e) => openLegalModal(e, 'privacy')}
+                                    className="block text-muted-foreground hover:text-primary transition-colors"
+                                >
                                     {t('footer.privacy_policy')}
                                 </a>
-                                <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">
+                                <a
+                                    href="#"
+                                    onClick={(e) => openLegalModal(e, 'terms')}
+                                    className="block text-muted-foreground hover:text-primary transition-colors"
+                                >
                                     {t('footer.terms_of_use')}
                                 </a>
                             </div>
@@ -33,13 +55,13 @@ function Footer() {
                         <div>
                             <h3 className="font-semibold mb-4">{t('footer.social_groups')}</h3>
                             <div className="flex gap-4">
-                                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                                <a href="#" className="text-muted-foreground/50 hover:text-primary transition-colors">
                                     <Facebook className="w-5 h-5" />
                                 </a>
-                                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                                <a href="#" className="text-muted-foreground/50 hover:text-primary transition-colors">
                                     <Twitter className="w-5 h-5" />
                                 </a>
-                                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                                <a href="#" className="text-muted-foreground/50 hover:text-primary transition-colors">
                                     <Instagram className="w-5 h-5" />
                                 </a>
                             </div>
@@ -51,6 +73,12 @@ function Footer() {
                     </div>
                 </div>
             </div>
+
+            <LegalModals
+                isOpen={legalModal.isOpen}
+                onOpenChange={(open) => setLegalModal(prev => ({ ...prev, isOpen: open }))}
+                type={legalModal.type}
+            />
         </footer>
     )
 }

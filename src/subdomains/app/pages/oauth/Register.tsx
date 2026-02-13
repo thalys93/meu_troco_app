@@ -19,6 +19,7 @@ import { motion } from 'framer-motion'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import SocialAuthGroup from '../../components/SocialAuthGroup'
+import LegalModals from '@/shared/components/LegalModals'
 
 const initialValues: SignUpForm = {
     firstName: "",
@@ -44,6 +45,17 @@ function RegisterPage() {
     const handleCreate = useCreateWithEmail();
     const handleLogin = useLoginWithEmail();
     const passwordValue = signUpForm.watch("password");
+
+    const [legalModal, setLegalModal] = React.useState<{ isOpen: boolean, type: 'terms' | 'privacy' }>({
+        isOpen: false,
+        type: 'terms'
+    });
+
+    const openLegalModal = (e: React.MouseEvent, type: 'terms' | 'privacy') => {
+        e.preventDefault();
+        e.stopPropagation();
+        setLegalModal({ isOpen: true, type });
+    };
 
     const randomQuote = React.useMemo(() => {
         const quotes = ['q1', 'q2', 'q3'];
@@ -323,11 +335,29 @@ function RegisterPage() {
                                     onCheckedChange={(checked) => signUpForm.setValue("checkedTerms", !!checked)}
                                 />
                                 <Label htmlFor="checkedTerms" className="text-sm text-muted-foreground font-normal cursor-pointer">
-                                    {t('signIn.termsOfUser_2')} <Link to="#" className='text-primary hover:underline'>{t('signIn.termsOfUse')}</Link> {t('signIn.and')} {" "}
-                                    <Link to="#" className='text-primary hover:underline'>{t('signIn.privacyPolicy')}</Link>
+                                    {t('signIn.termsOfUser_2')} {" "}
+                                    <span
+                                        onClick={(e) => openLegalModal(e, 'terms')}
+                                        className='text-primary hover:underline cursor-pointer font-medium'
+                                    >
+                                        {t('signIn.termsOfUse')}
+                                    </span>
+                                    {" "}{t('signIn.and')}{" "}
+                                    <span
+                                        onClick={(e) => openLegalModal(e, 'privacy')}
+                                        className='text-primary hover:underline cursor-pointer font-medium'
+                                    >
+                                        {t('signIn.privacyPolicy')}
+                                    </span>
                                 </Label>
                             </div>
                         </div>
+
+                        <LegalModals
+                            isOpen={legalModal.isOpen}
+                            onOpenChange={(open) => setLegalModal(prev => ({ ...prev, isOpen: open }))}
+                            type={legalModal.type}
+                        />
 
                         {handleCreate.error && (
                             <motion.div

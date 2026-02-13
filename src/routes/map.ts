@@ -13,6 +13,7 @@ import IncomePage from "@/subdomains/dashboard/pages/income/Income";
 import PaymentsPage from "@/subdomains/dashboard/pages/payments/Payments";
 import ProfilePage from "@/subdomains/dashboard/pages/profile/Profile";
 import TransactionsPage from "@/subdomains/dashboard/pages/transactions/Transactions";
+import CurrencyConverter from "@/subdomains/dashboard/pages/converter/CurrencyConverter";
 import { ReactElement } from "react";
 
 
@@ -47,6 +48,7 @@ export const DashboardRoutes: RoutesGroup = {
         { path: 'payments', element: PaymentsPage },
         { path: 'profile', element: ProfilePage },
         { path: 'transactions', element: TransactionsPage },
+        { path: 'converter', element: CurrencyConverter },
     ]
 }
 
@@ -57,8 +59,8 @@ export const BackOfficeRoutes: RoutesGroup = {
         { path: "session-validation", element: SessionValidation },
         { path: "home", element: BackofficeHomePage },
         { path: "plans", element: PlansPage },
-        { path: "plan/:id?", element: PlansFormComponent},
-        { path: "profile", element: BackOfficeProfilePage}
+        { path: "plan/:id?", element: PlansFormComponent },
+        { path: "profile", element: BackOfficeProfilePage }
     ]
 }
 

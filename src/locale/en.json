@@ -103,6 +103,11 @@
   "dashboard.listTitle": "Recent Transactions",
   "dashboard.statCardRelation": "% compared to last month",
   "dashboard.quickActions": "Quick actions",
+  "dashboard.actions.receipt": "Income",
+  "dashboard.actions.expense": "Expense",
+  "dashboard.actions.converter": "Converter",
+  "dashboard.actions.reports": "Reports",
+  "dashboard.actions.cards": "Cards",
   "dashboard.balancePositive": "Your balance is positive!",
   "dashboard.balanceWarning": "Watch your balance!",
   "dashboard.insightText": "Keep managing your finances intelligently.",
@@ -269,5 +274,17 @@
   "login.forgotPassword": "Forgot password?",
   "login.team": "Meu Troco Team",
   "login.appDescription": "Finance App",
-  "login.createAccountNow": "Create one now"
+  "login.createAccountNow": "Create one now",
+  "converter.title": "Currency Converter",
+  "converter.calculatorTitle": "Currency Calculator",
+  "converter.currentRate": "Current Rate",
+  "converter.estimatedRate": "Estimated Rate",
+  "converter.today": "today",
+  "converter.brl": "Real (BRL)",
+  "converter.usd": "Dollar (USD)",
+  "converter.disclaimer": "This is a demonstrative calculator only. Actual exchange rates may vary depending on your bank or broker at the time of the transaction.",
+  "converter.clear": "Clear Calculator",
+  "converter": {
+    "disclaimer": "This is a experimental calculator only. Actual exchange rates may vary depending on your bank or broker at the time of the transaction."
+  }
 }

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
+import { cn } from '@/lib/utils';
 
 interface BalanceCardProps {
     balance: number;
@@ -14,18 +15,42 @@ const BalanceCard = ({ balance, formatCurrency }: BalanceCardProps) => {
     const [isVisible, setIsVisible] = React.useState(true);
     const { t } = useTranslation();
 
+    const styles = useMemo(() => {
+        if (balance < 0) {
+            return {
+                card: "bg-gradient-to-br from-rose-600 via-rose-700 to-rose-900/30 shadow-rose-950/20",
+                label: "text-rose-100/80",
+                button: "text-rose-100 hover:text-white hover:bg-white/10"
+            };
+        }
+        if (balance < 50) {
+            return {
+                card: "bg-gradient-to-br from-amber-500 via-amber-600 to-amber-800/30 shadow-amber-950/20",
+                label: "text-amber-100/80",
+                button: "text-amber-100 hover:text-white hover:bg-white/10"
+            };
+        }
+        return {
+            card: "bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900/30 shadow-emerald-950/20",
+            label: "text-emerald-100/80",
+            button: "text-emerald-100 hover:text-white hover:bg-white/10"
+        };
+    }, [balance]);
+
     return (
-        <Card className="overflow-hidden border-none bg-gradient-to-br from-emerald-600 via-emerald-700 to-emerald-900/30 text-white shadow-xl shadow-emerald-950/20 rounded-3xl">
+        <Card className={cn("overflow-hidden border-none text-white shadow-xl rounded-3xl transition-all duration-500", styles.card)}>
             <CardContent className="p-8">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                        <h2 className="text-sm font-semibold text-emerald-100/80 tracking-wide uppercase">{t('dashboard.cardTotalTitle')}</h2>
+                        <h2 className={cn("text-sm font-semibold tracking-wide uppercase", styles.label)}>
+                            {t('dashboard.cardTotalTitle')}
+                        </h2>
                     </div>
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsVisible(!isVisible)}
-                        className="text-emerald-100 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                        className={cn("rounded-full transition-colors", styles.button)}
                     >
                         {isVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </Button>

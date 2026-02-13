@@ -1,47 +1,50 @@
-import React from 'react';
-import { PlusCircle, MinusCircle, BarChart3, Wallet, Send, ArrowLeftRight } from 'lucide-react';
+import React, { useMemo } from 'react';
+import { PlusCircle, MinusCircle, BarChart3, Wallet, Send, ArrowLeftRight, Scale3D } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
-
-const actions = [
-    {
-        icon: PlusCircle,
-        label: 'Receita',
-        href: '/dashboard/income',
-        color: 'text-emerald-500',
-        bg: 'bg-emerald-500/10'
-    },
-    {
-        icon: MinusCircle,
-        label: 'Despesa',
-        href: '/dashboard/expenses',
-        color: 'text-red-500',
-        bg: 'bg-red-500/10'
-    },
-    {
-        icon: ArrowLeftRight,
-        label: 'Troca',
-        href: '#',
-        color: 'text-blue-500',
-        bg: 'bg-blue-500/10'
-    },
-    {
-        icon: BarChart3,
-        label: 'Relatórios',
-        href: '#',
-        color: 'text-purple-500',
-        bg: 'bg-purple-500/10'
-    },
-    {
-        icon: Wallet,
-        label: 'Cartões',
-        href: '#',
-        color: 'text-orange-500',
-        bg: 'bg-orange-500/10'
-    }
-];
+import { useTranslation } from 'react-i18next';
 
 const QuickActions = () => {
+    const { t } = useTranslation();
+
+    const actions = useMemo(() => [
+        {
+            icon: PlusCircle,
+            label: t('dashboard.actions.receipt'),
+            href: '/dashboard/income',
+            color: 'text-emerald-500',
+            bg: 'bg-emerald-500/10'
+        },
+        {
+            icon: MinusCircle,
+            label: t('dashboard.actions.expense'),
+            href: '/dashboard/expenses',
+            color: 'text-red-500',
+            bg: 'bg-red-500/10'
+        },
+        {
+            icon: Scale3D,
+            label: t('dashboard.actions.converter'),
+            href: '/dashboard/converter',
+            color: 'text-blue-500',
+            bg: 'bg-blue-500/10'
+        },
+        {
+            icon: BarChart3,
+            label: t('dashboard.actions.reports'),
+            href: '#',
+            color: 'text-purple-500',
+            bg: 'bg-purple-500/10'
+        },
+        {
+            icon: Wallet,
+            label: t('dashboard.actions.cards'),
+            href: '#',
+            color: 'text-orange-500',
+            bg: 'bg-orange-500/10'
+        }
+    ], [t]);
+
     return (
         <div className="w-full overflow-x-auto no-scrollbar py-2 -mx-2 px-2">
             <div className="flex gap-4 md:grid md:grid-cols-5 min-w-max md:min-w-full">

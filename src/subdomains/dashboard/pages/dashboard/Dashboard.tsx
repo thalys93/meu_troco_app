@@ -1,3 +1,4 @@
+import React, { useMemo } from 'react';
 import TransactionList from '@/components/TransactionList';
 import PrivateLayout from '../../layout/PrivateLayout';
 import { useUserTransactions } from '@/utils/api/transation';
@@ -13,6 +14,7 @@ import StatCard from '@/components/StatCard';
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import useUserStore from '@/store/UserStore';
 import { firebaseTimestampToDate } from '@/utils/helpers/getFirebaseDate';
+import { cn } from '@/lib/utils';
 
 const DashboardPage = () => {
   const { data: transactions = [], isLoading } = useUserTransactions();
@@ -53,6 +55,25 @@ const DashboardPage = () => {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0 }
   };
+
+  const bannerStyles = useMemo(() => {
+    if (totalBalance < 0) {
+      return {
+        container: "bg-rose-500/5 border-rose-500/10",
+        iconContainer: "bg-rose-500/10 text-rose-500",
+      };
+    }
+    if (totalBalance < 50) {
+      return {
+        container: "bg-amber-500/5 border-amber-500/10",
+        iconContainer: "bg-amber-500/10 text-amber-500",
+      };
+    }
+    return {
+      container: "bg-emerald-500/5 border-emerald-500/10",
+      iconContainer: "bg-emerald-500/10 text-emerald-500",
+    };
+  }, [totalBalance]);
 
   return (
     <PrivateLayout>
@@ -117,13 +138,16 @@ const DashboardPage = () => {
               trendDirection="down"
               className="border-red-500/10 shadow-none hover:shadow-sm"
             />
-            <div className="col-span-2 hidden md:flex items-center justify-between p-6 rounded-3xl bg-primary/5 border border-primary/10">
+            <div className={cn(
+              "col-span-2 hidden md:flex items-center justify-between p-6 rounded-3xl border transition-colors duration-500",
+              bannerStyles.container
+            )}>
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                <div className={cn("p-3 rounded-2xl transition-colors duration-500", bannerStyles.iconContainer)}>
                   <Wallet className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="font-semibold">{isBalancePositive ? t('dashboard.balancePositive') : t('dashboard.balanceWarning')}</p>
+                  <p className="font-semibold">{totalBalance >= 0 ? t('dashboard.balancePositive') : t('dashboard.balanceWarning')}</p>
                   <p className="text-sm text-muted-foreground">{t('dashboard.insightText')}</p>
                 </div>
               </div>

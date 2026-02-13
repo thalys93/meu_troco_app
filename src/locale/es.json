@@ -92,6 +92,11 @@
   "dashboard.listTitle": "Transações recentes",
   "dashboard.statCardRelation": "% en comparación con el mes pasado",
   "dashboard.quickActions": "Acciones rápidas",
+  "dashboard.actions.receipt": "Ingreso",
+  "dashboard.actions.expense": "Gasto",
+  "dashboard.actions.converter": "Conversor",
+  "dashboard.actions.reports": "Informes",
+  "dashboard.actions.cards": "Tarjetas",
   "dashboard.balancePositive": "¡Tu saldo es positivo!",
   "dashboard.balanceWarning": "¡Atención al saldo!",
   "dashboard.insightText": "Sigue gestionando tus finanças com inteligência.",
@@ -254,5 +259,17 @@
   "login.forgotPassword": "¿Olvidaste tu contraseña?",
   "login.team": "Equipo Meu Troco",
   "login.appDescription": "App de Finanzas",
-  "login.createAccountNow": "Crea una ahora"
+  "login.createAccountNow": "Crea una ahora",
+  "converter.title": "Conversor de Moneda",
+  "converter.calculatorTitle": "Calculadora de Cambio",
+  "converter.currentRate": "Tasa Actual",
+  "converter.estimatedRate": "Tasa Estimada",
+  "converter.today": "hoy",
+  "converter.brl": "Real (BRL)",
+  "converter.usd": "Dólar (USD)",
+  "converter.disclaimer": "Esta es solo una calculadora demostrativa. Las tasas de cambio reales podem variar dependiendo de su banco o corredor en el momento de la transacción.",
+  "converter.clear": "Limpiar Calculadora",
+  "converter": {
+    "disclaimer": "Esta es solo una calculadora experimental. Las tasas de cambio reales podem variar dependiendo de su banco o corredor en el momento de la transacción."
+  }
 }

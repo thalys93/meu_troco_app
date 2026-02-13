@@ -49,7 +49,9 @@
   "login.passwordPlaceholder": "Enter your Password",
   "login.submitLoading": "Loading...",
   "login.welcome": "Welcome!",
-  "login.welcomeDescription": "Log in or create your account to continue",
+  "login.welcomeDescription": "Login to continue",
+  "login.hero_title": "Great to see you again!",
+  "login.hero_description": "We are ready to help you keep your finances on track today. Shall we?",
   "signIn.and": "in",
   "signIn.cardDescription": "Enter your details to create your account",
   "signIn.confirmPasswordLabel": "Confirm Your Password",
@@ -60,7 +62,11 @@
   "signIn.passwordCheckListTitle": "The Password must have:",
   "signIn.privacyPolicy": "privacy policy",
   "signIn.termsOfUse": "terms of use",
-  "signIn.termsOfUser_2": "Oil os",
+  "signIn.termsOfUser_2": "I accept the",
+  "signIn.hero_title": "Your financial journey starts here",
+  "signIn.hero_description": "Organize your earnings, control your spending and achieve your goals with the simplicity you've always wanted.",
+  "signIn.login_call": "Already have an account?",
+  "signIn.login_access": "Login",
   "signIn.title": "New User",
   "toast.SignInwarningDescription": "Please accept the terms and conditions.",
   "toast.errorLogin": "Login error",
@@ -247,5 +253,12 @@
   },
   "sidebar": {
     "settings": "Settings"
-  }
+  },
+  "login.quotes.q1": "The best tool to manage daily savings smartly.",
+  "login.quotes.q2": "Small savings today, big achievements tomorrow. Start now.",
+  "login.quotes.q3": "Organize your financial future with simplicity and security.",
+  "login.forgotPassword": "Forgot password?",
+  "login.team": "Meu Troco Team",
+  "login.appDescription": "Finance App",
+  "login.createAccountNow": "Create one now"
 }

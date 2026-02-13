@@ -1,26 +1,24 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react'
-import PublicLayout from '../../layout/PublicLayout'
 import { Label } from '@/components/ui/label'
 import { Input, PasswordInput } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Form } from '@/components/ui/form'
-import { AlertCircle, AlignLeft, DollarSign, Lock, Mail, Shield, User } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { AlertCircle, ArrowLeft, DollarSign, Lock, Mail, User, AlignLeft } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { SignUpForm, SignUpSchema } from '@/types/validation/signUp'
 import { useCreateWithEmail, useLoginWithEmail } from '@/utils/api/auth'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from '@/hooks/use-toast'
 import { passwordRules } from '@/utils/helpers/formRules'
 import useUserStore from '@/store/UserStore'
 import { useTranslation } from 'react-i18next'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useGetPlans } from '@/utils/api/plans'
-import { Badge } from '@/components/ui/badge'
 import { motion } from 'framer-motion'
+import ThemeToggle from '@/components/ThemeToggle'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
+import SocialAuthGroup from '../../components/SocialAuthGroup'
 
 const initialValues: SignUpForm = {
     firstName: "",
@@ -33,43 +31,28 @@ const initialValues: SignUpForm = {
 }
 
 function RegisterPage() {
-    const signInForm = useForm<SignUpForm>({
+    const navigate = useNavigate();
+    const { t } = useTranslation();
+    const { setUid } = useUserStore();
+    const title = "Meu Troco";
+
+    const signUpForm = useForm<SignUpForm>({
         defaultValues: initialValues,
         resolver: zodResolver(SignUpSchema)
     })
 
-    const { setUid } = useUserStore()
-    const { t } = useTranslation();
-
-    const selectedPlan = signInForm.watch("selectedPlan");
-    const [amount, setAmount] = React.useState();
-
     const handleCreate = useCreateWithEmail();
     const handleLogin = useLoginWithEmail();
-    const passwordValue = signInForm.watch("password");
-    const { data: plans, isError } = useGetPlans();
-    const navigate = useNavigate();
-    const location = useLocation()
+    const passwordValue = signUpForm.watch("password");
 
-    React.useEffect(() => {
-        if (location?.state?.plan) {
-            signInForm.setValue("selectedPlan", location?.state?.plan)
-        }
-    }, [location, signInForm])
-
-    function parsePrice(price: string | number): number {
-        if (typeof price === 'number') return price;
-
-        return Number(
-            price
-                .replace(/[^\d.,]/g, '')
-                .replace(',', '.')
-                .trim()
-        );
-    }
+    const randomQuote = React.useMemo(() => {
+        const quotes = ['q1', 'q2', 'q3'];
+        const randomIndex = Math.floor(Math.random() * quotes.length);
+        return quotes[randomIndex];
+    }, []);
 
     const handleSubmit = async (data: SignUpForm) => {
-        if (data.checkedTerms === false) {
+        if (!data.checkedTerms) {
             toast({
                 title: t('toast.warningTitle'),
                 description: t('toast.SignInwarningDescription'),
@@ -85,14 +68,11 @@ function RegisterPage() {
                 variant: "info"
             })
             return;
-        }        
+        }
 
         handleCreate.mutate({
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email,
-            password: data.password,
-            selectedPlan: data.selectedPlan
+            ...data,
+            selectedPlan: "Básico"
         }, {
             onSuccess: () => {
                 toast({
@@ -109,11 +89,9 @@ function RegisterPage() {
                             title: t('toast.welcome'),
                             description: t('toast.loginSuccess'),
                         })
-
                         setUid(uid)
                         navigate("/dashboard")
                     },
-
                     onError: () => {
                         toast({
                             title: t('toast.errorLogin'),
@@ -144,186 +122,254 @@ function RegisterPage() {
         }
 
         return (
-            <ul className='text-sm mt-2 space-y-1 grid grid-cols-2'>
-                <li className={checks.upper ? "text-green-500" : "text-red-500"}>1 {t('passwordChecklist.upperLetters')}</li>
-                <li className={checks.lower ? "text-green-500" : "text-red-500"}>1 {t('passwordChecklist.lowLetters')}</li>
-                <li className={checks.number ? "text-green-500" : "text-red-500"}>1 {t('passwordChecklist.numbers')}</li>
-                <li className={checks.special ? "text-green-500" : "text-red-500"}>1 {t('passwordChecklist.specialCaracters')}</li>
-                <li className={checks.minLength ? "text-green-500" : "text-red-500"}>8 {t('passwordChecklist.moreCaracters')}</li>
-            </ul>
+            <div className='bg-muted/30 p-4 rounded-xl border border-muted-foreground/10 mb-4'>
+                <p className='text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2'>
+                    {t('signIn.passwordCheckListTitle')}
+                </p>
+                <ul className='text-xs space-y-1.5 grid grid-cols-2'>
+                    <li className={checks.upper ? "text-emerald-500 flex items-center gap-1.5" : "text-muted-foreground/60 flex items-center gap-1.5"}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${checks.upper ? "bg-emerald-500" : "bg-muted-foreground/30"}`} />
+                        1 {t('passwordChecklist.upperLetters')}
+                    </li>
+                    <li className={checks.lower ? "text-emerald-500 flex items-center gap-1.5" : "text-muted-foreground/60 flex items-center gap-1.5"}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${checks.lower ? "bg-emerald-500" : "bg-muted-foreground/30"}`} />
+                        1 {t('passwordChecklist.lowLetters')}
+                    </li>
+                    <li className={checks.number ? "text-emerald-500 flex items-center gap-1.5" : "text-muted-foreground/60 flex items-center gap-1.5"}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${checks.number ? "bg-emerald-500" : "bg-muted-foreground/30"}`} />
+                        1 {t('passwordChecklist.numbers')}
+                    </li>
+                    <li className={checks.special ? "text-emerald-500 flex items-center gap-1.5" : "text-muted-foreground/60 flex items-center gap-1.5"}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${checks.special ? "bg-emerald-500" : "bg-muted-foreground/30"}`} />
+                        1 {t('passwordChecklist.specialCaracters')}
+                    </li>
+                    <li className={checks.minLength ? "text-emerald-500 flex items-center gap-1.5" : "text-muted-foreground/60 flex items-center gap-1.5"}>
+                        <div className={`w-1.5 h-1.5 rounded-full ${checks.minLength ? "bg-emerald-500" : "bg-muted-foreground/30"}`} />
+                        8 {t('passwordChecklist.moreCaracters')}
+                    </li>
+                </ul>
+            </div>
         )
     }
 
     return (
-        <PublicLayout type="simple">
-            <div className="flex items-center justify-center bg-gradient-to-br from-background via-background to-emerald-950/20 p-4">
-                <div className="w-full max-w-md space-y-8">
-                    <div className="text-center">
-                        <div className="flex justify-center mb-4">
-                            <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center">
-                                <User className="w-8 h-8 text-primary" />
-                            </div>
+        <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-background">
+            {/* Hero Section */}
+            <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.8 }}
+                className="hidden md:flex md:w-1/2 lg:w-[50%] relative p-12 flex-col justify-between overflow-hidden"
+            >
+                <div className="absolute inset-0 bg-white dark:bg-emerald-950/20 transition-colors duration-500" />
+                <div className="absolute inset-0 overflow-hidden">
+                    <motion.div
+                        animate={{
+                            scale: [1, 1.2, 1],
+                            opacity: [0.1, 0.2, 0.1],
+                            x: [0, 50, 0],
+                            y: [0, -30, 0]
+                        }}
+                        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                        className="absolute -top-1/4 -left-1/4 w-[80%] h-[80%] bg-primary rounded-full filter blur-[120px]"
+                    />
+                    <motion.div
+                        animate={{
+                            scale: [1.2, 1, 1.2],
+                            opacity: [0.05, 0.15, 0.05],
+                            x: [0, -50, 0],
+                            y: [0, 50, 0]
+                        }}
+                        transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                        className="absolute -bottom-1/4 -right-1/4 w-[70%] h-[70%] bg-emerald-200 dark:bg-emerald-600 rounded-full filter blur-[100px]"
+                    />
+                </div>
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+
+                <div className="relative z-10">
+                    <div className="flex items-center gap-3 mb-10 cursor-pointer group" onClick={() => navigate("/")}>
+                        <div className="w-10 h-10 bg-emerald-50 dark:bg-primary/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-emerald-100 dark:border-white/10 group-hover:scale-105 transition-transform">
+                            <DollarSign className="w-6 h-6 text-emerald-600 dark:text-primary" />
                         </div>
-                        <h1 className="text-3xl font-bold tracking-tight">{t('signIn.title')}</h1>
-                        <p className="text-muted-foreground mt-2">{t('signIn.description')}</p>
+                        <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{title}</span>
                     </div>
 
-                    <Card className="glass-card">
-                        <CardHeader className="space-y-2 mb-0 pb-0">
-                            <CardTitle className="text-2xl font-semibold">Sign In</CardTitle>
-                            <CardDescription>
-                                {t('signIn.cardDescription')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Form form={signInForm} onSubmit={handleSubmit} className="grid grid-cols-2 space-y-4 items-center justify-center gap-3">
-                                <div className='col-span-2 md:col-span-1 mt-auto space-y-2 md:mt-4'>
-                                    <Label htmlFor='lastName'>{t('signIn.nameLabel')}</Label>
-                                    <Input
-                                        leftIcon={<AlignLeft className='w-5 h-5' />}
-                                        type="text"
-                                        name="firstName"
-                                        placeholder="John"
-                                        control={signInForm.control}
-                                        className="bg-background/50"
-                                        required
-                                    />
-                                </div>
-
-                                <div className='col-span-2 md:col-span-1 mt-auto space-y-2'>
-                                    <Label htmlFor='lastName'>{t('signIn.lastNameLabel')}</Label>
-                                    <Input
-                                        leftIcon={<AlignLeft className='w-5 h-5' />}
-                                        type="text"
-                                        name="lastName"
-                                        placeholder="Doe"
-                                        control={signInForm.control}
-                                        className="bg-background/50"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="email">{t('login.emailInput')}</Label>
-                                    <Input
-                                        leftIcon={<Mail className='w-5 h-5' />}
-                                        type="email"
-                                        name="email"
-                                        placeholder={t('login.emailPlaceholder')}
-                                        control={signInForm.control}
-                                        className="bg-background/50"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="password">{t('login.passwordInput')}</Label>
-                                    <PasswordInput
-                                        leftIcon={<Lock className='w-5 h-5' />}
-                                        type="password"
-                                        name="password"
-                                        placeholder={t('login.passwordPlaceholder')}
-                                        control={signInForm.control}
-                                        className="bg-background/50"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="password">{t('signIn.confirmPasswordLabel')}</Label>
-                                    <PasswordInput
-                                        leftIcon={<Lock className='w-5 h-5' />}
-                                        type="password"
-                                        name="confirmPassword"
-                                        placeholder={t('signIn.confirmPasswordLabel')}
-                                        control={signInForm.control}
-                                        className="bg-background/50"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="password" className='text-foreground'>{t('signIn.passwordCheckListTitle')}</Label>
-                                    <PasswordChecklist password={passwordValue} />
-                                </div>
-
-                                <div className='col-span-2 space-y-2'>
-                                    <Select value={selectedPlan} onValueChange={(e) => signInForm.setValue("selectedPlan", e)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Plano de assinatura (opcional)" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {plans?.length && plans?.map((plan) => (
-                                                <SelectItem value={plan.title} >
-                                                    {plan.title} - {plan.price}
-                                                </SelectItem>
-                                            ))}
-
-                                            {isError && (
-                                                <div className="flex items-center space-x-2 text-destructive text-sm justify-center select-none my-5">
-                                                    <AlertCircle className="w-4 h-4" />
-                                                    <span>Falha ao obter os planos</span>
-                                                </div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                <div className="col-span-2 space-y-2">
-                                    <Label htmlFor="password">{t('footer.terms_of_use')}</Label>
-                                    <div className="flex items-center space-x-2 py-2">
-                                        <Checkbox
-                                            name="checkedTerms"
-                                            onCheckedChange={(checked) => signInForm.setValue("checkedTerms", checked ? true : false)}
-                                        />
-                                        <span className="text-sm text-muted-foreground">
-                                            {t('signIn.termsOfUser_2')} <Link to="#" className='text-primary hover:underline transition-all'>{t('signIn.termsOfUse')}</Link> {t('signIn.and')} {" "}
-                                            <Link to="#" className='text-primary hover:underline transition-all'>{t('signIn.privacyPolicy')}</Link>
-                                        </span>
-                                    </div>
-                                </div>
-
-                                {handleCreate.error && (
-                                    <div className="flex items-center space-x-2 text-destructive text-sm">
-                                        <AlertCircle className="w-4 h-4" />
-                                        <span>{handleCreate.error.message}</span>
-                                    </div>
-                                )}
-
-                                <motion.div
-                                    key={selectedPlan !== "Básico" ? "show" : "hide"}
-                                    initial={{ opacity: 0, y: 40 }}
-                                    animate={selectedPlan !== "Básico" ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-                                    transition={{ delay: 0.2, duration: 0.5, ease: 'easeOut' }}
-                                    className='flex col-span-2 justify-center items-center'
-                                >
-                                    <Badge className='flex flex-row gap-2 items-center justify-center w-full select-none' variant='secondary'>
-                                        <Shield className='w-6 h-6 my-2' />
-                                        <span> Transação 100% segura e privada</span>
-                                        <div className='h-5 w-0.5 bg-muted-foreground rounded-full select-none' />
-                                        <img src="/mercado-pago.png" className='h-10 w-10 object-contain' />
-                                    </Badge>
-                                </motion.div>
-
-                                <Button
-                                    type="submit"
-                                    className="w-full bg-primary hover:bg-primary/90 col-span-2"
-                                    disabled={handleCreate.isPending}
-                                >
-                                    {selectedPlan !== "Básico" ? (
-                                        handleCreate.isPending ? t('login.submitLoading') : t('signIn.checkout')
-                                    ) : (
-                                        handleCreate.isPending ? t('login.submitLoading') : t('signIn.createAccount')
-                                    )}
-                                </Button>
-                            </Form>
-                        </CardContent>
-                    </Card>
+                    <div className="max-w-md">
+                        <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight mb-6">
+                            {t('signIn.hero_title')}
+                        </h2>
+                        <p className="text-slate-600 dark:text-emerald-100/70 text-lg leading-relaxed">
+                            {t('signIn.hero_description')}
+                        </p>
+                    </div>
                 </div>
+
+                <div className="relative z-10">
+                    <div className="p-6 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl max-w-sm shadow-xl shadow-slate-200/50 dark:shadow-emerald-500/5">
+                        <p className="text-slate-700 dark:text-white/80 italic mb-4">
+                            "{t(`login.quotes.${randomQuote}`)}"
+                        </p>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-primary/20 border border-emerald-200 dark:border-primary/30 flex items-center justify-center text-emerald-700 dark:text-primary font-bold">MT</div>
+                            <div>
+                                <p className="text-slate-900 dark:text-white font-medium text-sm">{t('login.team')}</p>
+                                <p className="text-slate-500 dark:text-emerald-400 text-xs select-none">{t('login.appDescription')}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+
+            {/* Form Section */}
+            <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 bg-background relative overflow-y-auto">
+                <div className="w-full flex items-center justify-end gap-4 mb-4 md:absolute md:top-6 md:right-6 md:mb-0">
+                    <LanguageSwitcher />
+                    <ThemeToggle />
+                    <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        {t('navigation.back')}
+                    </Button>
+                </div>
+
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="w-full max-w-md space-y-8"
+                >
+                    <div className="md:hidden flex justify-center mb-8">
+                        <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20">
+                            <User className="w-8 h-8 text-primary" />
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{t('signIn.title')}</h1>
+                        <p className="text-muted-foreground">
+                            {t('signIn.login_call')}{' '}
+                            <Link to="/oauth/login" className="font-semibold text-primary hover:underline">
+                                {t('signIn.login_access')}
+                            </Link>
+                        </p>
+                    </div>
+
+                    <Form form={signUpForm} onSubmit={handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="firstName">{t('signIn.nameLabel')}</Label>
+                                <Input
+                                    leftIcon={<AlignLeft className='w-5 h-5 text-muted-foreground/60' />}
+                                    type="text"
+                                    name="firstName"
+                                    placeholder="John"
+                                    control={signUpForm.control}
+                                    className="h-12 bg-muted/30 focus:bg-background transition-all border-muted-foreground/10"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="lastName">{t('signIn.lastNameLabel')}</Label>
+                                <Input
+                                    leftIcon={<AlignLeft className='w-5 h-5 text-muted-foreground/60' />}
+                                    type="text"
+                                    name="lastName"
+                                    placeholder="Doe"
+                                    control={signUpForm.control}
+                                    className="h-12 bg-muted/30 focus:bg-background transition-all border-muted-foreground/10"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="email">{t('login.emailInput')}</Label>
+                            <Input
+                                leftIcon={<Mail className='w-5 h-5 text-muted-foreground/60' />}
+                                type="email"
+                                name="email"
+                                placeholder={t('login.emailPlaceholder')}
+                                control={signUpForm.control}
+                                className="h-12 bg-muted/30 focus:bg-background transition-all border-muted-foreground/10"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="password">{t('login.passwordInput')}</Label>
+                            <PasswordInput
+                                leftIcon={<Lock className='w-5 h-5 text-muted-foreground/60' />}
+                                name="password"
+                                placeholder={t('login.passwordPlaceholder')}
+                                control={signUpForm.control}
+                                className="h-12 bg-muted/30 focus:bg-background transition-all border-muted-foreground/10"
+                            />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="confirmPassword">{t('signIn.confirmPasswordLabel')}</Label>
+                            <PasswordInput
+                                leftIcon={<Lock className='w-5 h-5 text-muted-foreground/60' />}
+                                name="confirmPassword"
+                                placeholder={t('signIn.confirmPasswordLabel')}
+                                control={signUpForm.control}
+                                className="h-12 bg-muted/30 focus:bg-background transition-all border-muted-foreground/10"
+                            />
+                        </div>
+
+                        <PasswordChecklist password={passwordValue} />
+
+                        <div className="space-y-2">
+                            <div className="flex items-center space-x-2 py-2">
+                                <Checkbox
+                                    id="checkedTerms"
+                                    name="checkedTerms"
+                                    onCheckedChange={(checked) => signUpForm.setValue("checkedTerms", !!checked)}
+                                />
+                                <Label htmlFor="checkedTerms" className="text-sm text-muted-foreground font-normal cursor-pointer">
+                                    {t('signIn.termsOfUser_2')} <Link to="#" className='text-primary hover:underline'>{t('signIn.termsOfUse')}</Link> {t('signIn.and')} {" "}
+                                    <Link to="#" className='text-primary hover:underline'>{t('signIn.privacyPolicy')}</Link>
+                                </Label>
+                            </div>
+                        </div>
+
+                        {handleCreate.error && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center space-x-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm border border-destructive/20"
+                            >
+                                <AlertCircle className="w-4 h-4" />
+                                <span>{handleCreate.error.message}</span>
+                            </motion.div>
+                        )}
+
+                        <Button
+                            type="submit"
+                            className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01]"
+                            disabled={handleCreate.isPending}
+                        >
+                            {handleCreate.isPending ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                                    {t('login.submitLoading')}
+                                </div>
+                            ) : t('signIn.createAccount')}
+                        </Button>
+                    </Form>
+
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-muted" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">
+                                {t('login.or')}
+                            </span>
+                        </div>
+                    </div>
+
+                    <SocialAuthGroup />
+                </motion.div>
             </div>
-        </PublicLayout>
+        </div>
     )
 }
-
 
 export default RegisterPage

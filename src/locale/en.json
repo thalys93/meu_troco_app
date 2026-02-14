@@ -12,6 +12,7 @@
     "type": "Type",
     "flag": "Flag",
     "color": "Color",
+    "noCard": "No Card",
     "types": {
       "debit": "Debit",
       "credit": "Credit",
@@ -186,6 +187,17 @@
   "filters.categories": "Categories",
   "filters.from": "From",
   "filters.till": "Until",
+  "filters.all": "All",
+  "filters.button": "Filter",
+  "filters.title": "Filters",
+  "filters.type": "Type",
+  "filters.card": "Card",
+  "filters.showMore": "Show more...",
+  "filters.minValue": "Minimum value",
+  "filters.maxValue": "Maximum value",
+  "filters.clearAll": "Clear all",
+  "filters.applyCount": "Show",
+  "filters.items": "transactions",
   "transactionList.allHistory": "All Transactions",
   "transactions.title": "Transaction Summary",
   "default.save": "Save",
@@ -308,5 +320,8 @@
   "converter.clear": "Clear Calculator",
   "converter": {
     "disclaimer": "This is a experimental calculator only. Actual exchange rates may vary depending on your bank or broker at the time of the transaction."
+  },
+  "default": {
+    "all": "All"
   }
 }

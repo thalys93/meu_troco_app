@@ -12,6 +12,7 @@
     "type": "Tipo",
     "flag": "Bandera",
     "color": "Color",
+    "noCard": "Sin Tarjeta",
     "types": {
       "debit": "Débito",
       "credit": "Crédito",
@@ -175,6 +176,17 @@
   "filters.categories": "Categorías",
   "filters.from": "El",
   "filters.till": "Hasta",
+  "filters.all": "Todos",
+  "filters.button": "Filtrar",
+  "filters.title": "Filtros",
+  "filters.type": "Tipo",
+  "filters.card": "Tarjeta",
+  "filters.showMore": "Mostrar más...",
+  "filters.minValue": "Valor mínimo",
+  "filters.maxValue": "Valor máximo",
+  "filters.clearAll": "Limpiar todo",
+  "filters.applyCount": "Mostrar",
+  "filters.items": "transacciones",
   "transactionList.allHistory": "Todas las transações",
   "transactions.title": "Resumen de la transação",
   "default.save": "Ahorrar",
@@ -294,5 +306,8 @@
   "converter.clear": "Limpiar Calculadora",
   "converter": {
     "disclaimer": "Esta es solo una calculadora experimental. Las tasas de cambio reales podem variar dependiendo de su banco o corredor en el momento de la transacción."
+  },
+  "default": {
+    "all": "Todos"
   }
 }

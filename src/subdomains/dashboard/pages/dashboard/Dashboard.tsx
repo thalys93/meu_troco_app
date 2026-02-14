@@ -100,7 +100,7 @@ const DashboardPage = () => {
       )}
 
       <motion.div
-        className="container mx-auto max-w-5xl mt-6 md:mt-12 mb-16 md:mb-12 px-4 md:px-6 space-y-6 md:space-y-8"
+        className="container mx-auto max-w-5xl mt-6 md:mt-3 mb-16 md:mb-12 px-4 md:px-6 space-y-6 md:space-y-8"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
@@ -158,7 +158,7 @@ const DashboardPage = () => {
           </motion.div>
         </div>
 
-        <motion.div variants={itemVariants} className="pt-4 pb-16 md:pb-0">
+        <motion.div variants={itemVariants} className="pt-4 pb-16">
           <TransactionList
             transactions={transactions}
             isLoading={isLoading}

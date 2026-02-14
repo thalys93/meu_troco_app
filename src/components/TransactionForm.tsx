@@ -9,15 +9,16 @@ import { toast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { Form } from './ui/form';
 import { Transaction, useCreateTransaction, useEditTransaction, useUserTransaction, useUserTransactions } from '@/utils/api/transation';
-import { Loader2, Calendar as CalendarIcon, ChevronLeft } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, ChevronLeft, InfoIcon, List, CreditCard, Tag } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useUserStore from '@/store/UserStore';
 import { useCategories } from '@/hooks/use-categories';
 import { useTranslation } from 'react-i18next';
 import QuickAmountButtons from './QuickAmountButtons';
 import { cn } from '@/lib/utils';
-import { Card, CardContent } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { useCardsStore } from '@/modules/cards/store/useCardsStore';
 
 interface TransactionFormProps {
@@ -71,6 +72,25 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   const currencyName = useMemo(() => {
     return i18n.language === 'pt-BR' ? 'BRL' : 'USD';
   }, [i18n.language]);
+
+  const parseLocalDate = (raw?: string) => {
+    if (!raw) return new Date();
+    const [y, m, d] = raw.split('-');
+    const year = Number(y);
+    const month = Number(m) - 1;
+    const day = Number(d);
+    return new Date(year, month, day);
+  };
+
+  const dateLabel = (() => {
+    const raw = transactionForm.watch('date');
+    try {
+      const d = parseLocalDate(raw);
+      return d.toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });
+    } catch {
+      return raw;
+    }
+  })();
 
   React.useEffect(() => {
     if (id) refetchTransaction()
@@ -134,7 +154,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
         transactionForm.reset(initialValues);
         setCategory('');
         setDisplayValue('0');
-        refetchUserTransactions();        
+        refetchUserTransactions();
         if (uid) fetchCards(uid);
       },
       onError: () => {
@@ -182,9 +202,9 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   }
 
   return (
-    <Form form={transactionForm} onSubmit={id ? handleEdit : handleCreate} className="space-y-0 flex flex-col gap-6 max-w-md mx-auto">
+    <Form form={transactionForm} onSubmit={id ? handleEdit : handleCreate} className="space-y-0 flex flex-col gap-5 md:gap-6 sm:max-w-lg mx-auto">
       {/* Value Display */}
-      <div className="text-center space-y-2 py-8">
+      <div className="text-center space-y-2 py-6 md:py-8">
         <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">
           {t('transactionForm.form.value')}
         </p>
@@ -230,8 +250,11 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
             transactionForm.setValue('category', val);
           }}
         >
-          <SelectTrigger className="w-full bg-background/40 border-accent/10 h-12 rounded-2xl px-4">
-            <SelectValue placeholder={t('transactionForm.form.selectCategory')} />
+          <SelectTrigger className="w-full bg-background/40 border-accent h-12 rounded-2xl px-4">
+            <div className='flex flex-row gap-5 items-center'>
+              <Tag className='text-muted-foreground opacity-50 w-5 h-5' />
+              <SelectValue placeholder={t('transactionForm.form.selectCategory')} />
+            </div>
           </SelectTrigger>
           <SelectContent>
             {categories.map((cat) => (
@@ -252,8 +275,11 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
           value={selectedCardId}
           onValueChange={setSelectedCardId}
         >
-          <SelectTrigger className="w-full bg-background/40 border-accent/10 h-12 rounded-2xl px-4">
-            <SelectValue placeholder="Selecione o cartão" />
+          <SelectTrigger className="w-full bg-background/40 border-accent h-12 rounded-2xl px-4">
+            <div className='flex flex-row gap-5 items-center'>
+              <CreditCard className='text-muted-foreground opacity-50 w-5 h-5' />
+              <SelectValue placeholder="Selecione o cartão" />
+            </div>
           </SelectTrigger>
           <SelectContent>
             {cards.map((card) => (
@@ -271,39 +297,49 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
         </Select>
       </div>
 
-      {/* Description & Date Row */}
-      <Card className="bg-background/40 border-accent/10 rounded-3xl overflow-hidden">
-        <CardContent className="p-0">
-          <div className="flex flex-col">
-            <div className="flex items-center px-4 py-3 border-b border-accent/10">
-              <Input
-                name="description"
-                placeholder={`${t('transactionForm.form.descriptionPlaceholder')} ${type === 'receita' ? t('default.receipt') : t('default.expense')}`}
-                control={transactionForm.control}
-                className="bg-transparent border-none focus-visible:ring-0 text-base h-auto p-0"
-              />
-            </div>
-            <div className="flex items-center px-4 py-3 group cursor-pointer">
-              <CalendarIcon className="w-4 h-4 mr-2 text-muted-foreground" />
-              <Input
-                name="date"
-                type="date"
-                control={transactionForm.control}
-                className="bg-transparent border-none focus-visible:ring-0 text-sm h-auto p-0 cursor-pointer"
-              />
-            </div>
+      <div className="space-y-3">
+        <div className="flex flex-col md:grid md:grid-cols-2 md:gap-5 md:divide-x md:divide-accent/10">
+          <div className="flex items-center py-3 border-b border-accent/10 md:border-b-0">
+            <Input
+              name="description"
+              placeholder={`${t('transactionForm.form.descriptionPlaceholder')} ${type === 'receita' ? t('default.receipt') : t('default.expense')}`}
+              control={transactionForm.control}
+              className="bg-background/40 border-accent text-foreground placeholder:text-muted-foreground h-11 rounded-lg"
+              leftIcon={<List className="w-4 h-4 text-muted-foreground" />}
+            />
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center py-3 border-b border-accent/10 md:border-b-0 md:-ml-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="relative w-full h-11 rounded-lg bg-background/40 border border-accent px-3 text-base text-foreground hover:bg-background/50 flex items-center justify-start text-left pl-9">
+                  <CalendarIcon className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                  <span className="truncate">{dateLabel}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="p-2 w-auto">
+                <Calendar
+                  mode="single"
+                  selected={parseLocalDate(transactionForm.watch('date'))}
+                  onSelect={(date) => {
+                    if (!date) return;
+                    const y = date.getFullYear();
+                    const m = String(date.getMonth() + 1).padStart(2, '0');
+                    const d = String(date.getDate()).padStart(2, '0');
+                    const iso = `${y}-${m}-${d}`;
+                    transactionForm.setValue('date', iso, { shouldValidate: true, shouldDirty: true });
+                  }}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+      </div>
 
       {/* Action Button */}
       <Button
         type="submit"
         disabled={isPending || isPendingEdit}
-        className={cn(
-          "w-full h-16 text-lg font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]",
-          type === 'receita' ? "bg-emerald-500 hover:bg-emerald-600" : "bg-primary hover:bg-primary/90"
-        )}
+        className="w-full h-16 text-lg font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98] mt-2 md:sticky md:bottom-24 z-10"
       >
         {(isPending || isPendingEdit) ? (
           <Loader2 className="animate-spin h-6 w-6" />

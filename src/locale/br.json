@@ -164,6 +164,17 @@
   "filters.categories": "Categorias",
   "filters.from": "De",
   "filters.till": "Até",
+  "filters.all": "Todos",
+  "filters.button": "Filtrar",
+  "filters.title": "Filtros",
+  "filters.type": "Tipo",
+  "filters.card": "Cartão",
+  "filters.showMore": "Mostrar mais...",
+  "filters.minValue": "Valor mínimo",
+  "filters.maxValue": "Valor máximo",
+  "filters.clearAll": "Limpar tudo",
+  "filters.applyCount": "Mostrar",
+  "filters.items": "transações",
   "transactionList.allHistory": "Todas Transações",
   "transactions.title": "Resumo de Transações",
   "default.save": "Salvar",
@@ -304,6 +315,7 @@
     "type": "Tipo",
     "flag": "Bandeira",
     "color": "Cor",
+    "noCard": "Sem Cartão",
     "types": {
       "debit": "Débito",
       "credit": "Crédito",
@@ -312,5 +324,8 @@
     "empty": "Nenhum cartão cadastrado",
     "createFirst": "Cadastrar o primeiro",
     "confirmDelete": "Tem certeza que deseja excluir este cartão?"
+  },
+  "default": {
+    "all": "Todos"
   }
 }

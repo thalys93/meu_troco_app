@@ -13,8 +13,7 @@ const MobileNav = () => {
   const navigation = [
     { name: t('sidebar.home'), href: '/dashboard', icon: Home },
     { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
-    { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
-    { name: t('sidebar.transactions'), href: '/dashboard/transactions', icon: Bank },
+    { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },    
   ];
 
   return (

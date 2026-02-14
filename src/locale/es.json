@@ -1,4 +1,26 @@
 {
+  "cards": {
+    "title": "Mis Tarjetas",
+    "add": "Agregar",
+    "addTitle": "Agregar Tarjeta",
+    "editTitle": "Editar Tarjeta",
+    "description": "Administre sus tarjetas de crédito, débito y vales.",
+    "name": "Nombre de la Tarjeta",
+    "namePlaceholder": "Ej: Nubank, BBVA...",
+    "balance": "Saldo / Límite",
+    "balancePlaceholder": "0,00",
+    "type": "Tipo",
+    "flag": "Bandera",
+    "color": "Color",
+    "types": {
+      "debit": "Débito",
+      "credit": "Crédito",
+      "voucher": "Voucher"
+    },
+    "empty": "No hay tarjetas registradas",
+    "createFirst": "Registrar la primera",
+    "confirmDelete": "¿Estás seguro de que deseas eliminar esta tarjeta?"
+  },
   "lang.portuguese": "Portugués",
   "lang.spanish": "Español",
   "lang.english": "Inglés",
@@ -251,7 +273,8 @@
     }
   },
   "sidebar": {
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "home": "Inicio"
   },
   "login.quotes.q1": "La mejor herramienta para gestionar tus ahorros diarios de forma inteligente.",
   "login.quotes.q2": "Pequeños ahorros hoy, grandes logros mañana. Empieza ahora.",

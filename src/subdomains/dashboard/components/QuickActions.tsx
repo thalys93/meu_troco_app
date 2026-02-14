@@ -3,6 +3,7 @@ import { PlusCircle, MinusCircle, BarChart3, Wallet, Send, ArrowLeftRight, Scale
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Bank } from '@phosphor-icons/react';
 
 const QuickActions = () => {
     const { t } = useTranslation();
@@ -21,6 +22,20 @@ const QuickActions = () => {
             href: '/dashboard/expenses',
             color: 'text-red-500',
             bg: 'bg-red-500/10'
+        },        
+        {
+            icon: Bank,
+            label: t('sidebar.transactions'),
+            href: '/dashboard/transactions',
+            color: 'text-yellow-500',
+            bg: 'bg-yellow-500/10'
+        },
+        {
+            icon: Wallet,
+            label: t('dashboard.actions.cards'),
+            href: '/dashboard/cards',
+            color: 'text-orange-500',
+            bg: 'bg-orange-500/10'
         },
         {
             icon: Scale3D,
@@ -36,23 +51,16 @@ const QuickActions = () => {
             color: 'text-purple-500',
             bg: 'bg-purple-500/10'
         },
-        {
-            icon: Wallet,
-            label: t('dashboard.actions.cards'),
-            href: '#',
-            color: 'text-orange-500',
-            bg: 'bg-orange-500/10'
-        }
     ], [t]);
 
     return (
-        <div className="w-full overflow-x-auto no-scrollbar py-2 -mx-2 px-2">
-            <div className="flex gap-4 md:grid md:grid-cols-5 min-w-max md:min-w-full">
+        <div className="overflow-x-scroll overflow-y-hidden py-2 px-2 snap-x snap-mandatory">
+            <div className="inline-flex flex-nowrap gap-7 my-3 min-w-max">
                 {actions.map((action, index) => (
                     <Link
                         key={index}
                         to={action.href}
-                        className="flex flex-col items-center gap-2 group"
+                        className="flex flex-col items-center gap-3 group flex-shrink-0 snap-start"
                     >
                         <div className={cn(
                             "w-16 h-16 rounded-full flex items-center justify-center transition-all group-hover:scale-105 active:scale-95 shadow-sm border border-border/50",
@@ -60,7 +68,7 @@ const QuickActions = () => {
                         )}>
                             <action.icon className={cn("w-7 h-7", action.color)} />
                         </div>
-                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+                        <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors whitespace-nowrap">
                             {action.label}
                         </span>
                     </Link>

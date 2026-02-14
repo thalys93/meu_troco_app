@@ -10,13 +10,31 @@ export interface Transaction {
     description: string;
     category: string;
     type: 'receita' | 'despesa';
+    cardId: string;
 }
 
 const createTransaction = async (data: Transaction, uid: string) => {
+    // 1. Validar que cardId existe
+    if (!data.cardId) throw new Error("Card ID is required");
+
+    // 2. Buscar cartão (importar CardsService)
+    const { CardsService } = await import('@/modules/cards/services/CardsService');
+    const card = await CardsService.getById(data.cardId);
+    if (!card) throw new Error("Card not found");
+
+    // 3. Calcular novo saldo
+    const newBalance = data.type === 'receita'
+        ? card.balance + data.value
+        : card.balance - data.value;
+
+    // 4. Atualizar saldo do cartão
+    await CardsService.update(data.cardId, { balance: newBalance });
+
+    // 5. Criar transação
     const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
     const docRef = await addDoc(ref, {
         ...data,
-        createdAt: new Date(),        
+        createdAt: new Date(),
     });
     return docRef.id;
 }
@@ -27,10 +45,36 @@ const deleteTransaction = async (uid: string, id: string) => {
 }
 
 const editTransaction = async (uid: string, id: string, data: Transaction) => {
+    // 1. Buscar transação antiga
+    const oldTransaction = await getUserTransaction(uid, id);
+    if (!oldTransaction) throw new Error("Transaction not found");
+
+    const { CardsService } = await import('@/modules/cards/services/CardsService');
+
+    // 2. Se cardId mudou ou valor mudou, reverter saldo do cartão antigo
+    if (oldTransaction.cardId) {
+        const oldCard = await CardsService.getById(oldTransaction.cardId);
+        if (oldCard) {
+            const revertedBalance = oldTransaction.type === 'receita'
+                ? oldCard.balance - oldTransaction.value
+                : oldCard.balance + oldTransaction.value;
+            await CardsService.update(oldTransaction.cardId, { balance: revertedBalance });
+        }
+    }
+
+    // 3. Atualizar saldo do novo cartão
+    const newCard = await CardsService.getById(data.cardId);
+    if (!newCard) throw new Error("Card not found");
+
+    const newBalance = data.type === 'receita'
+        ? newCard.balance + data.value
+        : newCard.balance - data.value;
+
+    await CardsService.update(data.cardId, { balance: newBalance });
+
+    // 4. Atualizar transação
     const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
-    await updateDoc(ref, {
-        ...data
-    });
+    await updateDoc(ref, { ...data });
 }
 
 export const useDeleteTransaction = () => {

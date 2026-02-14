@@ -18,11 +18,8 @@ export const useExchangeRate = () => {
                 name: rate.name
             };
         },
-        // Otimização: manter os dados frescos por 5 minutos
         staleTime: 5 * 60 * 1000,
-        // Atualizar em background a cada 1 minuto se a janela estiver focada
         refetchInterval: 60 * 1000,
-        // Garantir que temos dados iniciais sensatos enquanto carrega (fallback opcional)
         placeholderData: (previousData) => previousData,
     });
 };

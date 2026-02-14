@@ -266,7 +266,8 @@
     }
   },
   "sidebar": {
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "home": "Inicio"
   },
   "navigation": {
     "back": "Voltar"
@@ -289,5 +290,27 @@
   "converter.clear": "Limpar Calculadora",
   "converter": {
     "disclaimer": "Esta é apenas uma calculadora experimental. As taxas de câmbio reais podem variar dependendo do seu banco ou corretora no momento da transação."
+  },
+  "cards": {
+    "title": "Meus Cartões",
+    "add": "Adicionar",
+    "addTitle": "Adicionar Cartão",
+    "editTitle": "Editar Cartão",
+    "description": "Gerencie seus cartões de crédito, débito e vale.",
+    "name": "Nome do Cartão",
+    "namePlaceholder": "Ex: Nubank, Inter...",
+    "balance": "Saldo / Limite",
+    "balancePlaceholder": "0,00",
+    "type": "Tipo",
+    "flag": "Bandeira",
+    "color": "Cor",
+    "types": {
+      "debit": "Débito",
+      "credit": "Crédito",
+      "voucher": "Voucher"
+    },
+    "empty": "Nenhum cartão cadastrado",
+    "createFirst": "Cadastrar o primeiro",
+    "confirmDelete": "Tem certeza que deseja excluir este cartão?"
   }
 }

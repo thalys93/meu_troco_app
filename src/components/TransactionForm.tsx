@@ -18,6 +18,7 @@ import QuickAmountButtons from './QuickAmountButtons';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from './ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCardsStore } from '@/modules/cards/store/useCardsStore';
 
 interface TransactionFormProps {
   type: 'receita' | 'despesa';
@@ -33,6 +34,7 @@ const initialValues = {
 
 const TransactionForm = ({ type }: TransactionFormProps) => {
   const [category, setCategory] = useState<string>('');
+  const [selectedCardId, setSelectedCardId] = useState<string>('');
   const [displayValue, setDisplayValue] = useState<string>('0');
   const transactionForm = useForm({
     defaultValues: initialValues
@@ -47,6 +49,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   const { mutate: create, isPending } = useCreateTransaction();
   const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(uid, id);
   const { refetch: refetchUserTransactions } = useUserTransactions()
+  const { cards, fetchCards } = useCardsStore();
   const { t, i18n } = useTranslation();
 
   const categories = type === 'receita' ? incomeCategories : expenseCategories;
@@ -85,6 +88,19 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
     transactionForm.setValue('type', type)
   }, [type])
 
+  React.useEffect(() => {
+    if (uid) {
+      fetchCards(uid);
+    }
+  }, [uid]);
+
+  React.useEffect(() => {
+    if (!id || !transaction) return;
+    if ((transaction as any).cardId) {
+      setSelectedCardId((transaction as any).cardId);
+    }
+  }, [id, transaction]);
+
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value.replace(/[^0-9.]/g, '');
     const parts = val.split('.');
@@ -98,9 +114,9 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   };
 
   const handleCreate = async (data: Transaction) => {
-    const finalData = { ...data, value: parseFloat(displayValue) };
+    const finalData = { ...data, value: parseFloat(displayValue), cardId: selectedCardId };
 
-    if (finalData.value <= 0 || !category || !finalData.description) {
+    if (finalData.value <= 0 || !category || !finalData.description || !selectedCardId) {
       toast({
         title: t('transactionForm.toast.title'),
         description: t('transactionForm.toast.description'),
@@ -118,7 +134,8 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
         transactionForm.reset(initialValues);
         setCategory('');
         setDisplayValue('0');
-        refetchUserTransactions();
+        refetchUserTransactions();        
+        if (uid) fetchCards(uid);
       },
       onError: () => {
         toast({
@@ -131,9 +148,9 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   };
 
   const handleEdit = async (data: Transaction) => {
-    const finalData = { ...data, value: parseFloat(displayValue) };
+    const finalData = { ...data, value: parseFloat(displayValue), cardId: selectedCardId };
 
-    if (finalData.value <= 0 || !category || !finalData.description) {
+    if (finalData.value <= 0 || !category || !finalData.description || !selectedCardId) {
       toast({
         title: t('transactionForm.toast.title'),
         description: t('transactionForm.toast.description'),
@@ -150,6 +167,8 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
         });
         refetchUserTransactions();
         refetchTransaction();
+        // Atualizar saldos dos cartões
+        if (uid) fetchCards(uid);
         navigate(-1);
       },
       onError: () => {
@@ -218,6 +237,34 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
             {categories.map((cat) => (
               <SelectItem key={cat} value={cat}>
                 {getCategoryLabel(cat)}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Card Selection */}
+      <div className="space-y-3">
+        <Label className="text-xs font-semibold text-muted-foreground uppercase ml-1">
+          Cartão
+        </Label>
+        <Select
+          value={selectedCardId}
+          onValueChange={setSelectedCardId}
+        >
+          <SelectTrigger className="w-full bg-background/40 border-accent/10 h-12 rounded-2xl px-4">
+            <SelectValue placeholder="Selecione o cartão" />
+          </SelectTrigger>
+          <SelectContent>
+            {cards.map((card) => (
+              <SelectItem key={card.id} value={card.id!}>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: card.color }} />
+                  <span>{card.name}</span>
+                  <span className="text-muted-foreground text-xs">
+                    ({currencySymbol} {card.balance.toFixed(2)})
+                  </span>
+                </div>
               </SelectItem>
             ))}
           </SelectContent>

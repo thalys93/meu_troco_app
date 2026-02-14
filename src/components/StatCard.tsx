@@ -16,14 +16,14 @@ interface StatCardProps {
 const StatCard = ({ title, value, icon: Icon, trend, trendDirection, className }: StatCardProps) => {
   return (
     <Card className={cn("glass-card hover:shadow-lg transition-all duration-300", className)}>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-4 sm:p-6">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
         </CardTitle>
         <Icon className={cn("h-5 w-5 text-primary", trendDirection === 'up' ? "text-emerald-400" : "text-red-400")} />
       </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-foreground">{value}</div>
+      <CardContent className="p-4 sm:p-6 pt-0">
+        <div className="text-xl sm:text-2xl font-bold text-foreground">{value}</div>
         {trend && (
           <p className={cn(
             "text-xs mt-1",

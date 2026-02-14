@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import TransactionList from '@/components/TransactionList';
 import PrivateLayout from '../../layout/PrivateLayout';
 import { useUserTransactions } from '@/utils/api/transation';
@@ -15,6 +15,7 @@ import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import useUserStore from '@/store/UserStore';
 import { firebaseTimestampToDate } from '@/utils/helpers/getFirebaseDate';
 import { cn } from '@/lib/utils';
+import { useDefaultCard } from '@/modules/cards/hooks/useDefaultCard';
 
 const DashboardPage = () => {
   const { data: transactions = [], isLoading } = useUserTransactions();
@@ -25,13 +26,13 @@ const DashboardPage = () => {
     totalBalance,
     totalExpense,
     totalIncome,
-    isBalancePositive,
     isIncomePositive,
     isExpensePositive
   } = useDashboardStats()
 
   const { user } = useUserStore();
   const { t } = useTranslation();
+  useDefaultCard();
 
   const createdAt = user?.details?.createdAt;
   const userCreatedDate = createdAt ? firebaseTimestampToDate(createdAt) : null;
@@ -79,14 +80,16 @@ const DashboardPage = () => {
     <PrivateLayout>
       {isNew && (
         <Dialog>
-          <DialogContent>
+          <DialogContent className="max-w-[90vw] sm:max-w-[600px] p-4 sm:p-6">
             <div>
               <DialogTitle>{t('dashboard.welcomeTitle')}</DialogTitle>
               <DialogDescription>
                 <span>{t('dashboard.welcomeDescription')}</span>
               </DialogDescription>
             </div>
-            <CarouselWithThumbs images={images} />
+            <div className="mt-4">
+              <CarouselWithThumbs images={images} />
+            </div>
             <div className='flex justify-end items-end'>
               <DialogClose>
                 <Button><span>{t('dashboard.welcomeUnderstand')}</span></Button>
@@ -97,13 +100,13 @@ const DashboardPage = () => {
       )}
 
       <motion.div
-        className="container mx-auto max-w-5xl mt-8 mb-20 md:mt-12 md:mb-12 px-4 md:px-6 space-y-8"
+        className="container mx-auto max-w-5xl mt-6 md:mt-12 mb-16 md:mb-12 px-4 md:px-6 space-y-6 md:space-y-8"
         initial="hidden"
         animate="visible"
         variants={containerVariants}
       >
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
           <div className="space-y-6">
             <motion.div variants={itemVariants}>
               <BalanceCard
@@ -112,7 +115,7 @@ const DashboardPage = () => {
               />
             </motion.div>
 
-            <motion.div variants={itemVariants} className="bg-card/30 p-4 rounded-3xl border border-border/40">
+            <motion.div variants={itemVariants} className="bg-card/30 p-3 sm:p-4 rounded-3xl border border-border/40 overflow-hidden">
               <h3 className="text-sm font-semibold text-muted-foreground mb-4 px-2 uppercase tracking-wider">{t('dashboard.quickActions')}</h3>
               <QuickActions />
             </motion.div>
@@ -120,7 +123,7 @@ const DashboardPage = () => {
 
           <motion.div
             variants={itemVariants}
-            className="grid grid-cols-2 gap-4 h-full"
+            className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full items-stretch auto-rows-[minmax(0,1fr)]"
           >
             <StatCard
               title={t('dashboard.cardTotalIncome')}
@@ -128,7 +131,7 @@ const DashboardPage = () => {
               icon={TrendingUp}
               trend={`${isIncomePositive ? "+" : "-"}${incomePercentage.toFixed(1)}%`}
               trendDirection="up"
-              className="border-emerald-500/10 shadow-none hover:shadow-sm"
+              className="h-full border-emerald-500/10 shadow-none hover:shadow-sm"
             />
             <StatCard
               title={t('dashboard.cardTotalExpense')}
@@ -136,10 +139,10 @@ const DashboardPage = () => {
               icon={TrendingDown}
               trend={`${isExpensePositive ? "+" : "-"}${expensePercentage.toFixed(1)}%`}
               trendDirection="down"
-              className="border-red-500/10 shadow-none hover:shadow-sm"
+              className="h-full border-red-500/10 shadow-none hover:shadow-sm"
             />
             <div className={cn(
-              "col-span-2 hidden md:flex items-center justify-between p-6 rounded-3xl border transition-colors duration-500",
+              "col-span-2 hidden md:flex items-center justify-between p-4 md:p-6 rounded-3xl border transition-colors duration-500",
               bannerStyles.container
             )}>
               <div className="flex items-center gap-4">
@@ -155,7 +158,7 @@ const DashboardPage = () => {
           </motion.div>
         </div>
 
-        <motion.div variants={itemVariants} className="pt-4 pb-20 md:pb-0">
+        <motion.div variants={itemVariants} className="pt-4 pb-16 md:pb-0">
           <TransactionList
             transactions={transactions}
             isLoading={isLoading}

@@ -1,4 +1,26 @@
 {
+  "cards": {
+    "title": "My Cards",
+    "add": "Add",
+    "addTitle": "Add Card",
+    "editTitle": "Edit Card",
+    "description": "Manage your credit, debit and voucher cards.",
+    "name": "Card Name",
+    "namePlaceholder": "Ex: Nubank, Chase...",
+    "balance": "Balance / Limit",
+    "balancePlaceholder": "0.00",
+    "type": "Type",
+    "flag": "Flag",
+    "color": "Color",
+    "types": {
+      "debit": "Debit",
+      "credit": "Credit",
+      "voucher": "Voucher"
+    },
+    "empty": "No cards registered",
+    "createFirst": "Register the first one",
+    "confirmDelete": "Are you sure you want to delete this card?"
+  },
   "lang.portuguese": "Portuguese",
   "lang.spanish": "Spanish",
   "lang.english": "English",

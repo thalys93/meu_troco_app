@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, User, LogOut, DollarSign, Crown, CreditCard, ChevronDown, ChevronUp, ShoppingBag } from 'lucide-react';
+import { Home, User, LogOut, ShoppingBag, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
@@ -23,7 +23,8 @@ const AppSidebar = () => {
 
   const navigation = [
     { name: t('sidebar.home'), href: '/backoffice/home', icon: Home },
-    { name: t('sidebar.plans'), href: "/backoffice/plans", icon: ShoppingBag },    
+    { name: t('sidebar.plans'), href: "/backoffice/plans", icon: ShoppingBag },
+    { name: t('sidebar.notifications'), href: "/backoffice/notifications", icon: Bell },
   ];
 
   return (

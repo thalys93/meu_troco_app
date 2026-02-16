@@ -1,34 +1,27 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Mail, Save, Loader2, Pencil, ChevronRight, Lock } from 'lucide-react';
+import { User, Pencil, Lock, Cog } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import PrivateLayout from '../../layout/PrivateLayout';
 import { useForm } from 'react-hook-form';
-import { Label } from '@/components/ui/label';
-import { Input, PasswordInput } from '@/components/ui/input';
-import { Form } from '@/components/ui/form';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import { AuthProvider, FireStore } from '@/utils/api/firebase';
+import ProfileMenuSheet from './components/profile-menu-sheet';
+import ProfileForm from './components/profile-form';
+import ProfilePasswordForm from './components/profile-password-form';
+import ProfileSettingsForm from './components/profile-settings-form';
+import { AuthProvider, FireStore } from '@/utils/services/api/firebase';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { AccountProviders } from '@/types/enums/AccountProviders';
 import { useUser } from '@/hooks/use-user';
 import useUserStore from '@/store/UserStore';
-import { useGetUserData } from '@/utils/api/auth';
-import ImageDropzone from '@/components/Dropzone';
+import { useGetUserData } from '@/utils/services/api/auth';
 import axios from 'axios';
-import { api } from '@/utils/api/api';
 import { useDashboardStats } from '@/hooks/use-dashboard';
 import { useTranslation } from 'react-i18next';
 import { FirebaseTimestamp } from '@/types/Firebase';
 import { cn } from '@/lib/utils';
+import ProfileMenuItem from './components/profile-menu-item';
 
 const initialNameForm = {
   name: '',
@@ -41,41 +34,11 @@ const initialPassForm = {
   confirmPassword: '',
 };
 
-interface ProfileMenuItemProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  onClick: () => void;
-  className?: string;
-}
-
-function ProfileMenuItem({
-  icon,
-  title,
-  description,
-  onClick,
-  className,
-}: ProfileMenuItemProps) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        'flex w-full items-center gap-4 rounded-2xl border border-border/40 bg-card p-4 text-left transition-all hover:bg-muted/50 hover:border-primary/20 active:scale-[0.99]',
-        className
-      )}
-    >
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-        {icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="font-semibold text-foreground">{title}</p>
-        <p className="text-sm text-muted-foreground line-clamp-1">{description}</p>
-      </div>
-      <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
-    </button>
-  );
-}
+const initialSettingsForm = {
+  emailNotifications: true,
+  pushNotifications: true,
+  monthlyReports: false,
+};
 
 const ProfilePage = () => {
   const { toast } = useToast();
@@ -87,6 +50,7 @@ const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const {
     expenseLength,
@@ -101,6 +65,10 @@ const ProfilePage = () => {
 
   const passForm = useForm({
     defaultValues: initialPassForm,
+  });
+
+  const settingsForm = useForm({
+    defaultValues: initialSettingsForm,
   });
 
   const handleSaveProfile = async (data: typeof initialNameForm) => {
@@ -141,24 +109,26 @@ const ProfilePage = () => {
   };
 
   const handleSaveAvatar = async (data: File) => {
-    const query = new URLSearchParams({ id: uid });
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'meu_troco';
+    if (!cloudName || !apiKey) {
+      toast({ title: t('profile.toast.avatarError'), description: t('profile.toast.errorDescription'), variant: 'destructive' });
+      return;
+    }
     setIsLoading(true);
-    const { data: config } = await api.get(
-      `/cloudinary-signature?${query.toString()}`
-    );
-    const formData = new FormData();
-    formData.append('file', data);
-    formData.append('timestamp', config.timestamp.toString());
-    formData.append('public_id', config.public_id);
-    formData.append('signature', config.signature);
-    formData.append('api_key', config.api_key);
-    formData.append('uploud_preset', 'meu_troco');
-    const response = await axios.post(
-      `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
-      formData
-    );
-    if (response.status !== 200) throw new Error('Erro ao fazer upload da imagem');
     try {
+      const formData = new FormData();
+      formData.append('file', data);
+      formData.append('api_key', apiKey);
+      formData.append('upload_preset', uploadPreset);
+      formData.append('filename_override', `${uid}`);
+      formData.append('public_id', `meu_troco/avatars/${uid}_${Date.now()}`);
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        formData
+      );
+      if (response.status !== 200) throw new Error('Erro ao fazer upload da imagem');
       const userRef = doc(FireStore, 'users', userLocal.uid);
       await updateDoc(userRef, {
         details: {
@@ -176,13 +146,13 @@ const ProfilePage = () => {
         variant: 'success',
       });
       refetch();
-      setIsLoading(false);
     } catch (error) {
       toast({
         title: t('profile.toast.avatarError'),
         description: t('profile.toast.errorDescription'),
         variant: 'destructive',
       });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -227,14 +197,53 @@ const ProfilePage = () => {
     }
   };
 
+  const handleSaveSettings = async (data: typeof initialSettingsForm) => {
+    try {
+      const userRef = doc(FireStore, 'users', userLocal.uid);
+
+      await updateDoc(userRef, {
+        preferences: {
+          emailNotifications: data.emailNotifications,
+          pushNotifications: data.pushNotifications,
+          monthlyReports: data.monthlyReports,
+          updatedAt: new Date(),
+        },
+      });
+
+      toast({
+        title: t('profile.toast.settingsSuccess'),
+        description: t('profile.toast.settingsSuccessDescription'),
+        variant: 'success',
+      });
+      refetch();
+      setSettingsOpen(false);
+    } catch (error) {
+      toast({
+        title: t('profile.toast.settingsError'),
+        description: t('profile.toast.settingsErrorDescription'),
+        variant: 'destructive',
+      });
+      console.log(error);
+    }
+  };
+
   useEffect(() => {
     if (userLocal) {
       nameForm.reset({
         name: userLocal.displayName,
         email: userLocal.email ?? '',
       });
+
+      const userPreferences = (userLocal as any).preferences;
+      if (userPreferences) {
+        settingsForm.reset({
+          emailNotifications: userPreferences.emailNotifications ?? true,
+          pushNotifications: userPreferences.pushNotifications ?? true,
+          monthlyReports: userPreferences.monthlyReports ?? false,
+        });
+      }
     }
-  }, [nameForm, userLocal]);
+  }, [nameForm, settingsForm, userLocal]);
 
   const stats = [
     {
@@ -257,99 +266,38 @@ const ProfilePage = () => {
   return (
     <PrivateLayout>
       <div className="mx-auto w-full max-w-xl mt-4 md:mt-6 px-4 md:px-6 space-y-6 pb-28">
-        {/* Header: título + botão editar */}
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {t('sidebar.profile')}
           </h1>
-          <Sheet open={editOpen} onOpenChange={setEditOpen}>
-            <SheetTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full h-10 w-10 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
-                aria-label={t('profile.editProfile')}
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent
-              side="right"
-              className="w-full sm:max-w-md flex flex-col"
-            >
-              <SheetHeader>
-                <SheetTitle>{t('profile.editProfile')}</SheetTitle>
-              </SheetHeader>
-              <div className="flex-1 overflow-y-auto py-6">
-                <div className="flex flex-col items-center mb-6">
-                  <div className="relative">
-                    <ImageDropzone
-                      setFile={setFile}
-                      initialImage={userLocal?.details.avatar}
-                    />
-                  </div>
-                </div>
-                <Form
-                  form={nameForm}
-                  onSubmit={handleSaveProfile}
-                  className="space-y-5"
-                >
-                  <div className="space-y-2">
-                    <Label htmlFor="name">{t('signIn.nameLabel')}</Label>
-                    <Input
-                      leftIcon={<User className="w-4 h-4" />}
-                      type="text"
-                      name="name"
-                      placeholder={t('profile.form.namePlaceholder')}
-                      control={nameForm.control}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t('login.emailInput')}</Label>
-                    <Input
-                      leftIcon={<Mail className="w-4 h-4" />}
-                      type="email"
-                      name="email"
-                      control={nameForm.control}
-                      placeholder={t('login.emailPlaceholder')}
-                      disabled
-                    />
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => setEditOpen(false)}
-                    >
-                      {t('default.cancel')}
-                    </Button>
-                    <Button type="submit" className="flex-1">
-                      <Save className="w-4 h-4 mr-2" />
-                      {t('profile.form.saveInfo')}
-                    </Button>
-                  </div>
-                </Form>
-                {file && (
-                  <Button
-                    className="w-full mt-4"
-                    onClick={() => handleSaveAvatar(file)}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Save className="w-4 h-4 mr-2" />
-                    )}
-                    {t('profile.avatar')}
-                  </Button>
-                )}
-              </div>
-            </SheetContent>
-          </Sheet>
+          <ProfileMenuSheet
+            open={editOpen}
+            onOpenChange={setEditOpen}
+            title={t('profile.editProfile')}
+          >
+            <ProfileForm
+              form={nameForm}
+              onSubmit={handleSaveProfile}
+              onCancel={() => setEditOpen(false)}
+              file={file}
+              setFile={setFile}
+              onSaveAvatar={handleSaveAvatar}
+              isLoading={isLoading}
+              initialAvatar={userLocal?.details.avatar}
+              t={t}
+            />
+          </ProfileMenuSheet>
+          <Button
+            variant="outline"
+            size="icon"
+            className="rounded-full h-10 w-10 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+            aria-label={t('profile.editProfile')}
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
         </div>
 
-        {/* Bloco do perfil: avatar + nome + email */}
         <Card className="rounded-3xl border border-border/40 shadow-sm overflow-hidden">
           <CardContent className="pt-8 pb-6">
             <div className="flex flex-col items-center text-center">
@@ -386,7 +334,6 @@ const ProfilePage = () => {
           </CardContent>
         </Card>
 
-        {/* Métricas em linha (Dias de uso | Receitas | Despesas) */}
         <div className="grid grid-cols-3 gap-3">
           {stats.map((stat) => (
             <Card
@@ -410,7 +357,6 @@ const ProfilePage = () => {
           ))}
         </div>
 
-        {/* Sobre mim */}
         <section>
           <h3 className="text-base font-semibold text-foreground mb-2">
             {t('profile.aboutMe')}
@@ -420,7 +366,6 @@ const ProfilePage = () => {
           </p>
         </section>
 
-        {/* Lista de opções (escalável) */}
         <div className="space-y-3">
           <ProfileMenuItem
             icon={<User className="h-5 w-5" />}
@@ -434,76 +379,47 @@ const ProfilePage = () => {
               title={t('profile.changePass')}
               description={t('profile.changePassDescription')}
               onClick={() => setPasswordOpen(true)}
+              iconClassName='text-sky-500 bg-sky-500/10'
             />
           )}
+
+          <ProfileMenuItem
+            icon={<Cog className="h-5 w-5" />}
+            title={t('sidebar.settings')}
+            description={t('sidebar.settingsDescription')}
+            onClick={() => setSettingsOpen(true)}
+            iconClassName='text-yellow-400 bg-yellow-400/10'
+            isDisabled={true}
+          />
         </div>
 
-        {/* Sheet: Alterar senha */}
-        <Sheet open={passwordOpen} onOpenChange={setPasswordOpen}>
-          <SheetContent
-            side="right"
-            className="w-full sm:max-w-md flex flex-col"
-          >
-            <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                <Lock className="h-5 w-5" />
-                {t('profile.changePass')}
-              </SheetTitle>
-            </SheetHeader>
-            <div className="flex-1 overflow-y-auto py-6">
-              <Form
-                form={passForm}
-                onSubmit={handleChangePassword}
-                className="space-y-5"
-              >
-                <div className="space-y-2">
-                  <Label htmlFor="currentPassword">{t('profile.form.passwordLabel')}</Label>
-                  <PasswordInput
-                    type="password"
-                    leftIcon={<Lock className="w-4 h-4" />}
-                    name="currentPassword"
-                    control={passForm.control}
-                    placeholder={t('profile.form.passwordPlaceholder')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">{t('profile.form.newPassword')}</Label>
-                  <PasswordInput
-                    type="password"
-                    leftIcon={<Lock className="w-4 h-4" />}
-                    name="newPassword"
-                    control={passForm.control}
-                    placeholder={t('profile.form.newPasswordPlaceholder')}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">{t('profile.form.confirmPass')}</Label>
-                  <PasswordInput
-                    type="password"
-                    leftIcon={<Lock className="w-4 h-4" />}
-                    name="confirmPassword"
-                    control={passForm.control}
-                    placeholder={t('profile.form.confirmPassPlaceholder')}
-                  />
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="flex-1"
-                    onClick={() => setPasswordOpen(false)}
-                  >
-                    {t('default.cancel')}
-                  </Button>
-                  <Button type="submit" className="flex-1">
-                    <Lock className="w-4 h-4 mr-2" />
-                    {t('profile.changePass')}
-                  </Button>
-                </div>
-              </Form>
-            </div>
-          </SheetContent>
-        </Sheet>
+        <ProfileMenuSheet
+          open={passwordOpen}
+          onOpenChange={setPasswordOpen}
+          title={t('profile.changePass')}
+          titleIcon={<Lock className="h-5 w-5" />}
+        >
+          <ProfilePasswordForm
+            form={passForm}
+            onSubmit={handleChangePassword}
+            onCancel={() => setPasswordOpen(false)}
+            t={t}
+          />
+        </ProfileMenuSheet>
+
+        <ProfileMenuSheet
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          title={t('sidebar.settings')}
+          titleIcon={<Cog className="h-5 w-5" />}
+        >
+          <ProfileSettingsForm
+            form={settingsForm}
+            onSubmit={handleSaveSettings}
+            onCancel={() => setSettingsOpen(false)}
+            t={t}
+          />
+        </ProfileMenuSheet>
       </div>
     </PrivateLayout>
   );

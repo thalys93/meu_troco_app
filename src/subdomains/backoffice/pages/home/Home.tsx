@@ -1,7 +1,7 @@
 import React from 'react'
 import PrivateLayout from '@/subdomains/backoffice/layout/PrivateLayout'
 import { cn } from '@/lib/utils'
-import { useGetAllUsers } from '@/utils/api/api'
+import { useGetAllUsers } from '@/utils/services/api/api'
 import UserCard from '../../components/UserCard'
 import { Code, Crown, Plus, User } from 'lucide-react'
 import { useTranslation } from 'react-i18next'

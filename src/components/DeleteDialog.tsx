@@ -1,7 +1,7 @@
 import React from 'react'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Button } from './ui/button'
-import { Transaction } from '@/utils/api/transation'
+import { Transaction } from '@/utils/services/api/transation'
 
 interface DialogProps {
     open: boolean

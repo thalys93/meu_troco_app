@@ -15,10 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CardForm } from "../validators/card";
-import { Card } from "../types/Card";
-import { useCardsStore } from "../store/useCardsStore";
-import { CARD_FLAGS } from "../utils/cardUtils";
+import { CardForm } from "../../../../../utils/validators/card";
+import { Card } from "../../../../../types/Card";
+import { useCardsStore } from "../../../../../store/useCardsStore";
+import { CARD_FLAGS } from "../../../../../utils/cardUtils";
 
 interface AddCardModalProps {
     open: boolean;

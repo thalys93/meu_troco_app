@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useCardsStore } from '../store/useCardsStore';
-import { useUserTransactions } from '@/utils/api/transation';
+import { useUserTransactions } from '@/utils/services/api/transation';
 import useUserStore from '@/store/UserStore';
 
 const DEFAULT_CARD_NAME = 'Sem Cartão (Bolso)';

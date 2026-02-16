@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { signOut } from "firebase/auth";
-import { AuthProvider, FireStore } from "@/utils/api/firebase";
+import { AuthProvider, FireStore } from "@/utils/services/api/firebase";
 import { User } from "@/types/entities/User";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";

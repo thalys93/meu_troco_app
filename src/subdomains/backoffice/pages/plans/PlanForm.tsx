@@ -3,7 +3,7 @@ import React from 'react'
 import PrivateLayout from '@/subdomains/backoffice/layout/PrivateLayout'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next';
-import { Plan, useCreatePlan, useGetPlan, useUpdatePlan } from '@/utils/api/plans';
+import { Plan, useCreatePlan, useGetPlan, useUpdatePlan } from '@/utils/services/api/plans';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { PlanForm, PlanSchema } from '@/types/validation/plan';

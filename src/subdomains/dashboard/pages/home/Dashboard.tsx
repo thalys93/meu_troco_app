@@ -1,21 +1,21 @@
 import { useMemo } from 'react';
 import TransactionList from '@/components/TransactionList';
 import PrivateLayout from '../../layout/PrivateLayout';
-import { useUserTransactions } from '@/utils/api/transation';
+import { useUserTransactions } from '@/utils/services/api/transation';
 import { useDashboardStats } from '@/hooks/use-dashboard';
 import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion"
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import CarouselWithThumbs, { imagesProps } from '@/components/Carousel';
 import { Button } from '@/components/ui/button';
-import BalanceCard from '../../components/BalanceCard';
-import QuickActions from '../../components/QuickActions';
+import BalanceCard from './components/BalanceCard';
+import QuickActions from './components/QuickActions';
 import StatCard from '@/components/StatCard';
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import useUserStore from '@/store/UserStore';
 import { firebaseTimestampToDate } from '@/utils/helpers/getFirebaseDate';
 import { cn } from '@/lib/utils';
-import { useDefaultCard } from '@/modules/cards/hooks/useDefaultCard';
+import { useDefaultCard } from '@/hooks/useDefaultCard';
 
 const DashboardPage = () => {
   const { data: transactions = [], isLoading } = useUserTransactions();

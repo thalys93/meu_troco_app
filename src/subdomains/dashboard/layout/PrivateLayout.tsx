@@ -3,7 +3,7 @@ import MobileNav from '@/components/MobileNav';
 import { useUser } from '@/hooks/use-user';
 import useUserStore from '@/store/UserStore';
 import { User } from '@/types/entities/User';
-import { useGetUserData } from '@/utils/api/auth';
+import { useGetUserData } from '@/utils/services/api/auth';
 import React from 'react'
 import DashboardHeader from '../components/DashboardHeader';
 

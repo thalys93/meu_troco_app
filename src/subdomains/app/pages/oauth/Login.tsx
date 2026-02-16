@@ -12,7 +12,7 @@ import { Input, PasswordInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useForm } from 'react-hook-form';
 import { LoginForm } from '@/types/validation/login';
-import { useLoginWithEmail } from '@/utils/api/auth';
+import { useLoginWithEmail } from '@/utils/services/api/auth';
 import { Form } from '@/components/ui/form';
 import useUserStore from '@/store/UserStore';
 import { useTranslation } from 'react-i18next';

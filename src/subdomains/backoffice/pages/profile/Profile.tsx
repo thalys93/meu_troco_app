@@ -11,17 +11,16 @@ import { useForm } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
 import { Input, PasswordInput } from '@/components/ui/input';
 import { Form } from '@/components/ui/form';
-import { AuthProvider, FireStore } from '@/utils/api/firebase';
+import { AuthProvider, FireStore } from '@/utils/services/api/firebase';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useUser } from '@/hooks/use-user';
 import { AccountProviders } from '@/types/enums/AccountProviders';
 import useUserStore from '@/store/UserStore';
-import { useGetUserData } from '@/utils/api/auth';
+import { useGetUserData } from '@/utils/services/api/auth';
 import AvatarTrigger from '@/components/AvatarTrigger';
 import ImageDropzone from '@/components/Dropzone';
 import axios from "axios";
-import { api } from '@/utils/api/api';
 import { useDashboardStats } from '@/hooks/use-dashboard';
 import { useTranslation } from 'react-i18next';
 
@@ -146,19 +145,26 @@ const BackOfficeProfilePage = () => {
   };
 
   const handleSaveAvatar = async (data: File) => {
-    const query = new URLSearchParams({ id: uid, })
+    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+    const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY;
+    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'meu_troco';
+    if (!cloudName || !apiKey) {
+      toast({ title: t('profile.toast.avatarError'), description: t('profile.toast.errorDescription'), variant: "destructive" });
+      return;
+    }
     setIsLoading(true);
-    const { data: config } = await api.get(`/cloudinary-signature?${query.toString()}`);
-    const formData = new FormData();
-    formData.append("file", data);
-    formData.append("timestamp", config.timestamp.toString());
-    formData.append("public_id", config.public_id);
-    formData.append("signature", config.signature);
-    formData.append("api_key", config.api_key);
-    formData.append("uploud_preset", "meu_troco");
-    const response = await axios.post(`https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`, formData)
-    if (response.status !== 200) throw new Error("Erro ao fazer upload da imagem");
     try {
+      const formData = new FormData();
+      formData.append("file", data);
+      formData.append("api_key", apiKey);
+      formData.append("upload_preset", uploadPreset);
+      formData.append("filename_override", `${uid}_${Date.now()}`);
+      formData.append("public_id", `meu_troco/avatars/${uid}_${Date.now()}`);
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        formData
+      );
+      if (response.status !== 200) throw new Error("Erro ao fazer upload da imagem");
       const userRef = doc(FireStore, "users", userLocal.uid);
       await updateDoc(userRef, {
         photoUrl: response.data.secure_url,
@@ -169,13 +175,13 @@ const BackOfficeProfilePage = () => {
         description: t('profile.toast.avatarSuccessDescription'),
       });
       refetch();
-      setIsLoading(false);
     } catch (error) {
       toast({
         title: t('profile.toast.avatarError'),
         description: t('profile.toast.errorDescription'),
         variant: "destructive",
       });
+    } finally {
       setIsLoading(false);
     }
   }

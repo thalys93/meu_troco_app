@@ -10,8 +10,8 @@ import {
     where,
     Timestamp
 } from "firebase/firestore";
-import { FireStore } from "@/utils/api/firebase";
-import { Card } from "../types/Card";
+import { FireStore } from "@/utils/services/api/firebase";
+import { Card } from "../../../types/Card";
 
 const COLLECTION_NAME = "cards";
 

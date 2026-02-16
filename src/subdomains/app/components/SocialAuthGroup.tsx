@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useLoginWithGoogle } from '@/utils/api/auth';
+import { useLoginWithGoogle } from '@/utils/services/api/auth';
 import { GoogleLogo, FacebookLogo, AppleLogo, GithubLogo, TwitterLogoIcon, XLogo } from '@phosphor-icons/react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useTranslation } from 'react-i18next';

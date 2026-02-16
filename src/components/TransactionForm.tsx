@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { Form } from './ui/form';
-import { Transaction, useCreateTransaction, useEditTransaction, useUserTransaction, useUserTransactions } from '@/utils/api/transation';
+import { Transaction, useCreateTransaction, useEditTransaction, useUserTransaction, useUserTransactions } from '@/utils/services/api/transation';
 import { Loader2, Calendar as CalendarIcon, ChevronLeft, InfoIcon, List, CreditCard, Tag } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useUserStore from '@/store/UserStore';
@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { useCardsStore } from '@/modules/cards/store/useCardsStore';
+import { useCardsStore } from '@/store/useCardsStore';
 
 interface TransactionFormProps {
   type: 'receita' | 'despesa';

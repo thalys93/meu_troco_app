@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { exchangeRateService } from "../services/exchangeRateService";
+import { exchangeRateService } from "../utils/services/api/exchange-rate-service";
 
 export const useExchangeRate = () => {
     return useQuery({

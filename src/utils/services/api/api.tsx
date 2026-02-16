@@ -1,7 +1,7 @@
 
 import useUserStore from "@/store/UserStore";
 import axios from "axios";
-import { whitelist } from "../helpers/authGuard";
+import { whitelist } from "../../helpers/authGuard";
 import { collection, getDocs } from "firebase/firestore";
 import { FireStore } from "./firebase";
 import { useQuery } from "@tanstack/react-query";

@@ -1,5 +1,5 @@
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, signOut } from "firebase/auth"
-import { AuthProvider, FireStore, GoogleProvider } from "@/utils/api/firebase"
+import { AuthProvider, FireStore, GoogleProvider } from "@/utils/services/api/firebase"
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { LoginForm } from "@/types/validation/login";
@@ -11,7 +11,7 @@ import { AccountTypes } from "@/types/enums/AccountsTypes";
 import useUserStore from "@/store/UserStore";
 import { AccountProviders } from "@/types/enums/AccountProviders";
 import { useTranslation } from "react-i18next";
-import { createUser } from "../helpers/createUser";
+import { createUser } from "../../helpers/createUser";
 
 export const loginWithEmail = async (data: LoginForm) => {
     const result = await signInWithEmailAndPassword(AuthProvider, data.email, data.password);

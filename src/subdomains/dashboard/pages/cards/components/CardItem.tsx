@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { Card } from "../types/Card";
+import { Card } from "../../../../../types/Card";
 import { Button } from "@/components/ui/button";
 import { Card as UICard, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Trash } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useCardsStore } from "../store/useCardsStore";
-import { getCardFlagIcon } from "../utils/cardUtils";
+import { useCardsStore } from "../../../../../store/useCardsStore";
+import { getCardFlagIcon } from "../../../../../utils/cardUtils";
 import { Handbag } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 

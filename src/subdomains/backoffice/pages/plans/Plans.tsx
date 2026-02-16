@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import PricingCard from '@/components/PricingCard';
 import { Button } from '@/components/ui/button';
 import { Edit, Plus, Trash } from 'lucide-react';
-import { Plan, useDeletePlan, useGetPlans } from '@/utils/api/plans';
+import { Plan, useDeletePlan, useGetPlans } from '@/utils/services/api/plans';
 import { EmptyIcon } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { TrendingUp, TrendingDown, Loader2, EllipsisVertical, Trash, Pen } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Transaction, useDeleteTransaction, useUserTransactions } from '@/utils/api/transation';
+import { Transaction, useDeleteTransaction, useUserTransactions } from '@/utils/services/api/transation';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import DeleteDialog from './DeleteDialog';

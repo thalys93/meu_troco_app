@@ -7,7 +7,7 @@ import { Input } from './ui/input';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '@/store/UserStore';
 import { useCategories } from '@/hooks/use-categories';
-import { useCardsStore } from '@/modules/cards/store/useCardsStore';
+import { useCardsStore } from '@/store/useCardsStore';
 import { cn } from '@/lib/utils';
 import React from 'react';
 

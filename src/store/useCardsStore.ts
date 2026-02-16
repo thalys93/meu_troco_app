@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Card } from '../types/Card';
-import { CardsService } from '../services/CardsService';
+import { CardsService } from '../utils/services/api/cards-service';
 
 interface CardsState {
     cards: Card[];

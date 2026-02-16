@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { useCardsStore } from "../store/useCardsStore";
+import { useCardsStore } from "../../../../../store/useCardsStore";
 import useUserStore from "@/store/UserStore";
 import { CardItem } from "./CardItem";
 import { AddCardModal } from "./AddCardModal";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { Card } from "../types/Card";
+import { Card } from "../../../../../types/Card";
 import { useTranslation } from "react-i18next";
 
 export function CardList() {

@@ -2,6 +2,7 @@ import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, 
 import { FireStore } from "./firebase";
 import useUserStore from "@/store/UserStore";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { CardsService } from "./cards-service";
 
 export interface Transaction {
     id?: string;
@@ -14,11 +15,8 @@ export interface Transaction {
 }
 
 const createTransaction = async (data: Transaction, uid: string) => {
-    // 1. Validar que cardId existe
     if (!data.cardId) throw new Error("Card ID is required");
 
-    // 2. Buscar cartão (importar CardsService)
-    const { CardsService } = await import('@/modules/cards/services/CardsService');
     const card = await CardsService.getById(data.cardId);
     if (!card) throw new Error("Card not found");
 
@@ -49,9 +47,6 @@ const editTransaction = async (uid: string, id: string, data: Transaction) => {
     const oldTransaction = await getUserTransaction(uid, id);
     if (!oldTransaction) throw new Error("Transaction not found");
 
-    const { CardsService } = await import('@/modules/cards/services/CardsService');
-
-    // 2. Se cardId mudou ou valor mudou, reverter saldo do cartão antigo
     if (oldTransaction.cardId) {
         const oldCard = await CardsService.getById(oldTransaction.cardId);
         if (oldCard) {
@@ -62,7 +57,6 @@ const editTransaction = async (uid: string, id: string, data: Transaction) => {
         }
     }
 
-    // 3. Atualizar saldo do novo cartão
     const newCard = await CardsService.getById(data.cardId);
     if (!newCard) throw new Error("Card not found");
 

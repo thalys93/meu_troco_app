@@ -1,9 +1,9 @@
-import { useUserTransactions } from "@/utils/api/transation"
+import { useUserTransactions } from "@/utils/services/api/transation"
 import { useUser } from "./use-user";
 import { useTranslation } from "react-i18next";
 import { FirebaseTimestamp } from "@/types/Firebase";
-import { useCardsStore } from "@/modules/cards/store/useCardsStore";
 import { useEffect } from "react";
+import { useCardsStore } from "@/store/useCardsStore";
 export const useDashboardStats = () => {
     const { data: transactions = [] } = useUserTransactions();
     const { user } = useUser();
@@ -28,7 +28,7 @@ export const useDashboardStats = () => {
 
     const totalIncome = incomeTransactions.reduce((acc, curr) => acc + curr.value, 0);
     const totalExpense = expenseTransactions.reduce((acc, curr) => acc + curr.value, 0);
-    
+
     const { selectTotalBalance, fetchCards, cards } = useCardsStore();
 
     useEffect(() => {
@@ -37,7 +37,7 @@ export const useDashboardStats = () => {
         }
     }, [user, cards.length, fetchCards]);
 
-    const cardsTotal = selectTotalBalance();    
+    const cardsTotal = selectTotalBalance();
     const totalBalance = cardsTotal;
 
     const totalMovimentado = totalIncome + totalExpense + Math.abs(cardsTotal);

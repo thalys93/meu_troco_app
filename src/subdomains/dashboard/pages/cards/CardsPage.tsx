@@ -1,6 +1,5 @@
-import React from 'react';
 import PrivateLayout from '@/subdomains/dashboard/layout/PrivateLayout';
-import { CardList } from '../components/CardList';
+import { CardList } from './components/CardList';
 
 const CardsPage = () => {
     return (

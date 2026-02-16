@@ -8,8 +8,8 @@ import { ArrowLeftRight, TrendingUp, TrendingDown, Info, ChevronLeft } from 'luc
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 
-import { useExchangeRate } from '@/modules/converter/hooks/useExchangeRate';
 
 const CurrencyConverter = () => {
     const { t } = useTranslation();
@@ -17,7 +17,6 @@ const CurrencyConverter = () => {
 
     const { data: exchangeData, isLoading, isError, refetch, isFetching } = useExchangeRate();
 
-    // Usamos a taxa da API ou o fallback de 5.80 enquanto carrega
     const rate = exchangeData?.bid || 5.80;
 
     const [brlValue, setBrlValue] = useState<string>('');

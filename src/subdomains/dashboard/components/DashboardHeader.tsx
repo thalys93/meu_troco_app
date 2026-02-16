@@ -1,8 +1,7 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Bell, Settings, User, Moon, DoorOpen, Settings2 } from 'lucide-react';
+import { Bell, Settings, User, DoorOpen, Settings2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import useUserStore from '@/store/UserStore';
 import { Link, NavLink } from 'react-router-dom';
 import {
     DropdownMenu,
@@ -11,17 +10,18 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from 'next-themes';
 import { useUser } from '@/hooks/use-user';
-import { BankIcon } from '@phosphor-icons/react';
+import { useNotifications } from '@/hooks/use-notifications';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import NotificationList from '@/subdomains/dashboard/components/notifications/notifications-list';
 
 const DashboardHeader = () => {
     const { user, handleLogout } = useUser();
-    const { setTheme, theme } = useTheme();
     const { t } = useTranslation();
+    const { unreadCount } = useNotifications();
 
     return (
         <div className="flex items-center justify-between py-4 px-2 md:px-0">
@@ -39,13 +39,19 @@ const DashboardHeader = () => {
             </Link>
 
             <div className="flex items-center gap-1 md:gap-2">
-                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 transition-all active:scale-90">
-                    <Search className="w-5 h-5 text-muted-foreground" />
-                </Button>
-                <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 transition-all active:scale-90 relative">
-                    <Bell className="w-5 h-5 text-muted-foreground" />
-                    <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background" />
-                </Button>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 transition-all active:scale-90 relative">
+                            <Bell className="w-5 h-5 text-muted-foreground" />
+                            {unreadCount > 0 && (
+                                <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full border-2 border-background" />
+                            )}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent align="end" className="p-0 w-auto min-w-[320px] max-w-[90vw] rounded-2xl border-border/50 backdrop-blur-lg">
+                        <NotificationList />
+                    </PopoverContent>
+                </Popover>
 
                 <ThemeToggle className='text-muted-foreground' />
 

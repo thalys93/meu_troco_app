@@ -7,14 +7,16 @@ import BackofficeHomePage from "@/subdomains/backoffice/pages/home/Home";
 import BackofficeLoginPage from "@/subdomains/backoffice/pages/login/Login";
 import PlansPage from "@/subdomains/backoffice/pages/plans/Plans";
 import BackOfficeProfilePage from "@/subdomains/backoffice/pages/profile/Profile";
-import DashboardPage from "@/subdomains/dashboard/pages/dashboard/Dashboard";
+import NotificationsPage from "@/subdomains/backoffice/pages/notifications/Notifications";
+import NotificationFormPage from "@/subdomains/backoffice/pages/notifications/NotificationForm";
+import DashboardPage from "@/subdomains/dashboard/pages/home/Dashboard";
 import ExpensesPage from "@/subdomains/dashboard/pages/expenses/Expenses";
 import IncomePage from "@/subdomains/dashboard/pages/income/Income";
 import PaymentsPage from "@/subdomains/dashboard/pages/payments/Payments";
 import ProfilePage from "@/subdomains/dashboard/pages/profile/Profile";
 import TransactionsPage from "@/subdomains/dashboard/pages/transactions/Transactions";
 import CurrencyConverter from "@/subdomains/dashboard/pages/converter/CurrencyConverter";
-import CardsPage from "@/modules/cards/pages/CardsPage";
+import CardsPage from "@/subdomains/dashboard/pages/cards/CardsPage";
 import { ReactElement } from "react";
 
 
@@ -62,6 +64,8 @@ export const BackOfficeRoutes: RoutesGroup = {
         { path: "home", element: BackofficeHomePage },
         { path: "plans", element: PlansPage },
         { path: "plan/:id?", element: PlansFormComponent },
+        { path: "notifications", element: NotificationsPage },
+        { path: "notification/:id?", element: NotificationFormPage },
         { path: "profile", element: BackOfficeProfilePage }
     ]
 }

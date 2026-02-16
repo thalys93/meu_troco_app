@@ -6,7 +6,8 @@ export type User = {
     uid: string;
     displayName: string;
     fullName: string;
-    email: string;
+    email: string;    
+    accountType?: AccountTypes;
     details?: UserDetails;
     billing?: UserBilling;
 }

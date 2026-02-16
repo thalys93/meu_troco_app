@@ -15,19 +15,50 @@ import {
 } from 'firebase/firestore';
 import { FireStore } from './firebase';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import type { Notification, NotificationCreateInput, NotificationUpdateInput } from '@/types/Notification';
+import type {
+    Notification,
+    NotificationCreateInput,
+    NotificationLocalized,
+    NotificationUpdateInput
+} from '@/types/Notification';
 
 const COLLECTION = 'notifications';
 
-const mapDoc = (id: string, data: Record<string, unknown>): Notification => ({
-    id,
-    title: (data.title as string) ?? '',
-    type: ((data.type as Notification['type']) ?? 'changelog'),
-    content: (data.content as string) ?? '',
-    createdAt: (data.createdAt as Timestamp)!,
-    publishedAt: (data.publishedAt as Timestamp | null) ?? null,
-    readBy: Array.isArray(data.readBy) ? (data.readBy as string[]) : []
-});
+const SUPPORTED_LOCALES = ['pt', 'en', 'es'] as const;
+
+function parseLocalized(data: Record<string, unknown>): Notification['localized'] {
+    const raw = data.localized as Record<string, { title?: string; content?: string }> | undefined;
+    if (raw && typeof raw === 'object') {
+        const out: NotificationLocalized = {};
+        for (const lang of SUPPORTED_LOCALES) {
+            const entry = raw[lang];
+            if (entry && typeof entry === 'object')
+                out[lang] = {
+                    title: typeof entry.title === 'string' ? entry.title : '',
+                    content: typeof entry.content === 'string' ? entry.content : ''
+                };
+        }
+        if (Object.keys(out).length > 0) return out;
+    }
+    const title = (data.title as string) ?? '';
+    const content = (data.content as string) ?? '';
+    return { pt: { title, content } };
+}
+
+const mapDoc = (id: string, data: Record<string, unknown>): Notification => {
+    const localized = parseLocalized(data);
+    const pt = localized.pt ?? { title: '', content: '' };
+    return {
+        id,
+        title: (data.title as string) ?? pt.title,
+        type: ((data.type as Notification['type']) ?? 'changelog'),
+        content: (data.content as string) ?? pt.content,
+        localized,
+        createdAt: (data.createdAt as Timestamp)!,
+        publishedAt: (data.publishedAt as Timestamp | null) ?? null,
+        readBy: Array.isArray(data.readBy) ? (data.readBy as string[]) : []
+    };
+};
 
 /** Dashboard: list only published notifications, newest first */
 export const getNotifications = async (): Promise<Notification[]> => {
@@ -82,8 +113,12 @@ export const getNotificationById = async (id: string): Promise<Notification | nu
 /** Backoffice: create (draft) */
 export const createNotification = async (data: NotificationCreateInput): Promise<string> => {
     const ref = collection(FireStore, COLLECTION);
+    const pt = data.localized?.pt ?? { title: '', content: '' };
     const docRef = await addDoc(ref, {
-        ...data,
+        type: data.type,
+        localized: data.localized,
+        title: pt.title,
+        content: pt.content,
         readBy: [],
         publishedAt: null,
         createdAt: serverTimestamp()
@@ -97,6 +132,13 @@ export const updateNotification = async (id: string, data: NotificationUpdateInp
     const payload = Object.fromEntries(
         Object.entries(data).filter(([, v]) => v !== undefined)
     ) as Record<string, unknown>;
+    if (payload.localized && typeof payload.localized === 'object') {
+        const pt = (payload.localized as NotificationLocalized).pt;
+        if (pt) {
+            payload.title = pt.title;
+            payload.content = pt.content;
+        }
+    }
     await updateDoc(ref, payload);
 };
 

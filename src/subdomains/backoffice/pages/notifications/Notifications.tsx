@@ -1,5 +1,6 @@
 import React from 'react';
 import PrivateLayout from '@/subdomains/backoffice/layout/PrivateLayout';
+import PageShell from '@/subdomains/backoffice/components/PageShell';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import dayjs from 'dayjs';
 import type { Notification } from '@/types/Notification';
+import { getNotificationLocalized } from '@/types/Notification';
+
+const TYPE_LABEL_KEYS: Record<Notification['type'], string> = {
+    changelog: 'notifications.typeChangelog',
+    terms: 'notifications.typeTerms',
+    novidades: 'notifications.typeNovidades',
+    avisos: 'notifications.typeAvisos'
+};
 
 function formatDate(notification: Notification): string {
     const date = notification.publishedAt?.toDate?.() ?? notification.createdAt?.toDate?.();
@@ -33,7 +42,7 @@ function formatDate(notification: Notification): string {
 }
 
 function NotificationsPage() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { data: notifications, isLoading, refetch } = useGetAllNotificationsAdmin();
     const navigate = useNavigate();
     const deleteNotification = useDeleteNotification();
@@ -95,34 +104,41 @@ function NotificationsPage() {
 
     return (
         <PrivateLayout>
-            <section className="container mx-2 md:mx-auto my-20 md:my-12 md:pl-0 mt-10 space-y-6">
-                <div className="flex items-center justify-between gap-3">
-                    <div>
-                        <h1 className="text-3xl font-bold">{t('notifications.backoffice.title')}</h1>
-                        <span className="text-muted-foreground">{t('notifications.backoffice.description')}</span>
-                    </div>
+            <PageShell
+                title={t('notifications.backoffice.title')}
+                description={t('notifications.backoffice.description')}
+                actions={
                     <Button onClick={() => navigate('/backoffice/notification/')}>
                         <Plus className="w-4 h-4 mr-2" />
                         {t('notifications.backoffice.new')}
                     </Button>
-                </div>
-
+                }
+            >
                 <div className={cn('space-y-3', isLoading && 'animate-pulse')}>
-                    {notifications?.map((notification) => (
+                    {notifications?.map((notification) => {
+                        const displayTitle = getNotificationLocalized(notification, i18n.language).title || notification.title;
+                        return (
                         <div
                             key={notification.id}
-                            className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-lg border border-border bg-card"
+                            className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-lg border border-border/80 bg-card shadow-sm hover:shadow transition-shadow"
                         >
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-medium">{notification.title}</span>
-                                    <Badge variant={notification.type === 'changelog' ? 'default' : 'secondary'}>
-                                        {notification.type === 'changelog'
-                                            ? t('notifications.typeChangelog')
-                                            : t('notifications.typeTerms')}
+                                    <span className="font-medium">{displayTitle}</span>
+                                    <Badge
+                                        variant={notification.type === 'changelog' ? 'default' : 'secondary'}
+                                        className="rounded-md font-normal"
+                                    >
+                                        {t(TYPE_LABEL_KEYS[notification.type])}
                                     </Badge>
-                                    {!notification.publishedAt && (
-                                        <Badge variant="outline">{t('notifications.backoffice.draft')}</Badge>
+                                    {!notification.publishedAt ? (
+                                        <Badge variant="outline" className="rounded-md font-normal bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30">
+                                            {t('notifications.backoffice.draft')}
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="rounded-md font-normal bg-primary/10 text-primary border-primary/30">
+                                            {t('notifications.backoffice.publishedLabel')}
+                                        </Badge>
                                     )}
                                 </div>
                                 <p className="text-sm text-muted-foreground mt-1">{formatDate(notification)}</p>
@@ -147,7 +163,6 @@ function NotificationsPage() {
                                     </Button>
                                 ) : (
                                     <Button
-                                        variant="secondary"
                                         size="sm"
                                         onClick={() => handlePublish(notification.id)}
                                     >
@@ -167,7 +182,7 @@ function NotificationsPage() {
                                             <DialogTitle>{t('notifications.backoffice.deleteConfirmTitle')}</DialogTitle>
                                             <DialogDescription>
                                                 {t('notifications.backoffice.deleteConfirmDescription', {
-                                                    title: notification.title
+                                                    title: displayTitle
                                                 })}
                                             </DialogDescription>
                                         </DialogHeader>
@@ -188,7 +203,7 @@ function NotificationsPage() {
                                 </Dialog>
                             </div>
                         </div>
-                    ))}
+                    );})}
 
                     {!notifications?.length && !isLoading && (
                         <div className="flex items-center gap-2 text-muted-foreground py-8">
@@ -197,7 +212,7 @@ function NotificationsPage() {
                         </div>
                     )}
                 </div>
-            </section>
+            </PageShell>
         </PrivateLayout>
     );
 }

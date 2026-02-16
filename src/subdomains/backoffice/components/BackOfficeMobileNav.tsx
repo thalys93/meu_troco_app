@@ -1,13 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import React from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, User, ChevronDown, ChevronUp, Moon, DoorOpen, ShoppingBag } from 'lucide-react';
+import { Home, User, Moon, DoorOpen, ShoppingBag, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useTheme } from 'next-themes';
 import { useUser } from '@/hooks/use-user';
-import { BankIcon } from '@phosphor-icons/react';
 import { useTranslation } from 'react-i18next';
 
 const BackOfficeMobileNav = () => {
@@ -19,11 +18,12 @@ const BackOfficeMobileNav = () => {
 
   const navigation = [
     { name: t('sidebar.home'), href: '/backoffice/home', icon: Home },
-    { name: t('sidebar.plans'), href: "/backoffice/plans", icon: ShoppingBag },    
+    { name: t('sidebar.plans'), href: '/backoffice/plans', icon: ShoppingBag },
+    { name: t('sidebar.notifications'), href: '/backoffice/notifications', icon: Bell },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card/90 backdrop-blur-lg border-t border-border/50 px-4 py-2 md:hidden">
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border shadow-[0_-1px_3px_rgba(0,0,0,0.05)] px-2 py-2 md:hidden">
       <nav className="flex justify-around items-center">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;

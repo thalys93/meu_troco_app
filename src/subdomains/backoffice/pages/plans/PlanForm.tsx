@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React from 'react'
-import PrivateLayout from '@/subdomains/backoffice/layout/PrivateLayout'
-import { useParams } from 'react-router-dom'
+import React from 'react';
+import PrivateLayout from '@/subdomains/backoffice/layout/PrivateLayout';
+import PageShell from '@/subdomains/backoffice/components/PageShell';
+import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plan, useCreatePlan, useGetPlan, useUpdatePlan } from '@/utils/services/api/plans';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -118,14 +119,10 @@ function PlansFormComponent() {
 
   return (
     <PrivateLayout>
-      <section className="container mx-2 md:mx-auto my-20 md:my-12 md:pl-0 mt-10 space-y-6">
-        <div className='flex items-center gap-3'>
-          <div>
-            <h1 className="text-3xl font-bold">{id ? 'Editar plano' : 'Novo plano'}</h1>
-            <span className='text-muted-foreground'>Crie um novo plano para sua empresa</span>
-          </div>
-        </div>
-
+      <PageShell
+        title={id ? 'Editar plano' : 'Novo plano'}
+        description="Crie um novo plano para sua empresa"
+      >
         <div>
           <Form form={planForm} onSubmit={() => handleSubmit(planForm.getValues())} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -178,7 +175,7 @@ function PlansFormComponent() {
                 </div>
               </div>
 
-              <Card className='col-span-1 glass-card p-3 flex flex-col'>
+              <Card className="col-span-1 border-border/80 shadow-sm p-4 flex flex-col">
                 <div>
                   <Label className='my-2 mb-3'>Funcionalidades *</Label>
                   {fields.map((field, index) => (
@@ -226,7 +223,7 @@ function PlansFormComponent() {
             </div>
           </Form>
         </div>
-      </section>
+      </PageShell>
     </PrivateLayout>
   )
 }

@@ -12,6 +12,7 @@ export function createUser(provider: AccountProviders, user: FirebaseUser, data?
                 displayName: user.displayName,
                 fullName: user.displayName,
                 email: user.email,
+                accountType: AccountTypes.USER,
                 details: {
                     firstName: "",
                     lastName: "",
@@ -21,7 +22,7 @@ export function createUser(provider: AccountProviders, user: FirebaseUser, data?
                     updatedAt: new Date(),
                 },
                 billing: {
-                    accountType: AccountTypes.BASIC,
+                    accountType: AccountTypes.USER,
                     premiumAt: null,
                     selectedPlan: "",
                     customCategories: 0,
@@ -36,6 +37,7 @@ export function createUser(provider: AccountProviders, user: FirebaseUser, data?
                 displayName: data.firstName + data.lastName,
                 fullName: data.firstName + data.lastName,
                 email: data.email,
+                accountType: AccountTypes.USER,
                 details: {
                     firstName: data.firstName,
                     lastName: data.lastName,
@@ -45,7 +47,7 @@ export function createUser(provider: AccountProviders, user: FirebaseUser, data?
                     updatedAt: new Date(),
                 },
                 billing: {
-                    accountType: AccountTypes.BASIC,
+                    accountType: AccountTypes.USER,
                     premiumAt: null,
                     selectedPlan: data.selectedPlan,
                     customCategories: 0,

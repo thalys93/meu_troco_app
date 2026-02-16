@@ -1,2 +1,2 @@
-
-export const whitelist = ["4jeUVj98RXQgO9PtUkkCOziTt6q2"]
+/** UIDs que podem acessar recursos de backoffice (listar todos os usuários, etc.). Deve bater com allow read em firestore.rules para /users. */
+export const whitelist = ["4jeUVj98RXQgO9PtUkkCOziTt6q2", "eCqjINFsQsOMyNFCS87DggmlgN93"];

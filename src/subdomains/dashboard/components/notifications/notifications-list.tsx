@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
-import { Bell, FileText, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bell, FileText, Sparkles, Megaphone, Newspaper, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNotifications } from '@/hooks/use-notifications';
 import useUserStore from '@/store/UserStore';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -9,25 +9,43 @@ import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import type { Notification } from '@/types/Notification';
+import { getNotificationLocalized } from '@/types/Notification';
 
 function formatNotificationDate(notification: Notification): string {
     const date = notification.publishedAt?.toDate?.() ?? notification.createdAt?.toDate?.();
     return date ? dayjs(date).format('DD/MM/YYYY') : '';
 }
 
+const TYPE_LABELS: Record<Notification['type'], string> = {
+    changelog: 'notifications.typeChangelog',
+    terms: 'notifications.typeTerms',
+    novidades: 'notifications.typeNovidades',
+    avisos: 'notifications.typeAvisos'
+};
+
+const TYPE_ICONS = {
+    changelog: Sparkles,
+    terms: FileText,
+    novidades: Newspaper,
+    avisos: Megaphone
+} as const;
+
 function NotificationItem({
     notification,
     isRead,
-    onOpen
+    onOpen,
+    lang
 }: {
     notification: Notification;
     isRead: boolean;
     onOpen: () => void;
+    lang: string;
 }) {
     const { t } = useTranslation();
     const [open, setOpen] = useState(false);
-    const typeLabel = notification.type === 'changelog' ? t('notifications.typeChangelog') : t('notifications.typeTerms');
-    const TypeIcon = notification.type === 'changelog' ? Sparkles : FileText;
+    const { title, content } = getNotificationLocalized(notification, lang);
+    const typeLabel = t(TYPE_LABELS[notification.type]);
+    const TypeIcon = TYPE_ICONS[notification.type];
 
     const handleOpenChange = (next: boolean) => {
         setOpen(next);
@@ -52,7 +70,7 @@ function NotificationItem({
                         </span>
                         {!isRead && <span className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" aria-hidden />}
                         <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{notification.title}</p>
+                            <p className="font-medium text-sm truncate">{title}</p>
                             <p className="text-xs text-muted-foreground">{typeLabel} · {formatNotificationDate(notification)}</p>
                         </div>
                         {open ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
@@ -60,7 +78,7 @@ function NotificationItem({
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                     <div className="px-3 pb-3 pt-2 mt-2 text-sm text-muted-foreground whitespace-pre-wrap border-t border-border/50">
-                        {notification.content}
+                        {content}
                     </div>
                 </CollapsibleContent>
             </div>
@@ -69,7 +87,7 @@ function NotificationItem({
 }
 
 function NotificationList() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const uid = useUserStore((s) => s.uid);
     const {
         notifications,
@@ -121,6 +139,7 @@ function NotificationList() {
                                 notification={notification}
                                 isRead={!!uid && notification.readBy.includes(uid)}
                                 onOpen={() => markAsRead(notification.id)}
+                                lang={i18n.language}
                             />
                         ))}
                     </div>

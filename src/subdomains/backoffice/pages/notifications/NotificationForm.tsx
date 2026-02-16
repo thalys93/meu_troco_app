@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import PrivateLayout from '@/subdomains/backoffice/layout/PrivateLayout';
+import PageShell from '@/subdomains/backoffice/components/PageShell';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useForm } from 'react-hook-form';
@@ -8,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { TextArea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Save, Send } from 'lucide-react';
 import {
@@ -17,12 +19,19 @@ import {
     usePublishNotification
 } from '@/utils/services/api/notifications-service';
 import { toast } from '@/hooks/use-toast';
-import type { NotificationCreateInput, NotificationType } from '@/types/Notification';
+import type { NotificationCreateInput, NotificationLocalized, NotificationType } from '@/types/Notification';
+
+const LOCALES = ['pt', 'en', 'es'] as const;
+
+const emptyLocalized: NotificationLocalized = {
+    pt: { title: '', content: '' },
+    en: { title: '', content: '' },
+    es: { title: '', content: '' }
+};
 
 const defaultValues: NotificationCreateInput = {
-    title: '',
     type: 'changelog',
-    content: ''
+    localized: { ...emptyLocalized }
 };
 
 function NotificationFormPage() {
@@ -41,10 +50,14 @@ function NotificationFormPage() {
 
     useEffect(() => {
         if (id && notification) {
+            const localized: NotificationLocalized = { ...emptyLocalized };
+            const from = notification.localized ?? { pt: { title: notification.title, content: notification.content } };
+            for (const lang of LOCALES) {
+                localized[lang] = from[lang] ?? { title: '', content: '' };
+            }
             form.reset({
-                title: notification.title,
                 type: notification.type,
-                content: notification.content
+                localized
             });
         }
     }, [id, notification, form]);
@@ -105,31 +118,17 @@ function NotificationFormPage() {
 
     return (
         <PrivateLayout>
-            <section className="container mx-2 md:mx-auto my-20 md:my-12 md:pl-0 mt-10 space-y-6">
-                <div className="flex items-center gap-3">
-                    <Button variant="ghost" size="icon" onClick={() => navigate('/backoffice/notifications')}>
-                        <ArrowLeft className="w-4 h-4" />
+            <PageShell
+                title={id ? t('notifications.backoffice.editTitle') : t('notifications.backoffice.newTitle')}
+                description={t('notifications.backoffice.formDescription')}
+                actions={
+                    <Button variant="outline" size="sm" onClick={() => navigate('/backoffice/notifications')}>
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        {t('default.back')}
                     </Button>
-                    <div>
-                        <h1 className="text-3xl font-bold">
-                            {id ? t('notifications.backoffice.editTitle') : t('notifications.backoffice.newTitle')}
-                        </h1>
-                        <span className="text-muted-foreground">{t('notifications.backoffice.formDescription')}</span>
-                    </div>
-                </div>
-
+                }
+            >
                 <Form form={form} onSubmit={onSubmit} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>{t('notifications.backoffice.fieldTitle')} *</Label>
-                        <Input
-                            name="title"
-                            control={form.control}
-                            placeholder={t('notifications.backoffice.fieldTitlePlaceholder')}
-                            className="bg-background/50"
-                            required
-                        />
-                    </div>
-
                     <div className="space-y-2">
                         <Label>{t('notifications.backoffice.fieldType')} *</Label>
                         <Select
@@ -142,19 +141,45 @@ function NotificationFormPage() {
                             <SelectContent>
                                 <SelectItem value="changelog">{t('notifications.typeChangelog')}</SelectItem>
                                 <SelectItem value="terms">{t('notifications.typeTerms')}</SelectItem>
+                                <SelectItem value="novidades">{t('notifications.typeNovidades')}</SelectItem>
+                                <SelectItem value="avisos">{t('notifications.typeAvisos')}</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
 
-                    <div className="space-y-2">
-                        <Label>{t('notifications.backoffice.fieldContent')} *</Label>
-                        <TextArea
-                            name="content"
-                            control={form.control}
-                            placeholder={t('notifications.backoffice.fieldContentPlaceholder')}
-                            className="min-h-[200px] bg-background/50"
-                            required
-                        />
+                    <div className="space-y-3">
+                        <Label>{t('notifications.backoffice.contentByLanguage')}</Label>
+                        <Tabs defaultValue="pt" className="w-full">
+                            <TabsList className="bg-muted/50">
+                                {LOCALES.map((lang) => (
+                                    <TabsTrigger key={lang} value={lang}>
+                                        {t(`notifications.backoffice.language.${lang}`)}
+                                    </TabsTrigger>
+                                ))}
+                            </TabsList>
+                            {LOCALES.map((lang) => (
+                                <TabsContent key={lang} value={lang} className="space-y-4 mt-4">
+                                    <div className="space-y-2">
+                                        <Label>{t('notifications.backoffice.fieldTitle')} *</Label>
+                                        <Input
+                                            name={`localized.${lang}.title`}
+                                            control={form.control}
+                                            placeholder={t('notifications.backoffice.fieldTitlePlaceholder')}
+                                            className="bg-background/50"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>{t('notifications.backoffice.fieldContent')} *</Label>
+                                        <TextArea
+                                            name={`localized.${lang}.content`}
+                                            control={form.control}
+                                            placeholder={t('notifications.backoffice.fieldContentPlaceholder')}
+                                            className="min-h-[200px] bg-background/50"
+                                        />
+                                    </div>
+                                </TabsContent>
+                            ))}
+                        </Tabs>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
@@ -175,7 +200,7 @@ function NotificationFormPage() {
                         )}
                     </div>
                 </Form>
-            </section>
+            </PageShell>
         </PrivateLayout>
     );
 }

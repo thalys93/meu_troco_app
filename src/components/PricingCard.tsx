@@ -11,6 +11,7 @@ interface PricingCardProps {
   features: string[];
   isPopular?: boolean;
   actions?: React.ReactNode;
+  className?: string;
 }
 
 const PricingCard = ({
@@ -19,10 +20,11 @@ const PricingCard = ({
   period = "/mês",
   features,
   isPopular = false,
-  actions
+  actions,
+  className
 }: PricingCardProps) => {
   return (
-    <Card className={`relative flex flex-col ${isPopular ? 'border-primary shadow-lg scale-105' : ''}`}>
+    <Card className={`relative flex flex-col ${isPopular ? 'border-primary shadow-lg scale-105' : ''} ${className ?? ''}`}>
       {isPopular && (
         <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
           <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">

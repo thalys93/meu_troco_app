@@ -105,4 +105,15 @@
   .glass-card {
     @apply bg-card/50 backdrop-blur-sm border border-border/50;
   }
+
+  /* Backoffice: fundo cinza claro, sem gradiente global */
+  .backoffice-page {
+    --bo-bg-page: 220 15% 97%;
+    --bo-card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+    background-color: hsl(var(--bo-bg-page));
+  }
+  .dark .backoffice-page {
+    --bo-bg-page: 240 10% 6%;
+    background-color: hsl(var(--bo-bg-page));
+  }
 }

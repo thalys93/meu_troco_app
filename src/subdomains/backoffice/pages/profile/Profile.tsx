@@ -7,6 +7,7 @@ import { User, Mail, Lock, Save, Crown, ArrowRight, LockIcon, Construction, Load
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import PrivateLayout from '../../layout/PrivateLayout';
+import PageShell from '@/subdomains/backoffice/components/PageShell';
 import { useForm } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
 import { Input, PasswordInput } from '@/components/ui/input';
@@ -201,19 +202,12 @@ const BackOfficeProfilePage = () => {
 
   return (
     <PrivateLayout>
-      <div className="container mx-2 md:mx-auto my-20 md:my-12 md:pl-0 mt-10 space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <User className="w-6 h-6 text-primary" />
-            <div>
-              <h1 className="text-3xl font-bold">{t('sidebar.profile')}</h1>
-              <p className="text-muted-foreground">{t('profile.description')}</p>
-            </div>
-          </div>
-        </div>
-
+      <PageShell
+        title={t('sidebar.profile')}
+        description={t('profile.description')}
+      >
         <div className="grid gap-6 md:grid-cols-2">
-          <Card className="glass-card">
+          <Card className="border-border/80 bg-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="w-5 h-5" />
@@ -252,7 +246,7 @@ const BackOfficeProfilePage = () => {
             </CardContent>
           </Card>
 
-          <Card className="glass-card">
+          <Card className="border-border/80 bg-card shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Lock className="w-5 h-5" />
@@ -302,7 +296,7 @@ const BackOfficeProfilePage = () => {
         </div>
 
         <div className='grid gap-6 md:grid-cols-2 col-span-2'>
-          <Card className='glass-card '>
+          <Card className="border-border/80 bg-card shadow-sm">
             <CardHeader className='flex flex-col gap-1 items-center justify-center'>
               {t('profile.avatar')}
               <span className='text-xs text-muted-foreground'>{t('profile.avatarDescription')}</span>
@@ -320,7 +314,7 @@ const BackOfficeProfilePage = () => {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </PageShell>
     </PrivateLayout>
   );
 };

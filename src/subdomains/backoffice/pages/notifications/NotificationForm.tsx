@@ -7,10 +7,10 @@ import { useForm } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { TextArea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import { ArrowLeft, Save, Send } from 'lucide-react';
 import {
     useGetNotificationById,
@@ -170,11 +170,11 @@ function NotificationFormPage() {
                                     </div>
                                     <div className="space-y-2">
                                         <Label>{t('notifications.backoffice.fieldContent')} *</Label>
-                                        <TextArea
+                                        <MarkdownEditor
                                             name={`localized.${lang}.content`}
                                             control={form.control}
                                             placeholder={t('notifications.backoffice.fieldContentPlaceholder')}
-                                            className="min-h-[200px] bg-background/50"
+                                            height={250}
                                         />
                                     </div>
                                 </TabsContent>

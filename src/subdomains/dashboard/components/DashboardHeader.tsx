@@ -48,7 +48,7 @@ const DashboardHeader = () => {
                             )}
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent align="end" className="p-0 w-auto min-w-[320px] max-w-[90vw] rounded-2xl border-border/50 backdrop-blur-lg">
+                    <PopoverContent align="end" className="p-0 w-auto min-w-[320px] max-w-[30vw] max-h-[85vh] overflow-y-auto rounded-2xl border-border/50 backdrop-blur-lg">
                         <NotificationList />
                     </PopoverContent>
                 </Popover>

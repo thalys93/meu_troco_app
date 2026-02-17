@@ -33,10 +33,13 @@ const initialValues = {
   type: ''
 }
 
+type FieldErrors = { value: boolean; category: boolean; card: boolean; description: boolean };
+
 const TransactionForm = ({ type }: TransactionFormProps) => {
   const [category, setCategory] = useState<string>('');
   const [selectedCardId, setSelectedCardId] = useState<string>('');
-  const [displayValue, setDisplayValue] = useState<string>('0');
+  const [displayValue, setDisplayValue] = useState<string>('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({ value: false, category: false, card: false, description: false });
   const transactionForm = useForm({
     defaultValues: initialValues
   })
@@ -45,7 +48,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   const navigate = useNavigate();
   const { uid } = useUserStore();
   const { data: transaction, refetch: refetchTransaction } = useUserTransaction(uid, id)
-  const { expenseCategories, incomeCategories } = useCategories()
+  const { expenseCategories, incomeCategories, getCategoryIcon } = useCategories();
 
   const { mutate: create, isPending } = useCreateTransaction();
   const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(uid, id);
@@ -55,6 +58,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
 
   const categories = type === 'receita' ? incomeCategories : expenseCategories;
   const getCategoryLabel = (category: string) => t(`categories.${category}`);
+  const CategoryTriggerIcon = category ? (getCategoryIcon(category) ?? Tag) : Tag;
 
   const currencySymbol = useMemo(() => {
     try {
@@ -100,8 +104,10 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
     if (!id || !transaction) return
     transactionForm.reset(transaction)
     setCategory(transaction.category)
-    setDisplayValue(transaction.value.toString())
-  }, [id, transaction])
+    const v = transaction.value;
+    if (v === 0) setDisplayValue('')
+    else setDisplayValue(v.toFixed(2).replace('.', i18n.language === 'pt-BR' ? ',' : '.'))
+  }, [id, transaction, i18n.language])
 
   React.useEffect(() => {
     if (!type) return
@@ -122,24 +128,52 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   }, [id, transaction]);
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.replace(/[^0-9.]/g, '');
-    const parts = val.split('.');
-    if (parts.length > 2) return;
-    if (parts[1] && parts[1].length > 2) return;
-    setDisplayValue(val || '0');
+    let s = e.target.value.replace(/[^0-9,.]/g, '');
+    const firstComma = s.indexOf(',');
+    const firstDot = s.indexOf('.');
+    if (firstComma >= 0 && firstDot >= 0) {
+      const sepIdx = Math.min(firstComma, firstDot);
+      const sep = s[sepIdx];
+      s = s.slice(0, sepIdx + 1) + s.slice(sepIdx + 1).replace(sep === ',' ? /\./g : /,/g, '');
+    }
+    const sepIdx = s.includes(',') ? s.indexOf(',') : s.indexOf('.');
+    if (sepIdx >= 0 && s.length > sepIdx + 3) s = s.slice(0, sepIdx + 3);
+    setDisplayValue(s);
+    setFieldErrors((prev) => ({ ...prev, value: false }));
   };
+
+  const parseDisplayValue = (v: string) => parseFloat((v || '0').replace(',', '.')) || 0;
 
   const handleQuickAmount = (amount: number) => {
-    setDisplayValue(prev => (parseFloat(prev || '0') + amount).toFixed(2).replace(/\.00$/, ''));
+    const n = parseDisplayValue(displayValue) + amount;
+    const formatted = n.toFixed(2).replace('.', i18n.language === 'pt-BR' ? ',' : '.');
+    setDisplayValue(formatted);
+    setFieldErrors((prev) => ({ ...prev, value: false }));
   };
 
-  const handleCreate = async (data: Transaction) => {
-    const finalData = { ...data, value: parseFloat(displayValue), cardId: selectedCardId };
+  const getValidationErrors = (): FieldErrors => ({
+    value: !displayValue.trim() || parseDisplayValue(displayValue) <= 0,
+    category: !category,
+    card: !selectedCardId,
+    description: !transactionForm.getValues('description')?.trim?.(),
+  });
 
-    if (finalData.value <= 0 || !category || !finalData.description || !selectedCardId) {
+  const handleCreate = async (data: Transaction) => {
+    const valueNum = parseDisplayValue(displayValue);
+    const finalData = { ...data, value: valueNum, cardId: selectedCardId };
+    const errors = getValidationErrors();
+
+    if (errors.value || errors.category || errors.card || errors.description) {
+      setFieldErrors(errors);
+      const missing = [
+        errors.value && t('transactionForm.form.value'),
+        errors.category && t('transactionForm.form.category'),
+        errors.card && t('transactionForm.form.card'),
+        errors.description && t('transactionForm.form.description'),
+      ].filter(Boolean).join(', ');
       toast({
         title: t('transactionForm.toast.title'),
-        description: t('transactionForm.toast.description'),
+        description: t('transactionForm.toast.missingFields', { fields: missing }),
         variant: "destructive",
       });
       return;
@@ -153,7 +187,8 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
         });
         transactionForm.reset(initialValues);
         setCategory('');
-        setDisplayValue('0');
+        setDisplayValue('');
+        setFieldErrors({ value: false, category: false, card: false, description: false });
         refetchUserTransactions();
         if (uid) fetchCards(uid);
       },
@@ -168,12 +203,21 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   };
 
   const handleEdit = async (data: Transaction) => {
-    const finalData = { ...data, value: parseFloat(displayValue), cardId: selectedCardId };
+    const valueNum = parseDisplayValue(displayValue);
+    const finalData = { ...data, value: valueNum, cardId: selectedCardId };
+    const errors = getValidationErrors();
 
-    if (finalData.value <= 0 || !category || !finalData.description || !selectedCardId) {
+    if (errors.value || errors.category || errors.card || errors.description) {
+      setFieldErrors(errors);
+      const missing = [
+        errors.value && t('transactionForm.form.value'),
+        errors.category && t('transactionForm.form.category'),
+        errors.card && t('transactionForm.form.card'),
+        errors.description && t('transactionForm.form.description'),
+      ].filter(Boolean).join(', ');
       toast({
         title: t('transactionForm.toast.title'),
-        description: t('transactionForm.toast.description'),
+        description: t('transactionForm.toast.missingFields', { fields: missing }),
         variant: "destructive",
       });
       return;
@@ -224,7 +268,12 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
               inputMode="decimal"
               value={displayValue}
               onChange={handleValueChange}
-              className={cn("text-6xl font-black tracking-tighter bg-transparent border-none outline-none w-auto max-w-[250px] text-center focus-visible:ring-0 p-0", type === 'receita' ? "text-emerald-200" : "text-red-200")}
+              placeholder="0"
+              className={cn(
+                "text-6xl font-black tracking-tighter bg-transparent border-none outline-none w-auto max-w-[250px] text-center focus-visible:ring-0 p-0 placeholder:text-muted-foreground/60",
+                type === 'receita' ? "text-emerald-200" : "text-red-200",
+                fieldErrors.value && "ring-2 ring-red-500 ring-offset-2 rounded-lg"
+              )}
               autoFocus
             />
           </div>
@@ -248,20 +297,27 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
           onValueChange={(val) => {
             setCategory(val);
             transactionForm.setValue('category', val);
+            setFieldErrors((prev) => ({ ...prev, category: false }));
           }}
         >
-          <SelectTrigger className="w-full bg-background/40 border-accent h-12 rounded-2xl px-4">
+          <SelectTrigger className={cn("w-full bg-background/40 border-accent h-12 rounded-2xl px-4", fieldErrors.category && "border-red-500 ring-2 ring-red-500/20")}>
             <div className='flex flex-row gap-5 items-center'>
-              <Tag className='text-muted-foreground opacity-50 w-5 h-5' />
+              <CategoryTriggerIcon className='text-muted-foreground opacity-50 w-5 h-5 shrink-0' aria-hidden />
               <SelectValue placeholder={t('transactionForm.form.selectCategory')} />
             </div>
           </SelectTrigger>
           <SelectContent>
-            {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {getCategoryLabel(cat)}
-              </SelectItem>
-            ))}
+            {categories.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <SelectItem key={cat.id} value={cat.id}>
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <span>{getCategoryLabel(cat.id)}</span>
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
@@ -273,9 +329,12 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
         </Label>
         <Select
           value={selectedCardId}
-          onValueChange={setSelectedCardId}
+          onValueChange={(val) => {
+            setSelectedCardId(val);
+            setFieldErrors((prev) => ({ ...prev, card: false }));
+          }}
         >
-          <SelectTrigger className="w-full bg-background/40 border-accent h-12 rounded-2xl px-4">
+          <SelectTrigger className={cn("w-full bg-background/40 border-accent h-12 rounded-2xl px-4", fieldErrors.card && "border-red-500 ring-2 ring-red-500/20")}>
             <div className='flex flex-row gap-5 items-center'>
               <CreditCard className='text-muted-foreground opacity-50 w-5 h-5' />
               <SelectValue placeholder="Selecione o cartão" />
@@ -304,8 +363,9 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
               name="description"
               placeholder={`${t('transactionForm.form.descriptionPlaceholder')} ${type === 'receita' ? t('default.receipt') : t('default.expense')}`}
               control={transactionForm.control}
-              className="bg-background/40 border-accent text-foreground placeholder:text-muted-foreground h-11 rounded-lg"
+              className={cn("bg-background/40 border-accent text-foreground placeholder:text-muted-foreground h-11 rounded-lg", fieldErrors.description && "border-red-500 ring-2 ring-red-500/20")}
               leftIcon={<List className="w-4 h-4 text-muted-foreground" />}
+              onFocus={() => setFieldErrors((prev) => ({ ...prev, description: false }))}
             />
           </div>
           <div className="flex items-center py-3 border-b border-accent/10 md:border-b-0 md:-ml-2">

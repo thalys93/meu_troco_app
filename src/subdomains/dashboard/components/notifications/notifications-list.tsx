@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useTranslation } from 'react-i18next';
 import dayjs from 'dayjs';
 import { Bell, FileText, Sparkles, Megaphone, Newspaper, ChevronDown, ChevronUp } from 'lucide-react';
@@ -77,8 +79,10 @@ function NotificationItem({
                     </button>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
-                    <div className="px-3 pb-3 pt-2 mt-2 text-sm text-muted-foreground whitespace-pre-wrap border-t border-border/50">
-                        {content}
+                    <div className="px-3 pb-3 pt-2 mt-2 text-sm text-muted-foreground border-t border-border/50 max-h-[200px] min-h-0 overflow-y-auto">
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                        </div>
                     </div>
                 </CollapsibleContent>
             </div>

@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Input } from './ui/input';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '@/store/UserStore';
-import { useCategories } from '@/hooks/use-categories';
+import { useCategories, type CategoryWithIcon } from '@/hooks/use-categories';
 import { useCardsStore } from '@/store/useCardsStore';
 import { cn } from '@/lib/utils';
 import React from 'react';
@@ -236,7 +236,7 @@ function CategoryChips({
   showMoreLabel,
 }: {
   values: string[];
-  categories: string[];
+  categories: CategoryWithIcon[];
   onChange: (v: string[]) => void;
   allLabel: string;
   showMoreLabel: string;
@@ -244,38 +244,45 @@ function CategoryChips({
   const { t } = useTranslation();
   const [showMore, setShowMore] = React.useState(false);
   const normalized = React.useMemo(
-    () => categories.filter((c) => c !== allLabel && c !== 'Todos'),
+    () => categories.filter((c) => c.id !== allLabel && c.id !== 'Todos'),
     [categories, allLabel]
   );
-  const base = [allLabel, ...normalized];
+  const allEntry = categories.find((c) => c.id === 'Todos');
+  const base = allEntry ? [allEntry, ...normalized] : normalized;
   const visible = showMore ? base : base.slice(0, 9);
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
-        {visible.map((cat) => (
-          <Button
-            key={cat}
-            variant="outline"
-            className={cn(
-              "rounded-full h-9 px-3",
-              (values.includes(cat) || (cat === allLabel && values.includes(allLabel))) && "border-foreground ring-2 ring-foreground/20"
-            )}
-            onClick={() => {
-              if (cat === allLabel) {
-                onChange([allLabel]);
-                return;
-              }
-              const next = values.includes(allLabel)
-                ? [cat]
-                : values.includes(cat)
-                  ? values.filter((v) => v !== cat)
-                  : [...values, cat];
-              onChange(next.length === 0 ? [allLabel] : next);
-            }}
-          >
-            {cat === allLabel ? allLabel : t(`categories.${cat}`, cat)}
-          </Button>
-        ))}
+        {visible.map((cat) => {
+          const Icon = cat.icon;
+          const isAll = cat.id === allLabel || cat.id === 'Todos';
+          const isSelected = values.includes(cat.id) || (isAll && (values.includes('Todos') || values.includes(allLabel)));
+          return (
+            <Button
+              key={cat.id}
+              variant="outline"
+              className={cn(
+                "rounded-full h-9 px-3 gap-1.5",
+                isSelected && "border-foreground ring-2 ring-foreground/20"
+              )}
+              onClick={() => {
+                if (isAll) {
+                  onChange(['Todos']);
+                  return;
+                }
+                const next = values.includes('Todos') || values.includes(allLabel)
+                  ? [cat.id]
+                  : values.includes(cat.id)
+                    ? values.filter((v) => v !== cat.id)
+                    : [...values, cat.id];
+                onChange(next.length === 0 ? ['Todos'] : next);
+              }}
+            >
+              <Icon className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+              <span>{isAll ? allLabel : t(`categories.${cat.id}`, cat.id)}</span>
+            </Button>
+          );
+        })}
       </div>
       {!showMore && base.length > visible.length && (
         <button

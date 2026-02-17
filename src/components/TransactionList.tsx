@@ -13,6 +13,7 @@ import { ScrollArea } from './ui/scroll-area';
 import useUserStore from '@/store/UserStore';
 import { useTranslation } from 'react-i18next';
 import TransactionFiltersDialog from './TransactionFiltersDialog';
+import { useCategories } from '@/hooks/use-categories';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 
 interface TransactionListProps {
@@ -29,7 +30,8 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction>()
   const { mutate, isPending } = useDeleteTransaction()
   const { refetch } = useUserTransactions()
-  const { t, i18n } = useTranslation()
+  const { t, i18n } = useTranslation();
+  const { getCategoryIcon } = useCategories();
 
   const [filterCard, setFilterCard] = React.useState<string>('Todos');
   const [filterCategories, setFilterCategories] = React.useState<string[]>(['Todos']);
@@ -262,8 +264,16 @@ const TransactionList = ({ transactions, title = "Transações Recentes", isLoad
                           <div>
                             <p className="font-medium leading-tight">{transaction.description}</p>
                             <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className="text-xs">
-                                {getCategoryLabel(transaction.category)}
+                              <Badge variant="secondary" className="text-xs gap-1.5">
+                                {(() => {
+                                  const Icon = getCategoryIcon(transaction.category);
+                                  return (
+                                    <>
+                                      {Icon && <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />}
+                                      <span>{getCategoryLabel(transaction.category)}</span>
+                                    </>
+                                  );
+                                })()}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
                                 {formatDate(transaction.date)}

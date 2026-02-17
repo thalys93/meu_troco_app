@@ -13,10 +13,10 @@ function PrivateLayout({ children }: { children: React.ReactNode }) {
     const { data } = useGetUserData(uid);
 
     React.useEffect(() => {
-        if (uid) {
-            handleAddUser(data as User)
+        if (uid && data) {
+            handleAddUser(data as User);
         }
-    }, [uid, data])
+    }, [uid, data]);
 
     return (
         <main className="min-h-screen bg-gradient-to-br from-background via-background to-emerald-950/10 flex flex-col">

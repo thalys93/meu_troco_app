@@ -5,7 +5,7 @@ import { FirebaseTimestamp } from "@/types/Firebase"
  * @param timestamp - Um objeto com segundos e nanosegundos
  * @returns Date
  */
-export function firebaseTimestampToDate(timestamp: FirebaseTimestamp): Date {    
+export function firebaseTimestampToDate(timestamp: FirebaseTimestamp): Date {
     if (!timestamp || typeof timestamp.seconds !== "number") {
         console.error("Invalid FirebaseTimestamp")
         return

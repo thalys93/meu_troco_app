@@ -29,12 +29,12 @@ const DashboardHeader = () => {
                 <Avatar className="h-12 w-12 border-2 border-primary/20 transition-all group-hover:border-primary/50 group-hover:shadow-md">
                     <AvatarImage src={user?.details?.avatar} alt={user?.displayName} />
                     <AvatarFallback className="bg-primary/10 text-primary">
-                        {user?.displayName?.charAt(0)}
+                        {user?.displayName?.charAt(0) ?? '?'}
                     </AvatarFallback>
                 </Avatar>
                 <div>
                     <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('dashboard.welcomeGreeting')}</p>
-                    <h1 className="text-xl font-bold tracking-tight group-hover:text-primary transition-colors">{user?.displayName}</h1>
+                    <h1 className="text-xl font-bold tracking-tight group-hover:text-primary transition-colors">{user?.displayName ?? '...'}</h1>
                 </div>
             </Link>
 

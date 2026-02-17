@@ -5,15 +5,10 @@ import { useUserTransactions } from '@/utils/services/api/transation';
 import { useDashboardStats } from '@/hooks/use-dashboard';
 import { useTranslation } from 'react-i18next';
 import { motion } from "framer-motion"
-import { Dialog, DialogClose, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
-import CarouselWithThumbs, { imagesProps } from '@/components/Carousel';
-import { Button } from '@/components/ui/button';
 import BalanceCard from './components/BalanceCard';
 import QuickActions from './components/QuickActions';
 import StatCard from '@/components/StatCard';
 import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
-import useUserStore from '@/store/UserStore';
-import { firebaseTimestampToDate } from '@/utils/helpers/getFirebaseDate';
 import { cn } from '@/lib/utils';
 import { useDefaultCard } from '@/hooks/useDefaultCard';
 
@@ -30,19 +25,8 @@ const DashboardPage = () => {
     isExpensePositive
   } = useDashboardStats()
 
-  const { user } = useUserStore();
   const { t } = useTranslation();
   useDefaultCard();
-
-  const createdAt = user?.details?.createdAt;
-  const userCreatedDate = createdAt ? firebaseTimestampToDate(createdAt) : null;
-  const isNew = userCreatedDate ? userCreatedDate.toDateString() === new Date().toDateString() : false;
-
-  const images: imagesProps[] = [
-    { image: "/gifs/adding_expenses.gif", description: t('sidebar.expenses') },
-    { image: "/gifs/adding_incomes.gif", description: t('sidebar.income') },
-    { image: "/gifs/saving_avatar.gif", description: t('sidebar.profile') }
-  ]
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -74,31 +58,10 @@ const DashboardPage = () => {
       container: "bg-emerald-500/5 border-emerald-500/10",
       iconContainer: "bg-emerald-500/10 text-emerald-500",
     };
-  }, [totalBalance]);
+  }, [totalBalance]);  
 
   return (
     <PrivateLayout>
-      {isNew && (
-        <Dialog>
-          <DialogContent className="max-w-[90vw] sm:max-w-[600px] p-4 sm:p-6">
-            <div>
-              <DialogTitle>{t('dashboard.welcomeTitle')}</DialogTitle>
-              <DialogDescription>
-                <span>{t('dashboard.welcomeDescription')}</span>
-              </DialogDescription>
-            </div>
-            <div className="mt-4">
-              <CarouselWithThumbs images={images} />
-            </div>
-            <div className='flex justify-end items-end'>
-              <DialogClose>
-                <Button><span>{t('dashboard.welcomeUnderstand')}</span></Button>
-              </DialogClose>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
-
       <motion.div
         className="container mx-auto max-w-5xl mt-6 md:mt-3 mb-16 md:mb-12 px-4 md:px-6 space-y-6 md:space-y-8"
         initial="hidden"

@@ -10,7 +10,7 @@ export const useDashboardStats = () => {
     const { i18n } = useTranslation()
     const incomeTransactions = transactions.filter((t) => t.type === "receita");
     const expenseTransactions = transactions.filter((t) => t.type === "despesa");
-    const userJoinedTime = user?.details.createdAt;
+    const userJoinedTime = user?.details?.createdAt;
     const getDaysSinceUserCreated = (timestamp?: FirebaseTimestamp) => {
         if (!timestamp) return null;
 

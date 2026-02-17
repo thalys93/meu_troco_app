@@ -69,14 +69,7 @@ const DashboardHeader = () => {
                                 <User className="w-4 h-4 mr-2" />
                                 <span className="font-medium">{t('sidebar.profile')}</span>
                             </DropdownMenuItem>
-                        </NavLink>                        
-
-                        <NavLink to="/dashboard/settings">
-                            <DropdownMenuItem className="rounded-xl cursor-pointer">
-                                <Settings2 className="w-4 h-4 mr-2" />
-                                <span className="font-medium">{t('sidebar.settings')}</span>
-                            </DropdownMenuItem>
-                        </NavLink>
+                        </NavLink>                                                
 
                         <DropdownMenuSeparator className="bg-border/50" />
 

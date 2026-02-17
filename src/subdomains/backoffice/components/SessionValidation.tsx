@@ -1,7 +1,6 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import PublicLayout from '@/subdomains/backoffice/layout/PublicLayout'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
 import { Progress } from '@/components/ui/progress'
 import useUserStore from '@/store/UserStore'
@@ -16,56 +15,68 @@ import { useTranslation } from 'react-i18next'
 function SessionValidation() {
     const { uid } = useUserStore();
     const { handleAddUser } = useUser();
-    const [value, setValue] = React.useState(0);
-    const { data, isFetching } = useGetUserData(uid);
-    const {t} = useTranslation();
+    const [value, setValue] = useState(0);
+    const { data, isFetching, isError } = useGetUserData(uid ?? undefined);
+    const { t } = useTranslation();
     const navigate = useNavigate();
+    const hasValidated = useRef(false);
 
-    React.useEffect(() => {
-        const dynamicProgress = async () => {
-            if (isFetching) setValue(10);            
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            if (data) setValue(50);
-            const validateData = () => {
-                if (data?.accountType !== AccountTypes.ADMIN) return false
-                return true
-            }
+    useEffect(() => {
+        if (!uid) {
+            navigate("/backoffice/login", { replace: true });
+            return;
+        }
+    }, [uid, navigate]);
 
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            const dataIsValidated = validateData();
-            if (dataIsValidated === true) {
-                setValue(70)
-                handleAddUser(data as User);
-                setTimeout(() => {
-                    setValue(100);
-                }, 1000);
+    useEffect(() => {
+        if (isFetching && uid) setValue(10);
+    }, [isFetching, uid]);
 
-                toast({
-                    title: t('toast.successVar'),
-                    description: t('toast.successDescription'),
-                })
+    useEffect(() => {
+        if (isFetching || !uid || hasValidated.current) return;
 
-                setTimeout(() => {
-                    navigate("/backoffice/home");
-                }, 2000);
-            } else {
+        hasValidated.current = true;
+
+        const runValidation = async () => {
+            setValue(30);
+            await new Promise((r) => setTimeout(r, 500));
+
+            if (isError || !data) {
                 setValue(20);
-                setTimeout(() => { setValue(10) }, 1000);
-                setTimeout(() => { setValue(0) }, 1000);
                 toast({
                     title: "Erro",
                     description: t('backoffice.security.toastError'),
-                })
+                    variant: 'destructive',
+                });
+                setTimeout(() => navigate("/backoffice/login", { replace: true }), 1500);
+                return;
+            }
 
-                setTimeout(() => {
-                    navigate("/backoffice/login");
-                }, 2000);
-            };
-        }
+            if (data.accountType !== AccountTypes.ADMIN) {
+                setValue(20);
+                toast({
+                    title: "Erro",
+                    description: t('backoffice.security.toastError'),
+                    variant: 'destructive',
+                });
+                setTimeout(() => navigate("/backoffice/login", { replace: true }), 1500);
+                return;
+            }
 
-        dynamicProgress();
+            setValue(70);
+            handleAddUser(data as User);
+            await new Promise((r) => setTimeout(r, 500));
 
-    }, []);
+            setValue(100);
+            toast({
+                title: t('toast.successVar'),
+                description: t('toast.successDescription'),
+            });
+            setTimeout(() => navigate("/backoffice/home", { replace: true }), 1000);
+        };
+
+        runValidation();
+    }, [isFetching, data, isError, uid, navigate, t, handleAddUser]);
 
     return (
         <PublicLayout>

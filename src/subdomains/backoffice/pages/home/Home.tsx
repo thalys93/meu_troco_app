@@ -46,7 +46,7 @@ function BackofficeHomePage() {
 
     const notificationSegments: { key: NotificationType; value: number; label: string; color: string }[] = [
         { key: 'changelog', value: changelogCount, label: t('notifications.typeChangelog'), color: NOTIFICATION_COLORS.changelog },
-        { key: 'terms', value: termsCount, label: t('notifications.typeTerms'), color: NOTIFICATION_COLORS.terms },
+        { key: 'terms', value: termsCount, label: t('notifications.typeTerms'), color: NOTIFICATION_COLORS.terms },                
     ];
 
     const total = data.users + data.expenses + data.income + data.cards;

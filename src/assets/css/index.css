@@ -106,6 +106,27 @@
     @apply bg-card/50 backdrop-blur-sm border border-border/50;
   }
 
+  /* Barra de rolagem da navegação móvel – alinhada ao tema do app */
+  .mobile-nav-scroll {
+    scrollbar-gutter: stable;
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  .mobile-nav-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+  .mobile-nav-scroll::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 3px;
+  }
+  .mobile-nav-scroll::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+  .mobile-nav-scroll::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.5);
+  }
+
   /* Backoffice: fundo cinza claro, sem gradiente global */
   .backoffice-page {
     --bo-bg-page: 220 15% 97%;

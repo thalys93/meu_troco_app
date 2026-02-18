@@ -11,6 +11,7 @@ interface CardsState {
     addCard: (card: Omit<Card, "id">) => Promise<void>;
     updateCard: (id: string, card: Partial<Card>) => Promise<void>;
     deleteCard: (id: string) => Promise<void>;
+    reorderCards: (orderedIds: string[]) => Promise<void>;
 
     selectTotalBalance: () => number;
 }
@@ -23,7 +24,8 @@ export const useCardsStore = create<CardsState>((set, get) => ({
     fetchCards: async (userId: string) => {
         set({ isLoading: true, error: null });
         try {
-            const cards = await CardsService.getAll(userId);
+            const list = await CardsService.getAll(userId);
+            const cards = [...list].sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
             set({ cards, isLoading: false });
         } catch (error) {
             set({ error: (error as Error).message, isLoading: false });
@@ -66,6 +68,24 @@ export const useCardsStore = create<CardsState>((set, get) => ({
             }));
         } catch (error) {
             set({ error: (error as Error).message, isLoading: false });
+        }
+    },
+
+    reorderCards: async (orderedIds) => {
+        const { cards } = get();
+        const byId = new Map(cards.map(c => [c.id, c]));
+        const reordered = orderedIds.map((id, index) => {
+            const card = byId.get(id);
+            return card ? { ...card, order: index } : null;
+        }).filter(Boolean) as Card[];
+        if (reordered.length === 0) return;
+        set({ cards: reordered });
+        try {
+            await Promise.all(
+                reordered.map((card) => CardsService.update(card.id, { order: card.order }))
+            );
+        } catch (error) {
+            set({ error: (error as Error).message });
         }
     },
 

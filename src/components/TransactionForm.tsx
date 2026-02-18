@@ -20,6 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useCardsStore } from '@/store/useCardsStore';
+import { usePocketBalance } from '@/hooks/usePocketBalance';
+import { NO_CARD_ID, POCKET_CARD_NAME } from '@/constants/cards';
 
 interface TransactionFormProps {
   type: 'receita' | 'despesa';
@@ -54,7 +56,13 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(uid, id);
   const { refetch: refetchUserTransactions } = useUserTransactions()
   const { cards, fetchCards } = useCardsStore();
+  const pocketBalance = usePocketBalance();
   const { t, i18n } = useTranslation();
+
+  const realCards = useMemo(
+    () => cards.filter((c) => c.name !== POCKET_CARD_NAME),
+    [cards]
+  );
 
   const categories = type === 'receita' ? incomeCategories : expenseCategories;
   const getCategoryLabel = (category: string) => t(`categories.${category}`);
@@ -122,9 +130,8 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
 
   React.useEffect(() => {
     if (!id || !transaction) return;
-    if ((transaction as any).cardId) {
-      setSelectedCardId((transaction as any).cardId);
-    }
+    const cardId = (transaction as { cardId?: string }).cardId;
+    setSelectedCardId(cardId && cardId !== '' ? cardId : NO_CARD_ID);
   }, [id, transaction]);
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -154,13 +161,13 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   const getValidationErrors = (): FieldErrors => ({
     value: !displayValue.trim() || parseDisplayValue(displayValue) <= 0,
     category: !category,
-    card: !selectedCardId,
+    card: !selectedCardId?.trim(),
     description: !transactionForm.getValues('description')?.trim?.(),
   });
 
   const handleCreate = async (data: Transaction) => {
     const valueNum = parseDisplayValue(displayValue);
-    const finalData = { ...data, value: valueNum, cardId: selectedCardId };
+    const finalData = { ...data, value: valueNum, cardId: selectedCardId?.trim() || NO_CARD_ID };
     const errors = getValidationErrors();
 
     if (errors.value || errors.category || errors.card || errors.description) {
@@ -204,7 +211,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
 
   const handleEdit = async (data: Transaction) => {
     const valueNum = parseDisplayValue(displayValue);
-    const finalData = { ...data, value: valueNum, cardId: selectedCardId };
+    const finalData = { ...data, value: valueNum, cardId: selectedCardId?.trim() || NO_CARD_ID };
     const errors = getValidationErrors();
 
     if (errors.value || errors.category || errors.card || errors.description) {
@@ -341,7 +348,16 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
             </div>
           </SelectTrigger>
           <SelectContent>
-            {cards.map((card) => (
+            <SelectItem value={NO_CARD_ID}>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-gray-500" />
+                <span>{t('cards.pocket', POCKET_CARD_NAME)}</span>
+                <span className="text-muted-foreground text-xs">
+                  ({currencySymbol} {pocketBalance.toFixed(2)})
+                </span>
+              </div>
+            </SelectItem>
+            {realCards.map((card) => (
               <SelectItem key={card.id} value={card.id!}>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: card.color }} />

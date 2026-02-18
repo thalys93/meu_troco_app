@@ -52,6 +52,8 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
         }
     });
 
+    const cardType = form.watch('type');    
+
     useEffect(() => {
         if (open) {
             if (cardToEdit) {
@@ -129,26 +131,6 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
 
                     <FormField
                         control={form.control}
-                        name="balance"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>{t('cards.balance', 'Saldo / Limite')}</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        {...field}
-                                        type="number"
-                                        step="0.01"
-                                        placeholder="0.00"
-                                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                                    />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-
-                    <FormField
-                        control={form.control}
                         name="type"
                         render={({ field }) => (
                             <FormItem>
@@ -169,6 +151,28 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                             </FormItem>
                         )}
                     />
+
+                    {(cardType === 'credit' || cardType === 'voucher') && (
+                        <FormField
+                            control={form.control}
+                            name="balance"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>{t('cards.balance', 'Limite')}</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}                                            
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
 
                     <div className="grid grid-cols-2 gap-4">
                         <FormField

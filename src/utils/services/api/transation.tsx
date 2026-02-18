@@ -3,6 +3,7 @@ import { FireStore } from "./firebase";
 import useUserStore from "@/store/UserStore";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CardsService } from "./cards-service";
+import { NO_CARD_ID, isPocketCardId } from "@/constants/cards";
 
 export interface Transaction {
     id?: string;
@@ -15,25 +16,26 @@ export interface Transaction {
 }
 
 const createTransaction = async (data: Transaction, uid: string) => {
-    if (!data.cardId) throw new Error("Card ID is required");
+    const cardId = data.cardId?.trim() || NO_CARD_ID;
+    const payload = { ...data, cardId };
 
-    const card = await CardsService.getById(data.cardId);
+    if (isPocketCardId(cardId)) {
+        const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
+        const docRef = await addDoc(ref, { ...payload, createdAt: new Date() });
+        return docRef.id;
+    }
+
+    const card = await CardsService.getById(cardId);
     if (!card) throw new Error("Card not found");
 
-    // 3. Calcular novo saldo
     const newBalance = data.type === 'receita'
         ? card.balance + data.value
         : card.balance - data.value;
 
-    // 4. Atualizar saldo do cartão
-    await CardsService.update(data.cardId, { balance: newBalance });
+    await CardsService.update(cardId, { balance: newBalance });
 
-    // 5. Criar transação
     const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
-    const docRef = await addDoc(ref, {
-        ...data,
-        createdAt: new Date(),
-    });
+    const docRef = await addDoc(ref, { ...payload, createdAt: new Date() });
     return docRef.id;
 }
 
@@ -43,11 +45,13 @@ const deleteTransaction = async (uid: string, id: string) => {
 }
 
 const editTransaction = async (uid: string, id: string, data: Transaction) => {
-    // 1. Buscar transação antiga
     const oldTransaction = await getUserTransaction(uid, id);
     if (!oldTransaction) throw new Error("Transaction not found");
 
-    if (oldTransaction.cardId) {
+    const newCardId = data.cardId?.trim() || NO_CARD_ID;
+    const payload = { ...data, cardId: newCardId };
+
+    if (!isPocketCardId(oldTransaction.cardId)) {
         const oldCard = await CardsService.getById(oldTransaction.cardId);
         if (oldCard) {
             const revertedBalance = oldTransaction.type === 'receita'
@@ -57,18 +61,17 @@ const editTransaction = async (uid: string, id: string, data: Transaction) => {
         }
     }
 
-    const newCard = await CardsService.getById(data.cardId);
-    if (!newCard) throw new Error("Card not found");
+    if (!isPocketCardId(newCardId)) {
+        const newCard = await CardsService.getById(newCardId);
+        if (!newCard) throw new Error("Card not found");
+        const newBalance = data.type === 'receita'
+            ? newCard.balance + data.value
+            : newCard.balance - data.value;
+        await CardsService.update(newCardId, { balance: newBalance });
+    }
 
-    const newBalance = data.type === 'receita'
-        ? newCard.balance + data.value
-        : newCard.balance - data.value;
-
-    await CardsService.update(data.cardId, { balance: newBalance });
-
-    // 4. Atualizar transação
     const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
-    await updateDoc(ref, { ...data });
+    await updateDoc(ref, payload);
 }
 
 export const useDeleteTransaction = () => {

@@ -8,17 +8,26 @@ import { cn } from '@/lib/utils';
 import { useCardsStore } from '@/store/useCardsStore';
 import useUserStore from '@/store/UserStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { usePocketBalance } from '@/hooks/usePocketBalance';
+import { POCKET_CARD_NAME } from '@/constants/cards';
 
 interface BalanceCardProps {
     balance: number;
     formatCurrency: (value: number) => string;
 }
 
+const POCKET_COLOR = '#6b7280';
+
 const BalanceCard = ({ balance, formatCurrency }: BalanceCardProps) => {
     const [isVisible, setIsVisible] = React.useState(true);
     const { t } = useTranslation();
     const { cards, fetchCards } = useCardsStore();
     const { user } = useUserStore();
+    const pocketBalance = usePocketBalance();
+    const realCards = React.useMemo(
+        () => cards.filter((c) => c.name !== POCKET_CARD_NAME),
+        [cards]
+    );
 
     const styles = useMemo(() => {
         if (balance < 0) {
@@ -98,29 +107,41 @@ const BalanceCard = ({ balance, formatCurrency }: BalanceCardProps) => {
                         )}
                     </AnimatePresence>
 
-                    {/* Card Indicators */}
-                    {cards.length > 0 && (
-                        <TooltipProvider>
-                            <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-white/10">
-                                {cards.map((card) => (
-                                    <Tooltip key={card.id}>
-                                        <TooltipTrigger asChild>
-                                            <div
-                                                className="w-3 h-3 rounded-full cursor-pointer transition-transform hover:scale-125"
-                                                style={{ backgroundColor: card.color }}
-                                            />
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <div className="text-xs">
-                                                <p className="font-semibold">{card.name}</p>
-                                                <p className="text-muted-foreground">{formatCurrency(card.balance)}</p>
-                                            </div>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                ))}
-                            </div>
-                        </TooltipProvider>
-                    )}
+                    {/* Card Indicators: Bolso + Meus cartões */}
+                    <TooltipProvider>
+                        <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-white/10">
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <div
+                                        className="w-3 h-3 rounded-full cursor-pointer transition-transform hover:scale-125"
+                                        style={{ backgroundColor: POCKET_COLOR }}
+                                    />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <div className="text-xs">
+                                        <p className="font-semibold">{t('cards.pocket', POCKET_CARD_NAME)}</p>
+                                        <p className="text-muted-foreground">{formatCurrency(pocketBalance)}</p>
+                                    </div>
+                                </TooltipContent>
+                            </Tooltip>
+                            {realCards.map((card) => (
+                                <Tooltip key={card.id}>
+                                    <TooltipTrigger asChild>
+                                        <div
+                                            className="w-3 h-3 rounded-full cursor-pointer transition-transform hover:scale-125"
+                                            style={{ backgroundColor: card.color }}
+                                        />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <div className="text-xs">
+                                            <p className="font-semibold">{card.name}</p>
+                                            <p className="text-muted-foreground">{formatCurrency(card.balance)}</p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            ))}
+                        </div>
+                    </TooltipProvider>
                 </div>
             </CardContent>
         </Card>

@@ -1,9 +1,10 @@
-import { useUserTransactions } from "@/utils/services/api/transation"
+import { useUserTransactions } from "@/utils/services/api/transation";
 import { useUser } from "./use-user";
 import { useTranslation } from "react-i18next";
 import { FirebaseTimestamp } from "@/types/Firebase";
 import { useEffect } from "react";
 import { useCardsStore } from "@/store/useCardsStore";
+import { usePocketBalance } from "./usePocketBalance";
 export const useDashboardStats = () => {
     const { data: transactions = [] } = useUserTransactions();
     const { user } = useUser();
@@ -30,6 +31,7 @@ export const useDashboardStats = () => {
     const totalExpense = expenseTransactions.reduce((acc, curr) => acc + curr.value, 0);
 
     const { selectTotalBalance, fetchCards, cards } = useCardsStore();
+    const pocketBalance = usePocketBalance();
 
     useEffect(() => {
         if (user?.uid && cards.length === 0) {
@@ -38,9 +40,9 @@ export const useDashboardStats = () => {
     }, [user, cards.length, fetchCards]);
 
     const cardsTotal = selectTotalBalance();
-    const totalBalance = cardsTotal;
+    const totalBalance = pocketBalance + cardsTotal;
 
-    const totalMovimentado = totalIncome + totalExpense + Math.abs(cardsTotal);
+    const totalMovimentado = totalIncome + totalExpense + Math.abs(totalBalance);
 
     const incomePercentage = totalMovimentado > 0 ? (totalIncome / totalMovimentado) * 100 : 0;
     const expensePercentage = totalMovimentado > 0 ? (totalExpense / totalMovimentado) * 100 : 0;

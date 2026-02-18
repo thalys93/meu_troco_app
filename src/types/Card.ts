@@ -10,6 +10,8 @@ export interface Card {
     type: CardType;
     color: string;
     flag: string;
+    /** Ordem de exibição na lista (menor = primeiro). */
+    order?: number;
     createdAt?: FirebaseTimestamp | Date;
     updatedAt?: FirebaseTimestamp | Date;
 }

@@ -29,6 +29,10 @@ type RoutesGroup = {
     public?: RouteItem[];
     private?: RouteItem[];
     prefix?: string;
+    /** Redirect path when guard fails; required when group has private routes. */
+    guardRedirectTo?: string;
+    /** When true, only users with accountType ADMIN can access private routes. */
+    guardRequireAdmin?: boolean;
 }
 
 export const AppRoutes: RoutesGroup = {
@@ -42,6 +46,8 @@ export const AppRoutes: RoutesGroup = {
 
 export const DashboardRoutes: RoutesGroup = {
     prefix: "/dashboard",
+    guardRedirectTo: "/oauth/login",
+    guardRequireAdmin: false,
     private: [
         { path: "", element: DashboardPage },
         { path: 'income', element: IncomePage },
@@ -58,9 +64,13 @@ export const DashboardRoutes: RoutesGroup = {
 
 export const BackOfficeRoutes: RoutesGroup = {
     prefix: "/backoffice",
-    private: [
+    guardRedirectTo: "/backoffice/login",
+    guardRequireAdmin: true,
+    public: [
         { path: "login", element: BackofficeLoginPage },
         { path: "session-validation", element: SessionValidation },
+    ],
+    private: [
         { path: "home", element: BackofficeHomePage },
         { path: "plans", element: PlansPage },
         { path: "plan/:id?", element: PlansFormComponent },

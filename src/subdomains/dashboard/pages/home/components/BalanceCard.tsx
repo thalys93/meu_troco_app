@@ -9,16 +9,27 @@ import { useCardsStore } from '@/store/useCardsStore';
 import useUserStore from '@/store/UserStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePocketBalance } from '@/hooks/usePocketBalance';
-import { POCKET_CARD_NAME } from '@/constants/cards';
-
-interface BalanceCardProps {
-    balance: number;
-    formatCurrency: (value: number) => string;
-}
+import { NO_CARD_ID, POCKET_CARD_NAME } from '@/constants/cards';
+import type { Transaction } from '@/utils/services/api/transation';
+import { netByCardId } from '@/subdomains/dashboard/utils/transaction-month-nets';
 
 const POCKET_COLOR = '#6b7280';
 
-const BalanceCard = ({ balance, formatCurrency }: BalanceCardProps) => {
+interface BalanceCardProps {
+    /** Saldo global (cartões + bolso) quando `scope === 'global'`. */
+    balance: number;
+    formatCurrency: (value: number) => string;
+    /** `global`: limite/saldo cadastrado. `month`: fluxo líquido do mês nas transações passadas. */
+    scope?: 'global' | 'month';
+    monthTransactions?: Transaction[];
+}
+
+const BalanceCard = ({
+    balance,
+    formatCurrency,
+    scope = 'global',
+    monthTransactions = [],
+}: BalanceCardProps) => {
     const [isVisible, setIsVisible] = React.useState(true);
     const { t } = useTranslation();
     const { cards, fetchCards } = useCardsStore();
@@ -29,15 +40,52 @@ const BalanceCard = ({ balance, formatCurrency }: BalanceCardProps) => {
         [cards]
     );
 
+    const isMonthScope = scope === 'month';
+
+    const nets = useMemo(
+        () => (isMonthScope ? netByCardId(monthTransactions) : null),
+        [isMonthScope, monthTransactions]
+    );
+
+    const pocketDisplay = isMonthScope && nets ? (nets.get(NO_CARD_ID) ?? 0) : pocketBalance;
+
+    const cardDisplays = useMemo(() => {
+        if (isMonthScope && nets) {
+            return realCards.map((card) => ({
+                id: card.id,
+                name: card.name,
+                color: card.color,
+                amount: nets.get(card.id) ?? 0,
+            }));
+        }
+        return realCards.map((card) => ({
+            id: card.id,
+            name: card.name,
+            color: card.color,
+            amount: card.balance,
+        }));
+    }, [isMonthScope, nets, realCards]);
+
+    const primaryBalance = isMonthScope
+        ? monthTransactions.reduce(
+              (acc, tr) => acc + (tr.type === 'receita' ? tr.value : -tr.value),
+              0
+          )
+        : balance;
+
+    const titleKey = isMonthScope
+        ? 'dashboard.cardTotalTitleMonth'
+        : 'dashboard.cardTotalTitle';
+
     const styles = useMemo(() => {
-        if (balance < 0) {
+        if (primaryBalance < 0) {
             return {
                 card: "bg-gradient-to-br from-rose-600 via-rose-700 to-rose-900/30 shadow-rose-950/20",
                 label: "text-rose-100/80",
                 button: "text-rose-100 hover:text-white hover:bg-white/10"
             };
         }
-        if (balance < 50) {
+        if (primaryBalance < 50) {
             return {
                 card: "bg-gradient-to-br from-amber-500 via-amber-600 to-amber-800/30 shadow-amber-950/20",
                 label: "text-amber-100/80",
@@ -49,22 +97,27 @@ const BalanceCard = ({ balance, formatCurrency }: BalanceCardProps) => {
             label: "text-emerald-100/80",
             button: "text-emerald-100 hover:text-white hover:bg-white/10"
         };
-    }, [balance]);
+    }, [primaryBalance]);
 
     React.useEffect(() => {
         if (user?.uid) {
             fetchCards(user.uid);
         }
-    }, [user?.uid]);
+    }, [user?.uid, fetchCards]);
 
     return (
         <Card className={cn("overflow-hidden border-none text-white shadow-xl rounded-3xl transition-all duration-500", styles.card)}>
             <CardContent className="p-8">
                 <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-col gap-0.5">
                         <h2 className={cn("text-sm font-semibold tracking-wide uppercase", styles.label)}>
-                            {t('dashboard.cardTotalTitle')}
+                            {t(titleKey)}
                         </h2>
+                        {isMonthScope && (
+                            <span className={cn("text-xs opacity-80", styles.label)}>
+                                {t('dashboard.cardTotalMonthHint')}
+                            </span>
+                        )}
                     </div>
                     <Button
                         variant="ghost"
@@ -88,7 +141,7 @@ const BalanceCard = ({ balance, formatCurrency }: BalanceCardProps) => {
                             >
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-4xl md:text-5xl font-black tracking-tight">
-                                        {formatCurrency(balance)}
+                                        {formatCurrency(primaryBalance)}
                                     </span>
                                 </div>
                             </motion.div>
@@ -107,7 +160,6 @@ const BalanceCard = ({ balance, formatCurrency }: BalanceCardProps) => {
                         )}
                     </AnimatePresence>
 
-                    {/* Card Indicators: Bolso + Meus cartões */}
                     <TooltipProvider>
                         <div className="flex items-center justify-center gap-2 mt-4 pt-4 border-t border-white/10">
                             <Tooltip>
@@ -120,11 +172,16 @@ const BalanceCard = ({ balance, formatCurrency }: BalanceCardProps) => {
                                 <TooltipContent>
                                     <div className="text-xs">
                                         <p className="font-semibold">{t('cards.pocket', POCKET_CARD_NAME)}</p>
-                                        <p className="text-muted-foreground">{formatCurrency(pocketBalance)}</p>
+                                        <p className="text-muted-foreground">{formatCurrency(pocketDisplay)}</p>
+                                        {isMonthScope && (
+                                            <p className="text-[10px] text-muted-foreground mt-1">
+                                                {t('cards.monthFlowCaption')}
+                                            </p>
+                                        )}
                                     </div>
                                 </TooltipContent>
                             </Tooltip>
-                            {realCards.map((card) => (
+                            {cardDisplays.map((card) => (
                                 <Tooltip key={card.id}>
                                     <TooltipTrigger asChild>
                                         <div
@@ -135,7 +192,12 @@ const BalanceCard = ({ balance, formatCurrency }: BalanceCardProps) => {
                                     <TooltipContent>
                                         <div className="text-xs">
                                             <p className="font-semibold">{card.name}</p>
-                                            <p className="text-muted-foreground">{formatCurrency(card.balance)}</p>
+                                            <p className="text-muted-foreground">{formatCurrency(card.amount)}</p>
+                                            {isMonthScope && (
+                                                <p className="text-[10px] text-muted-foreground mt-1">
+                                                    {t('cards.monthFlowCaption')}
+                                                </p>
+                                            )}
                                         </div>
                                     </TooltipContent>
                                 </Tooltip>

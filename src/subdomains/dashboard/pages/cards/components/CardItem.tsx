@@ -12,9 +12,11 @@ import { cn } from "@/lib/utils";
 interface CardItemProps {
     card: Card;
     onEdit: (card: Card) => void;
+    /** Fluxo líquido no mês selecionado (receitas − despesas) para este cartão. */
+    monthNet?: number;
 }
 
-export function CardItem({ card, onEdit }: CardItemProps) {
+export function CardItem({ card, onEdit, monthNet }: CardItemProps) {
     const { t, i18n } = useTranslation();
     const { deleteCard } = useCardsStore();
     const [isHovered, setIsHovered] = useState(false);
@@ -57,9 +59,13 @@ export function CardItem({ card, onEdit }: CardItemProps) {
                 )}
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(card.balance)}</div>
+                <div className="text-2xl font-bold">
+                    {formatCurrency(monthNet !== undefined ? monthNet : card.balance)}
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                    {card.flag} - {t(`cards.types.${card.type}`, card.type)}
+                    {monthNet !== undefined
+                        ? t("cards.registeredBalance", { value: formatCurrency(card.balance) })
+                        : `${card.flag} - ${t(`cards.types.${card.type}`, card.type)}`}
                 </p>
             </CardContent>
             <CardFooter className="flex justify-end gap-2 p-2 bg-muted/50">

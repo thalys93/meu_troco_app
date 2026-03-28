@@ -25,6 +25,8 @@ import { NO_CARD_ID, POCKET_CARD_NAME } from '@/constants/cards';
 
 interface TransactionFormProps {
   type: 'receita' | 'despesa';
+  onSuccess?: () => void;
+  mode?: 'page' | 'sheet';
 }
 
 const initialValues = {
@@ -37,7 +39,7 @@ const initialValues = {
 
 type FieldErrors = { value: boolean; category: boolean; card: boolean; description: boolean };
 
-const TransactionForm = ({ type }: TransactionFormProps) => {
+const TransactionForm = ({ type, onSuccess, mode = 'page' }: TransactionFormProps) => {
   const [category, setCategory] = useState<string>('');
   const [selectedCardId, setSelectedCardId] = useState<string>('');
   const [displayValue, setDisplayValue] = useState<string>('');
@@ -198,6 +200,7 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
         setFieldErrors({ value: false, category: false, card: false, description: false });
         refetchUserTransactions();
         if (uid) fetchCards(uid);
+        onSuccess?.();
       },
       onError: () => {
         toast({
@@ -253,7 +256,14 @@ const TransactionForm = ({ type }: TransactionFormProps) => {
   }
 
   return (
-    <Form form={transactionForm} onSubmit={id ? handleEdit : handleCreate} className="space-y-0 flex flex-col gap-5 md:gap-6 sm:max-w-lg mx-auto">
+    <Form
+      form={transactionForm}
+      onSubmit={id ? handleEdit : handleCreate}
+      className={cn(
+        "space-y-0 flex flex-col gap-5 md:gap-6",
+        mode === 'sheet' ? "mx-0 max-w-none" : "sm:max-w-lg mx-auto"
+      )}
+    >
       {/* Value Display */}
       <div className="text-center space-y-2 py-6 md:py-8">
         <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">

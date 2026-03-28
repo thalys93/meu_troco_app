@@ -7,9 +7,10 @@ import { cn } from "@/lib/utils";
 interface SortableCardItemProps {
     card: Card;
     onEdit: (card: Card) => void;
+    monthNet?: number;
 }
 
-export function SortableCardItem({ card, onEdit }: SortableCardItemProps) {
+export function SortableCardItem({ card, onEdit, monthNet }: SortableCardItemProps) {
     const {
         attributes,
         listeners,
@@ -35,7 +36,7 @@ export function SortableCardItem({ card, onEdit }: SortableCardItemProps) {
                 isDragging && "opacity-60 z-10 shadow-lg rounded-lg"
             )}
         >
-            <CardItem card={card} onEdit={onEdit} />
+            <CardItem card={card} onEdit={onEdit} monthNet={monthNet} />
         </div>
     );
 }

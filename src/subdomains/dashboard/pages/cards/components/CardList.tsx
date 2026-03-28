@@ -1,4 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useUserTransactions } from "@/utils/services/api/transation";
+import { useDashboardPreferences } from "@/subdomains/dashboard/context/dashboard-preferences";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { getMonthRangeByKey, parseLocalDateInput } from "@/subdomains/dashboard/utils/month-range";
+import { netByCardId } from "@/subdomains/dashboard/utils/transaction-month-nets";
+import { NO_CARD_ID } from "@/constants/cards";
 import {
     DndContext,
     DragEndEvent,
@@ -21,7 +27,37 @@ import { POCKET_CARD_NAME } from "@/constants/cards";
 export function CardList() {
     const { cards, fetchCards, isLoading, reorderCards } = useCardsStore();
     const { user } = useUserStore();
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
+    const { data: allTransactions = [] } = useUserTransactions();
+    const { selectedMonth, layoutMode } = useDashboardPreferences();
+    const isMobile = useIsMobile();
+    const monthCardsMode = layoutMode === "notion" && !isMobile;
+
+    const monthTransactions = useMemo(() => {
+        if (!monthCardsMode) return [];
+        const range = getMonthRangeByKey(selectedMonth);
+        const start = parseLocalDateInput(range.startDate);
+        const end = parseLocalDateInput(range.endDate);
+        return allTransactions.filter((tr) => {
+            const d = parseLocalDateInput(tr.date);
+            return d >= start && d <= end;
+        });
+    }, [allTransactions, monthCardsMode, selectedMonth]);
+
+    const nets = useMemo(
+        () => (monthCardsMode ? netByCardId(monthTransactions) : null),
+        [monthCardsMode, monthTransactions]
+    );
+
+    const pocketMonthNet = nets ? (nets.get(NO_CARD_ID) ?? 0) : undefined;
+
+    const monthLabel = useMemo(() => {
+        if (!monthCardsMode) return "";
+        return new Intl.DateTimeFormat(i18n.language, {
+            month: "long",
+            year: "numeric",
+        }).format(parseLocalDateInput(`${selectedMonth}-01`));
+    }, [i18n.language, monthCardsMode, selectedMonth]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingCard, setEditingCard] = useState<Card | null>(null);
 
@@ -79,13 +115,20 @@ export function CardList() {
                     {t("cards.pocket", POCKET_CARD_NAME)}
                 </h2>
                 <div className="max-w-sm">
-                    <PocketCard />
+                    <PocketCard monthNet={pocketMonthNet} />
                 </div>
             </section>
 
             <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-bold tracking-tight">{t("cards.title", "Meus Cartões")}</h2>
+                <div className="flex items-center justify-between gap-4 flex-wrap">
+                    <div>
+                        <h2 className="text-xl font-bold tracking-tight">{t("cards.title", "Meus Cartões")}</h2>
+                        {monthCardsMode && monthLabel && (
+                            <p className="text-sm text-muted-foreground mt-1 capitalize">
+                                {t("cards.monthContextLabel", { month: monthLabel })}
+                            </p>
+                        )}
+                    </div>
                     <Button onClick={handleAddNew} size="sm">
                         <Plus className="mr-2 h-4 w-4" /> {t("cards.add", "Adicionar")}
                     </Button>
@@ -102,6 +145,7 @@ export function CardList() {
                                     key={card.id}
                                     card={card}
                                     onEdit={handleEdit}
+                                    monthNet={nets?.get(card.id)}
                                 />
                             ))}
 

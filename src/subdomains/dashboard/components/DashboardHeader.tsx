@@ -1,6 +1,6 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bell, Settings, User, DoorOpen, Settings2 } from 'lucide-react';
+import { Bell, Settings, User, DoorOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, NavLink } from 'react-router-dom';
 import {
@@ -17,11 +17,16 @@ import { useNotifications } from '@/hooks/use-notifications';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import NotificationList from '@/subdomains/dashboard/components/notifications/notifications-list';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { useDashboardPreferences } from '@/subdomains/dashboard/context/dashboard-preferences';
 
 const DashboardHeader = () => {
     const { user, handleLogout } = useUser();
     const { t } = useTranslation();
     const { unreadCount } = useNotifications();
+    const isMobile = useIsMobile();
+    const { layoutMode, toggleLayoutMode } = useDashboardPreferences();
+    const isNotionLayout = layoutMode === 'notion';
 
     return (
         <div className="flex items-center justify-between py-4 px-2 md:px-0">
@@ -39,6 +44,27 @@ const DashboardHeader = () => {
             </Link>
 
             <div className="flex items-center gap-1 md:gap-2">
+                {!isMobile && (
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={toggleLayoutMode}
+                        aria-label={t('dashboard.layoutToggle.ariaLabel')}
+                        className="gap-2 rounded-full text-muted-foreground"
+                    >
+                        {isNotionLayout ? (
+                            <PanelRightClose className="h-4 w-4" />
+                        ) : (
+                            <PanelRightOpen className="h-4 w-4" />
+                        )}
+                        <span className="hidden lg:inline">
+                            {isNotionLayout
+                                ? t('dashboard.layoutToggle.default')
+                                : t('dashboard.layoutToggle.notion')}
+                        </span>
+                    </Button>
+                )}
+
                 <Popover>
                     <PopoverTrigger asChild>
                         <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 transition-all active:scale-90 relative">

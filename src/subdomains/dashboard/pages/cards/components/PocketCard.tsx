@@ -6,9 +6,15 @@ import { POCKET_CARD_NAME } from "@/constants/cards";
 
 const POCKET_COLOR = "#6b7280";
 
-export function PocketCard() {
+type PocketCardProps = {
+    /** Quando definido (layout mês), mostra fluxo líquido do bolso no período em vez do saldo cadastrado. */
+    monthNet?: number;
+};
+
+export function PocketCard({ monthNet }: PocketCardProps) {
     const { t, i18n } = useTranslation();
-    const balance = usePocketBalance();
+    const pocketBalance = usePocketBalance();
+    const balance = monthNet !== undefined ? monthNet : pocketBalance;
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat(i18n.language, {
@@ -29,7 +35,9 @@ export function PocketCard() {
             <CardContent>
                 <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                    {t("cards.noCard", "Sem Cartão")}
+                    {monthNet !== undefined
+                        ? t("cards.monthFlowCaption")
+                        : t("cards.noCard", "Sem Cartão")}
                 </p>
             </CardContent>
         </UICard>

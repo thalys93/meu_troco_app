@@ -1,4 +1,4 @@
-import React from 'react'
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import PrivateLayout from '../../layout/PrivateLayout'
 import TransactionList from '@/components/TransactionList'
@@ -8,17 +8,46 @@ import { useDashboardStats } from '@/hooks/use-dashboard'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react'
+import { useDashboardPreferences } from '../../context/dashboard-preferences'
+import { getMonthRangeByKey, parseLocalDateInput } from '../../utils/month-range'
+import { useIsMobile } from '@/hooks/use-mobile'
 
-function TransactionsPage() {
+/** Conteúdo que usa `useDashboardPreferences` — deve ser filho de `PrivateLayout` (provider). */
+function TransactionsPageBody() {
     const { data: transactions, isLoading } = useUserTransactions()
     const {
-        incomeLength,
-        expenseLength,
-        totalIncome,
-        totalExpense,
         formatCurrency
     } = useDashboardStats()
     const { t } = useTranslation();
+    const {
+        selectedMonth,
+        setSelectedMonth,
+        goToNextMonth,
+        goToPreviousMonth,
+        resetCurrentMonth,
+        layoutMode
+    } = useDashboardPreferences();
+    const isMobile = useIsMobile();
+    const isNotionDesktop = layoutMode === 'notion' && !isMobile;
+    const monthRange = useMemo(() => getMonthRangeByKey(selectedMonth), [selectedMonth]);
+    const monthTransactions = useMemo(() => {
+        const start = parseLocalDateInput(monthRange.startDate);
+        const end = parseLocalDateInput(monthRange.endDate);
+        return (transactions || []).filter((item) => {
+            const date = parseLocalDateInput(item.date);
+            return date >= start && date <= end;
+        });
+    }, [monthRange.endDate, monthRange.startDate, transactions]);
+    const monthIncome = useMemo(
+        () => monthTransactions.filter((item) => item.type === 'receita').reduce((acc, item) => acc + item.value, 0),
+        [monthTransactions]
+    );
+    const monthExpense = useMemo(
+        () => monthTransactions.filter((item) => item.type === 'despesa').reduce((acc, item) => acc + item.value, 0),
+        [monthTransactions]
+    );
+    const incomeLength = monthTransactions.filter((item) => item.type === 'receita').length;
+    const expenseLength = monthTransactions.filter((item) => item.type === 'despesa').length;
 
     const containerVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -38,8 +67,11 @@ function TransactionsPage() {
     }
 
     return (
-        <PrivateLayout>
-            <div className="container mx-auto max-w-5xl mt-8 mb-20 md:mt-12 md:mb-12 px-4 md:px-6 space-y-8">
+        <div className={cn(
+            "container mx-auto mt-8 mb-20 md:mt-12 md:mb-12 px-4 md:px-6 space-y-8",
+            isNotionDesktop ? "max-w-screen-2xl" : "max-w-5xl"
+        )}>
+            {!isNotionDesktop && (
                 <motion.div
                     initial="hidden"
                     animate="visible"
@@ -70,7 +102,7 @@ function TransactionsPage() {
                                         <div className="space-y-1">
                                             <p className="text-sm font-medium text-muted-foreground">{t('sidebar.income')}</p>
                                             <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                                                {formatCurrency(totalIncome)}
+                                                {formatCurrency(monthIncome)}
                                             </p>
                                         </div>
                                         <div className="h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
@@ -94,7 +126,7 @@ function TransactionsPage() {
                                         <div className="space-y-1">
                                             <p className="text-sm font-medium text-muted-foreground">{t('sidebar.expenses')}</p>
                                             <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                                                {formatCurrency(totalExpense)}
+                                                {formatCurrency(monthExpense)}
                                             </p>
                                         </div>
                                         <div className="h-12 w-12 rounded-full bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/20 transition-colors">
@@ -112,14 +144,40 @@ function TransactionsPage() {
                         </CardContent>
                     </Card>
                 </motion.div>
+            )}
 
                 <TransactionList
-                    transactions={transactions || []}
+                    transactions={monthTransactions}
                     isLoading={isLoading}
                     title={t('transactionList.allHistory')}
-                    scrollClassName="max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-320px)] overflow-auto"
+                    scrollClassName={
+                        isNotionDesktop
+                            ? "h-[calc(100vh-240px)] md:h-[calc(100vh-280px)] min-h-[360px] max-h-[860px]"
+                            : "max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-320px)] overflow-auto"
+                    }
+                    selectedMonth={selectedMonth}
+                    onSelectedMonthChange={setSelectedMonth}
+                    onPreviousMonth={goToPreviousMonth}
+                    onNextMonth={goToNextMonth}
+                    onResetCurrentMonth={resetCurrentMonth}
+                    variant={isNotionDesktop ? 'table' : 'list'}
+                    formatCurrency={formatCurrency}
+                    showQuickAdd={isNotionDesktop}
+                    tableMonthSummary={isNotionDesktop ? {
+                        incomeTotal: monthIncome,
+                        expenseTotal: monthExpense,
+                        incomeCount: incomeLength,
+                        expenseCount: expenseLength,
+                    } : undefined}
                 />
-            </div>
+        </div>
+    )
+}
+
+function TransactionsPage() {
+    return (
+        <PrivateLayout>
+            <TransactionsPageBody />
         </PrivateLayout>
     )
 }

@@ -26,12 +26,9 @@ export function ProtectedRoute({
   }
 
   if (requireAdmin) {
-    if (user?.accountType === AccountTypes.ADMIN) {
-      return <>{children}</>;
-    }
-    if (user && user?.accountType !== AccountTypes.ADMIN) {
-      return <Navigate to={redirectTo} replace />;
-    }
+    if (user?.accountType === AccountTypes.ADMIN) return <>{children}</>;
+    if (user) return <Navigate to={redirectTo} replace />;
+
     if (!user && uid) {
       if (isFetching) {
         return (

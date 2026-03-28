@@ -1,5 +1,5 @@
 import React from "react";
-import { Pie, PieChart, Cell } from "recharts";
+import { Pie, PieChart } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
@@ -9,7 +9,8 @@ import {
 import { Transaction } from "@/utils/services/api/transation";
 import { useTranslation } from "react-i18next";
 
-const COLORS = [
+/** Cores explícitas por fatia — `fill` vai nos dados do Pie (Recharts mescla no setor). */
+const SLICE_COLORS = [
   "#22c55e",
   "#14b8a6",
   "#3b82f6",
@@ -18,6 +19,8 @@ const COLORS = [
   "#f97316",
   "#ef4444",
   "#ec4899",
+  "#64748b",
+  "#0d9488",
 ];
 
 type ExpenseByCategoryChartProps = {
@@ -45,20 +48,21 @@ export default function ExpenseByCategoryChart({
         total: Number(total.toFixed(2)),
       }))
       .sort((a, b) => b.total - a.total)
-      .slice(0, 6);
+      .slice(0, 6)
+      .map((row, index) => ({
+        ...row,
+        /** Obrigatório no próprio `data`: `Cell` nem sempre repassa `fill` corretamente para todos os setores. */
+        fill: SLICE_COLORS[index % SLICE_COLORS.length],
+        stroke: "hsl(var(--background))",
+      }));
   }, [transactions, t]);
 
+  /** Só `label`: chaves com espaço/acento (ex. "Fatura Cartão") geram `--color-…` inválido no ChartStyle. */
   const chartConfig = React.useMemo(() => {
-    return data.reduce<Record<string, { label: string; color: string }>>(
-      (acc, item, index) => {
-        acc[item.category] = {
-          label: item.label,
-          color: COLORS[index % COLORS.length],
-        };
-        return acc;
-      },
-      {}
-    );
+    return data.reduce<Record<string, { label: string }>>((acc, item) => {
+      acc[item.category] = { label: item.label };
+      return acc;
+    }, {});
   }, [data]);
 
   const topCategory = data[0];
@@ -93,15 +97,8 @@ export default function ExpenseByCategoryChart({
                 innerRadius={56}
                 outerRadius={90}
                 paddingAngle={2}
-              >
-                {data.map((entry, index) => (
-                  <Cell
-                    key={entry.category}
-                    fill={COLORS[index % COLORS.length]}
-                    stroke="transparent"
-                  />
-                ))}
-              </Pie>
+                strokeWidth={2}
+              />
             </PieChart>
           </ChartContainer>
         )}

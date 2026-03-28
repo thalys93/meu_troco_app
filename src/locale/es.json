@@ -162,6 +162,8 @@
     "Compras": "Compras",
     "Educação": "Educación",
     "Viagem": "Viaje",
+    "Empréstimo": "Préstamo",
+    "Fatura Cartão": "Factura de tarjeta",
     "Todos": "Todos"
   },
   "dialog.deleteDescription": "¿Está seguro de que desea excluir esta transação?",

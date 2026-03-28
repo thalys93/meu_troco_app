@@ -6,6 +6,67 @@ import {
 
 type DashboardLayoutMode = "default" | "notion";
 
+/** Filtros da lista de transações (persistidos em localStorage). */
+export type TransactionListFiltersPreference = {
+  card: string;
+  categories: string[];
+  type: string;
+  minValue: string;
+  maxValue: string;
+  startDate: string;
+  endDate: string;
+  dateRangeLockedToMonth: boolean;
+};
+
+export const defaultTransactionListFiltersPreference: TransactionListFiltersPreference =
+  {
+    card: "Todos",
+    categories: ["Todos"],
+    type: "Todos",
+    minValue: "",
+    maxValue: "",
+    startDate: "",
+    endDate: "",
+    dateRangeLockedToMonth: true,
+  };
+
+const FILTERS_STORAGE_KEY = "dashboard-transaction-list-filters";
+
+function parseStoredTransactionListFilters(): TransactionListFiltersPreference {
+  if (typeof window === "undefined") {
+    return defaultTransactionListFiltersPreference;
+  }
+  try {
+    const raw = window.localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (!raw) return defaultTransactionListFiltersPreference;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") {
+      return defaultTransactionListFiltersPreference;
+    }
+    const o = parsed as Record<string, unknown>;
+    const d = defaultTransactionListFiltersPreference;
+    return {
+      card: typeof o.card === "string" ? o.card : d.card,
+      categories:
+        Array.isArray(o.categories) &&
+        o.categories.every((x) => typeof x === "string")
+          ? (o.categories as string[])
+          : d.categories,
+      type: typeof o.type === "string" ? o.type : d.type,
+      minValue: typeof o.minValue === "string" ? o.minValue : d.minValue,
+      maxValue: typeof o.maxValue === "string" ? o.maxValue : d.maxValue,
+      startDate: typeof o.startDate === "string" ? o.startDate : d.startDate,
+      endDate: typeof o.endDate === "string" ? o.endDate : d.endDate,
+      dateRangeLockedToMonth:
+        typeof o.dateRangeLockedToMonth === "boolean"
+          ? o.dateRangeLockedToMonth
+          : d.dateRangeLockedToMonth,
+    };
+  } catch {
+    return defaultTransactionListFiltersPreference;
+  }
+}
+
 type DashboardPreferencesContextValue = {
   layoutMode: DashboardLayoutMode;
   selectedMonth: string;
@@ -15,6 +76,10 @@ type DashboardPreferencesContextValue = {
   goToPreviousMonth: () => void;
   goToNextMonth: () => void;
   resetCurrentMonth: () => void;
+  transactionListFilters: TransactionListFiltersPreference;
+  setTransactionListFilters: React.Dispatch<
+    React.SetStateAction<TransactionListFiltersPreference>
+  >;
 };
 
 const LAYOUT_STORAGE_KEY = "dashboard-layout-mode";
@@ -44,6 +109,10 @@ export function DashboardPreferencesProvider({
     React.useState<DashboardLayoutMode>(getInitialLayoutMode);
   const [selectedMonth, setSelectedMonth] =
     React.useState<string>(getInitialMonth);
+  const [transactionListFilters, setTransactionListFilters] =
+    React.useState<TransactionListFiltersPreference>(
+      parseStoredTransactionListFilters
+    );
 
   React.useEffect(() => {
     window.localStorage.setItem(LAYOUT_STORAGE_KEY, layoutMode);
@@ -52,6 +121,17 @@ export function DashboardPreferencesProvider({
   React.useEffect(() => {
     window.localStorage.setItem(MONTH_STORAGE_KEY, selectedMonth);
   }, [selectedMonth]);
+
+  React.useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        FILTERS_STORAGE_KEY,
+        JSON.stringify(transactionListFilters)
+      );
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }, [transactionListFilters]);
 
   const value = React.useMemo<DashboardPreferencesContextValue>(
     () => ({
@@ -66,8 +146,10 @@ export function DashboardPreferencesProvider({
         setSelectedMonth((prev) => shiftMonthKey(prev, -1)),
       goToNextMonth: () => setSelectedMonth((prev) => shiftMonthKey(prev, 1)),
       resetCurrentMonth: () => setSelectedMonth(getCurrentMonthKey()),
+      transactionListFilters,
+      setTransactionListFilters,
     }),
-    [layoutMode, selectedMonth]
+    [layoutMode, selectedMonth, transactionListFilters]
   );
 
   return (

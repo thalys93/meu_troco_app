@@ -15,6 +15,8 @@ import {
   ShoppingCart,
   GraduationCap,
   Plane,
+  HandCoins,
+  CreditCard,
   Tag,
   List,
 } from 'lucide-react';
@@ -40,6 +42,8 @@ const EXPENSE_CATEGORIES: CategoryWithIcon[] = [
   { id: 'Compras', icon: ShoppingCart },
   { id: 'Educação', icon: GraduationCap },
   { id: 'Viagem', icon: Plane },
+  { id: 'Empréstimo', icon: HandCoins },
+  { id: 'Fatura Cartão', icon: CreditCard },
   { id: 'Outro', icon: Tag },
 ];
 

@@ -173,6 +173,8 @@
     "Compras": "Shopping",
     "Educação": "Education",
     "Viagem": "Travel",
+    "Empréstimo": "Loan",
+    "Fatura Cartão": "Credit card bill",
     "Todos": "All"
   },
   "dialog.deleteDescription": "Are you sure you want to exclude this transaction?",

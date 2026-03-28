@@ -16,6 +16,10 @@ import TransactionForm from './TransactionForm';
 import { useCategories } from '@/hooks/use-categories';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import { getMonthRangeByKey, isCurrentMonthKey, parseLocalDateInput, parseMonthKey } from '@/subdomains/dashboard/utils/month-range';
+import {
+  defaultTransactionListFiltersPreference,
+  useDashboardPreferences,
+} from '@/subdomains/dashboard/context/dashboard-preferences';
 import { transactionSignedAmount } from '@/subdomains/dashboard/utils/transaction-month-nets';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './ui/sheet';
 import {
@@ -104,62 +108,80 @@ const TransactionList = ({
   const { refetch } = useUserTransactions()
   const { t, i18n } = useTranslation();
   const { getCategoryIcon } = useCategories();
+  const { transactionListFilters, setTransactionListFilters } =
+    useDashboardPreferences();
 
-  const [filterCard, setFilterCard] = React.useState<string>('Todos');
-  const [filterCategories, setFilterCategories] = React.useState<string[]>(['Todos']);
-  const [filterType, setFilterType] = React.useState<string>('Todos');
-  const [minValue, setMinValue] = React.useState<string>('');
-  const [maxValue, setMaxValue] = React.useState<string>('');
+  const filterCard = transactionListFilters.card;
+  const filterCategories = transactionListFilters.categories;
+  const filterType = transactionListFilters.type;
+  const minValue = transactionListFilters.minValue;
+  const maxValue = transactionListFilters.maxValue;
+  const startDate = transactionListFilters.startDate;
+  const endDate = transactionListFilters.endDate;
+  const dateRangeLockedToMonth =
+    transactionListFilters.dateRangeLockedToMonth;
+
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const [sheetCreateType, setSheetCreateType] = React.useState<'receita' | 'despesa'>('receita');
   const [sheetEditId, setSheetEditId] = React.useState<string | null>(null);
   const [sheetEditType, setSheetEditType] = React.useState<'receita' | 'despesa'>('receita');
-  const [startDate, setStartDate] = React.useState<string>('');
-  const [endDate, setEndDate] = React.useState<string>('');
   const [filtersOpen, setFiltersOpen] = React.useState<boolean>(false);
-  /** Quando true, "De/Até" acompanham o mês do seletor; ao editar datas no filtro, fica false para permitir intervalos entre meses. */
-  const [dateRangeLockedToMonth, setDateRangeLockedToMonth] = React.useState(true);
   const monthRange = React.useMemo(
     () => (selectedMonth ? getMonthRangeByKey(selectedMonth) : undefined),
     [selectedMonth]
   );
 
+  /** Quando true, "De/Até" acompanham o mês do seletor; ao editar datas no filtro, fica false para permitir intervalos entre meses. */
   React.useEffect(() => {
     if (!monthRange || !dateRangeLockedToMonth) return;
-    setStartDate(monthRange.startDate);
-    setEndDate(monthRange.endDate);
-  }, [monthRange, dateRangeLockedToMonth]);
+    setTransactionListFilters((prev) => {
+      if (!prev.dateRangeLockedToMonth) return prev;
+      if (
+        prev.startDate === monthRange.startDate &&
+        prev.endDate === monthRange.endDate
+      ) {
+        return prev;
+      }
+      return {
+        ...prev,
+        startDate: monthRange.startDate,
+        endDate: monthRange.endDate,
+      };
+    });
+  }, [monthRange, dateRangeLockedToMonth, setTransactionListFilters]);
 
   const handlePreviousMonthClick = React.useCallback(() => {
-    setDateRangeLockedToMonth(true);
+    setTransactionListFilters((prev) => ({
+      ...prev,
+      dateRangeLockedToMonth: true,
+    }));
     onPreviousMonth?.();
-  }, [onPreviousMonth]);
+  }, [onPreviousMonth, setTransactionListFilters]);
 
   const handleNextMonthClick = React.useCallback(() => {
-    setDateRangeLockedToMonth(true);
+    setTransactionListFilters((prev) => ({
+      ...prev,
+      dateRangeLockedToMonth: true,
+    }));
     onNextMonth?.();
-  }, [onNextMonth]);
+  }, [onNextMonth, setTransactionListFilters]);
 
   const handleResetCurrentMonthClick = React.useCallback(() => {
-    setDateRangeLockedToMonth(true);
+    setTransactionListFilters((prev) => ({
+      ...prev,
+      dateRangeLockedToMonth: true,
+    }));
     onResetCurrentMonth?.();
-  }, [onResetCurrentMonth]);
+  }, [onResetCurrentMonth, setTransactionListFilters]);
 
   const handleFiltersClearAll = React.useCallback(() => {
-    setFilterCard('Todos');
-    setFilterCategories(['Todos']);
-    setFilterType('Todos');
-    setMinValue('');
-    setMaxValue('');
-    setDateRangeLockedToMonth(true);
-    if (monthRange) {
-      setStartDate(monthRange.startDate);
-      setEndDate(monthRange.endDate);
-    } else {
-      setStartDate('');
-      setEndDate('');
-    }
-  }, [monthRange]);
+    setTransactionListFilters({
+      ...defaultTransactionListFiltersPreference,
+      dateRangeLockedToMonth: true,
+      startDate: monthRange?.startDate ?? '',
+      endDate: monthRange?.endDate ?? '',
+    });
+  }, [monthRange, setTransactionListFilters]);
 
 
   const formatAmount = (amount: number, type: 'receita' | 'despesa') => {
@@ -438,26 +460,34 @@ const TransactionList = ({
               filteredCount={filteredTransactions.length}
               onClearAll={handleFiltersClearAll}
               onChange={(key, value: string | string[]) => {
-                switch (key) {
-                  case 'card':
-                    setFilterCard(value as string); break;
-                  case 'categories':
-                    setFilterCategories(value as string[]); break;
-                  case 'type':
-                    setFilterType(value as string); break;
-                  case 'minValue':
-                    setMinValue(value as string); break;
-                  case 'maxValue':
-                    setMaxValue(value as string); break;
-                  case 'startDate':
-                    setStartDate(value as string);
-                    setDateRangeLockedToMonth(false);
-                    break;
-                  case 'endDate':
-                    setEndDate(value as string);
-                    setDateRangeLockedToMonth(false);
-                    break;
-                }
+                setTransactionListFilters((prev) => {
+                  switch (key) {
+                    case 'card':
+                      return { ...prev, card: value as string };
+                    case 'categories':
+                      return { ...prev, categories: value as string[] };
+                    case 'type':
+                      return { ...prev, type: value as string };
+                    case 'minValue':
+                      return { ...prev, minValue: value as string };
+                    case 'maxValue':
+                      return { ...prev, maxValue: value as string };
+                    case 'startDate':
+                      return {
+                        ...prev,
+                        startDate: value as string,
+                        dateRangeLockedToMonth: false,
+                      };
+                    case 'endDate':
+                      return {
+                        ...prev,
+                        endDate: value as string,
+                        dateRangeLockedToMonth: false,
+                      };
+                    default:
+                      return prev;
+                  }
+                });
               }}
             />
             </div>
@@ -512,7 +542,10 @@ const TransactionList = ({
             <ToggleGroup
               type="single"
               value={filterType}
-              onValueChange={(v) => v && setFilterType(v)}
+              onValueChange={(v) =>
+                v &&
+                setTransactionListFilters((prev) => ({ ...prev, type: v }))
+              }
               variant="outline"
               size="sm"
               className={cn("flex-wrap gap-2", variant === 'table' && "gap-1.5")}

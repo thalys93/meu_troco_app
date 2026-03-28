@@ -25,7 +25,11 @@ import { NO_CARD_ID, POCKET_CARD_NAME } from '@/constants/cards';
 
 interface TransactionFormProps {
   type: 'receita' | 'despesa';
+  /** Quando definido (ex.: edição no sheet), usa este id em vez do parâmetro de rota. */
+  transactionId?: string;
   onSuccess?: () => void;
+  /** Fechar sheet / voltar sem depender de `navigate(-1)`. */
+  onCancel?: () => void;
   mode?: 'page' | 'sheet';
 }
 
@@ -39,7 +43,7 @@ const initialValues = {
 
 type FieldErrors = { value: boolean; category: boolean; card: boolean; description: boolean };
 
-const TransactionForm = ({ type, onSuccess, mode = 'page' }: TransactionFormProps) => {
+const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, onCancel, mode = 'page' }: TransactionFormProps) => {
   const [category, setCategory] = useState<string>('');
   const [selectedCardId, setSelectedCardId] = useState<string>('');
   const [displayValue, setDisplayValue] = useState<string>('');
@@ -48,14 +52,15 @@ const TransactionForm = ({ type, onSuccess, mode = 'page' }: TransactionFormProp
     defaultValues: initialValues
   })
 
-  const { id } = useParams();
+  const { id: routeId } = useParams();
+  const id = transactionIdProp ?? routeId;
   const navigate = useNavigate();
   const { uid } = useUserStore();
-  const { data: transaction, refetch: refetchTransaction } = useUserTransaction(uid, id)
+  const { data: transaction, refetch: refetchTransaction } = useUserTransaction(uid, id ?? '')
   const { expenseCategories, incomeCategories, getCategoryIcon } = useCategories();
 
   const { mutate: create, isPending } = useCreateTransaction();
-  const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(uid, id);
+  const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(uid, id ?? '');
   const { refetch: refetchUserTransactions } = useUserTransactions()
   const { cards, fetchCards } = useCardsStore();
   const pocketBalance = usePocketBalance();
@@ -243,7 +248,11 @@ const TransactionForm = ({ type, onSuccess, mode = 'page' }: TransactionFormProp
         refetchTransaction();
         // Atualizar saldos dos cartões
         if (uid) fetchCards(uid);
-        navigate(-1);
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          navigate(-1);
+        }
       },
       onError: () => {
         toast({
@@ -258,7 +267,7 @@ const TransactionForm = ({ type, onSuccess, mode = 'page' }: TransactionFormProp
   return (
     <Form
       form={transactionForm}
-      onSubmit={id ? handleEdit : handleCreate}
+      onSubmit={id && String(id).length > 0 ? handleEdit : handleCreate}
       className={cn(
         "space-y-0 flex flex-col gap-5 md:gap-6",
         mode === 'sheet' ? "mx-0 max-w-none" : "sm:max-w-lg mx-auto"
@@ -431,16 +440,16 @@ const TransactionForm = ({ type, onSuccess, mode = 'page' }: TransactionFormProp
           <Loader2 className="animate-spin h-6 w-6" />
         ) : (
           <>
-            {id ? t('default.edit') : t('default.add')} {type === 'receita' ? t('default.receipt') : t('default.expense')}
+            {id && String(id).length > 0 ? t('default.edit') : t('default.add')} {type === 'receita' ? t('default.receipt') : t('default.expense')}
           </>
         )}
       </Button>
 
-      {id && (
+      {id && String(id).length > 0 && (
         <Button
           variant="ghost"
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() => (onCancel ? onCancel() : navigate(-1))}
           className="flex items-center gap-2 text-muted-foreground"
         >
           <ChevronLeft className="w-4 h-4" />

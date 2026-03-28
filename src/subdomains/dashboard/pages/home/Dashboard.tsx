@@ -117,7 +117,7 @@ function DashboardHomeBody() {
         <>
           <motion.div variants={itemVariants} className="pt-2 pb-2">
             <TransactionList
-              transactions={monthTransactions}
+              transactions={transactions}
               isLoading={isLoading}
               scrollClassName={
                 isNotionDesktop
@@ -126,19 +126,12 @@ function DashboardHomeBody() {
               }
               title={t('dashboard.listTitle')}
               selectedMonth={selectedMonth}
-              onSelectedMonthChange={setSelectedMonth}
               onPreviousMonth={goToPreviousMonth}
               onNextMonth={goToNextMonth}
               onResetCurrentMonth={resetCurrentMonth}
               variant="table"
               formatCurrency={formatCurrency}
               showQuickAdd
-              tableMonthSummary={{
-                incomeTotal: monthIncome,
-                expenseTotal: monthExpense,
-                incomeCount: incomeLength,
-                expenseCount: expenseLength,
-              }}
             />
           </motion.div>
 
@@ -251,11 +244,10 @@ function DashboardHomeBody() {
 
           <motion.div variants={itemVariants} className="pt-4 pb-16">
             <TransactionList
-              transactions={monthTransactions}
+              transactions={transactions}
               isLoading={isLoading}
               title={t('dashboard.listTitle')}
               selectedMonth={selectedMonth}
-              onSelectedMonthChange={setSelectedMonth}
               onPreviousMonth={goToPreviousMonth}
               onNextMonth={goToNextMonth}
               onResetCurrentMonth={resetCurrentMonth}

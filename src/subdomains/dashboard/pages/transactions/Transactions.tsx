@@ -147,7 +147,7 @@ function TransactionsPageBody() {
             )}
 
                 <TransactionList
-                    transactions={monthTransactions}
+                    transactions={transactions ?? []}
                     isLoading={isLoading}
                     title={t('transactionList.allHistory')}
                     scrollClassName={
@@ -156,19 +156,12 @@ function TransactionsPageBody() {
                             : "max-h-[calc(100vh-280px)] md:max-h-[calc(100vh-320px)] overflow-auto"
                     }
                     selectedMonth={selectedMonth}
-                    onSelectedMonthChange={setSelectedMonth}
                     onPreviousMonth={goToPreviousMonth}
                     onNextMonth={goToNextMonth}
                     onResetCurrentMonth={resetCurrentMonth}
                     variant={isNotionDesktop ? 'table' : 'list'}
                     formatCurrency={formatCurrency}
                     showQuickAdd={isNotionDesktop}
-                    tableMonthSummary={isNotionDesktop ? {
-                        incomeTotal: monthIncome,
-                        expenseTotal: monthExpense,
-                        incomeCount: incomeLength,
-                        expenseCount: expenseLength,
-                    } : undefined}
                 />
         </div>
     )

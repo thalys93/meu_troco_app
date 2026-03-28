@@ -8,7 +8,6 @@ import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import DeleteDialog from './DeleteDialog';
 import { toast } from '@/hooks/use-toast';
-import { Link } from 'react-router-dom';
 import { ScrollArea } from './ui/scroll-area';
 import useUserStore from '@/store/UserStore';
 import { useTranslation } from 'react-i18next';
@@ -29,11 +28,43 @@ import {
   TableRow,
 } from '@/components/ui/table';
 
-type TransactionTableMonthSummary = {
-  incomeTotal: number
-  expenseTotal: number
-  incomeCount: number
-  expenseCount: number
+/** Portais Radix + calendário (react-day-picker `.rdp`) ficam fora do nó do Dialog; precisamos ignorar esses cliques. */
+const QUICK_ADD_OUTSIDE_PORTAL_SELECTOR =
+  '[data-radix-popper-content-wrapper],[data-radix-menu-content],[data-radix-select-viewport],.rdp';
+
+function elementFromEventTarget(target: EventTarget | null): Element | null {
+  if (!target) return null;
+  if (target instanceof Element) return target;
+  if (target instanceof Text) return target.parentElement;
+  return null;
+}
+
+function isInsideQuickAddNestedLayer(node: EventTarget | null): boolean {
+  const el = elementFromEventTarget(node);
+  if (!el) return false;
+  return Boolean(el.closest(QUICK_ADD_OUTSIDE_PORTAL_SELECTOR));
+}
+
+/** Evita fechar o Sheet ao interagir com Popover/Select/Calendar em portal (usa composedPath por causa de shadow/text nodes). */
+function preventQuickAddSheetDismissIfFromNestedPortal(event: {
+  preventDefault: () => void;
+  target: EventTarget;
+  detail?: { originalEvent?: Event };
+}): void {
+  const orig = event.detail?.originalEvent as
+    | (Event & { composedPath?: () => EventTarget[] })
+    | undefined;
+  if (orig && typeof orig.composedPath === 'function') {
+    for (const n of orig.composedPath()) {
+      if (isInsideQuickAddNestedLayer(n)) {
+        event.preventDefault();
+        return;
+      }
+    }
+  }
+  if (isInsideQuickAddNestedLayer(orig?.target ?? null) || isInsideQuickAddNestedLayer(event.target)) {
+    event.preventDefault();
+  }
 }
 
 interface TransactionListProps {
@@ -43,7 +74,6 @@ interface TransactionListProps {
   limit?: number
   scrollClassName?: string
   selectedMonth?: string
-  onSelectedMonthChange?: (monthKey: string) => void
   onPreviousMonth?: () => void
   onNextMonth?: () => void
   onResetCurrentMonth?: () => void
@@ -51,7 +81,6 @@ interface TransactionListProps {
   variant?: 'list' | 'table'
   formatCurrency?: (value: number) => string
   showQuickAdd?: boolean
-  tableMonthSummary?: TransactionTableMonthSummary
 }
 
 const TransactionList = ({
@@ -61,14 +90,12 @@ const TransactionList = ({
   limit,
   scrollClassName = 'max-h-[350px] overflow-auto',
   selectedMonth,
-  onSelectedMonthChange,
   onPreviousMonth,
   onNextMonth,
   onResetCurrentMonth,
   variant = 'list',
   formatCurrency,
   showQuickAdd = false,
-  tableMonthSummary,
 }: TransactionListProps) => {
   const displayTransactions = limit ? transactions?.slice(0, limit) : transactions;
   const { uid } = useUserStore();
@@ -83,20 +110,55 @@ const TransactionList = ({
   const [filterType, setFilterType] = React.useState<string>('Todos');
   const [minValue, setMinValue] = React.useState<string>('');
   const [maxValue, setMaxValue] = React.useState<string>('');
-  const [quickAddOpen, setQuickAddOpen] = React.useState<boolean>(false);
-  const [quickAddType, setQuickAddType] = React.useState<'receita' | 'despesa'>('receita');
+  const [sheetOpen, setSheetOpen] = React.useState(false);
+  const [sheetCreateType, setSheetCreateType] = React.useState<'receita' | 'despesa'>('receita');
+  const [sheetEditId, setSheetEditId] = React.useState<string | null>(null);
+  const [sheetEditType, setSheetEditType] = React.useState<'receita' | 'despesa'>('receita');
   const [startDate, setStartDate] = React.useState<string>('');
   const [endDate, setEndDate] = React.useState<string>('');
   const [filtersOpen, setFiltersOpen] = React.useState<boolean>(false);
+  /** Quando true, "De/Até" acompanham o mês do seletor; ao editar datas no filtro, fica false para permitir intervalos entre meses. */
+  const [dateRangeLockedToMonth, setDateRangeLockedToMonth] = React.useState(true);
   const monthRange = React.useMemo(
     () => (selectedMonth ? getMonthRangeByKey(selectedMonth) : undefined),
     [selectedMonth]
   );
 
   React.useEffect(() => {
-    if (!monthRange) return;
+    if (!monthRange || !dateRangeLockedToMonth) return;
     setStartDate(monthRange.startDate);
     setEndDate(monthRange.endDate);
+  }, [monthRange, dateRangeLockedToMonth]);
+
+  const handlePreviousMonthClick = React.useCallback(() => {
+    setDateRangeLockedToMonth(true);
+    onPreviousMonth?.();
+  }, [onPreviousMonth]);
+
+  const handleNextMonthClick = React.useCallback(() => {
+    setDateRangeLockedToMonth(true);
+    onNextMonth?.();
+  }, [onNextMonth]);
+
+  const handleResetCurrentMonthClick = React.useCallback(() => {
+    setDateRangeLockedToMonth(true);
+    onResetCurrentMonth?.();
+  }, [onResetCurrentMonth]);
+
+  const handleFiltersClearAll = React.useCallback(() => {
+    setFilterCard('Todos');
+    setFilterCategories(['Todos']);
+    setFilterType('Todos');
+    setMinValue('');
+    setMaxValue('');
+    setDateRangeLockedToMonth(true);
+    if (monthRange) {
+      setStartDate(monthRange.startDate);
+      setEndDate(monthRange.endDate);
+    } else {
+      setStartDate('');
+      setEndDate('');
+    }
   }, [monthRange]);
 
 
@@ -174,15 +236,6 @@ const TransactionList = ({
     return isPending && selectedTransaction?.id === id
   }
 
-  const isIncome = (type: string) => {
-    switch (type) {
-      case 'receita':
-        return 'income'
-      case 'despesa':
-        return 'expenses'
-    }
-  }
-
   const getCategoryLabel = (category: string) => t(`categories.${category}`);
 
 
@@ -208,6 +261,18 @@ const TransactionList = ({
       return matchCard && matchCategory && matchType && matchMin && matchMax && matchStart && matchEnd;
     }).sort((a, b) => parseLocalDateInput(b.date).getTime() - parseLocalDateInput(a.date).getTime());
   }, [displayTransactions, filterCard, filterCategories, filterType, minValue, maxValue, startDate, endDate]);
+
+  /** Mesmos critérios da tabela (filtros), para os cards de receita/despesa não divergirem do rodapé/lista. */
+  const tableFilteredIncomeExpenseSummary = React.useMemo(() => {
+    const income = filteredTransactions.filter((tr) => tr.type === 'receita');
+    const expense = filteredTransactions.filter((tr) => tr.type === 'despesa');
+    return {
+      incomeTotal: income.reduce((acc, tr) => acc + tr.value, 0),
+      expenseTotal: expense.reduce((acc, tr) => acc + tr.value, 0),
+      incomeCount: income.length,
+      expenseCount: expense.length,
+    };
+  }, [filteredTransactions]);
 
   const tableNetSum = React.useMemo(
     () => filteredTransactions.reduce((acc, tr) => acc + transactionSignedAmount(tr), 0),
@@ -253,16 +318,38 @@ const TransactionList = ({
     return `${sign}$${Math.abs(tableNetSum).toLocaleString()}`;
   }, [formatCurrency, tableNetSum]);
 
-  const openQuickAdd = React.useCallback((type: 'receita' | 'despesa') => {
-    setQuickAddType(type);
-    setQuickAddOpen(true);
+  const handleSheetOpenChange = React.useCallback((open: boolean) => {
+    if (!open) {
+      setSheetOpen(false);
+      setSheetEditId(null);
+    }
   }, []);
+
+  const openCreateSheet = React.useCallback((type: 'receita' | 'despesa') => {
+    setSheetCreateType(type);
+    setSheetEditId(null);
+    setSheetOpen(true);
+  }, []);
+
+  const openEditSheet = React.useCallback((transaction: Transaction) => {
+    if (!transaction.id) return;
+    setSheetEditId(transaction.id);
+    setSheetEditType(transaction.type === 'receita' ? 'receita' : 'despesa');
+    setSheetOpen(true);
+  }, []);
+
+  const onQuickAddSheetDismissIntercept = React.useCallback(
+    (event: { preventDefault: () => void; target: EventTarget; detail?: { originalEvent?: Event } }) => {
+      preventQuickAddSheetDismissIfFromNestedPortal(event);
+    },
+    []
+  );
 
   return (
     <>
       <Card className={cn("glass-card", variant === 'table' && "rounded-xl border-border/60")}>
         <CardHeader>
-          {variant === 'table' && tableMonthSummary && (
+          {variant === 'table' && showQuickAdd && (
             <div
               aria-label={t('dashboard.monthFilter.label')}
               className="grid grid-cols-1 gap-2 md:grid-cols-2 mb-3"
@@ -272,7 +359,7 @@ const TransactionList = ({
                   <div className="min-w-0 space-y-0.5">
                     <p className="text-xs font-medium text-muted-foreground">{t('sidebar.income')}</p>
                     <p className="truncate text-base font-semibold text-emerald-600 dark:text-emerald-400">
-                      {formatSummaryValue(tableMonthSummary.incomeTotal)}
+                      {formatSummaryValue(tableFilteredIncomeExpenseSummary.incomeTotal)}
                     </p>
                   </div>
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
@@ -281,7 +368,7 @@ const TransactionList = ({
                 </div>
                 <div className="mt-2 flex items-center gap-1.5">
                   <Badge className="h-5 border-0 bg-emerald-500/15 px-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                    {tableMonthSummary.incomeCount}
+                    {tableFilteredIncomeExpenseSummary.incomeCount}
                   </Badge>
                   <span className="text-[11px] text-muted-foreground">
                     {t('filters.items', { defaultValue: 'transações' })}
@@ -293,7 +380,7 @@ const TransactionList = ({
                   <div className="min-w-0 space-y-0.5">
                     <p className="text-xs font-medium text-muted-foreground">{t('sidebar.expenses')}</p>
                     <p className="truncate text-base font-semibold text-red-600 dark:text-red-400">
-                      {formatSummaryValue(tableMonthSummary.expenseTotal)}
+                      {formatSummaryValue(tableFilteredIncomeExpenseSummary.expenseTotal)}
                     </p>
                   </div>
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/10 text-red-500">
@@ -302,7 +389,7 @@ const TransactionList = ({
                 </div>
                 <div className="mt-2 flex items-center gap-1.5">
                   <Badge className="h-5 border-0 bg-red-500/15 px-1.5 text-[11px] font-semibold text-red-700 dark:text-red-300">
-                    {tableMonthSummary.expenseCount}
+                    {tableFilteredIncomeExpenseSummary.expenseCount}
                   </Badge>
                   <span className="text-[11px] text-muted-foreground">
                     {t('filters.items', { defaultValue: 'transações' })}
@@ -321,7 +408,7 @@ const TransactionList = ({
                   <Button
                     size="sm"
                     className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
-                    onClick={() => openQuickAdd('receita')}
+                    onClick={() => openCreateSheet('receita')}
                   >
                     <Plus className="h-4 w-4 shrink-0" />
                     {t('dashboard.actions.receipt')}
@@ -329,7 +416,7 @@ const TransactionList = ({
                   <Button
                     size="sm"
                     className="gap-1.5 bg-red-600 text-white hover:bg-red-700 shadow-sm"
-                    onClick={() => openQuickAdd('despesa')}
+                    onClick={() => openCreateSheet('despesa')}
                   >
                     <Plus className="h-4 w-4 shrink-0" />
                     {t('dashboard.actions.expense')}
@@ -349,6 +436,7 @@ const TransactionList = ({
                 endDate,
               }}
               filteredCount={filteredTransactions.length}
+              onClearAll={handleFiltersClearAll}
               onChange={(key, value: string | string[]) => {
                 switch (key) {
                   case 'card':
@@ -361,22 +449,14 @@ const TransactionList = ({
                     setMinValue(value as string); break;
                   case 'maxValue':
                     setMaxValue(value as string); break;
-                  case 'startDate': {
-                    const nextValue = value as string;
-                    setStartDate(nextValue);
-                    if (selectedMonth && onSelectedMonthChange && nextValue.length >= 7) {
-                      onSelectedMonthChange(nextValue.slice(0, 7));
-                    }
+                  case 'startDate':
+                    setStartDate(value as string);
+                    setDateRangeLockedToMonth(false);
                     break;
-                  }
-                  case 'endDate': {
-                    const nextValue = value as string;
-                    setEndDate(nextValue);
-                    if (selectedMonth && onSelectedMonthChange && nextValue.length >= 7) {
-                      onSelectedMonthChange(nextValue.slice(0, 7));
-                    }
+                  case 'endDate':
+                    setEndDate(value as string);
+                    setDateRangeLockedToMonth(false);
                     break;
-                  }
                 }
               }}
             />
@@ -396,7 +476,7 @@ const TransactionList = ({
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
-                  onClick={onPreviousMonth}
+                  onClick={handlePreviousMonthClick}
                   aria-label={t('dashboard.monthFilter.previous')}
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -405,7 +485,7 @@ const TransactionList = ({
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={onResetCurrentMonth}
+                  onClick={handleResetCurrentMonthClick}
                   disabled={isCurrentMonthKey(selectedMonth)}
                 >
                   {t('dashboard.monthFilter.current')}
@@ -415,7 +495,7 @@ const TransactionList = ({
                   variant="outline"
                   size="icon"
                   className="h-8 w-8"
-                  onClick={onNextMonth}
+                  onClick={handleNextMonthClick}
                   aria-label={t('dashboard.monthFilter.next')}
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -498,11 +578,20 @@ const TransactionList = ({
                       return (
                         <TableRow
                           key={transaction.id}
+                          role="button"
+                          tabIndex={0}
                           className={cn(
-                            "border-0 transition-colors",
+                            "border-0 transition-colors cursor-pointer",
                             zebra ? "bg-muted/30 hover:bg-muted/45 dark:bg-muted/15 dark:hover:bg-muted/25" : "bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20",
                             isPendingTransaction(transaction.id) && "pointer-events-none opacity-60"
                           )}
+                          onClick={() => openEditSheet(transaction)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              openEditSheet(transaction);
+                            }
+                          }}
                         >
                           <TableCell className="border-b border-border/30 py-2 pl-4 pr-2 align-middle">
                             <div className="flex items-center gap-2.5">
@@ -549,7 +638,10 @@ const TransactionList = ({
                           )}>
                             {formatAmount(transaction.value, transaction.type)}
                           </TableCell>
-                          <TableCell className="border-b border-border/30 py-2 pr-4 pl-2 text-right align-middle">
+                          <TableCell
+                            className="border-b border-border/30 py-2 pr-4 pl-2 text-right align-middle"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground">
@@ -564,11 +656,12 @@ const TransactionList = ({
                                     <Trash className='h-4 w-4' /> {t('transactionList.delete')}
                                   </div>
                                 </DropdownMenuItem>
-                                <Link to={`/dashboard/${isIncome(transaction.type)}/${transaction.id}`}>
-                                  <DropdownMenuItem className='flex flex-row items-center gap-2'>
-                                    <Pen className='h-4 w-4' /> {t('transactionList.edit')}
-                                  </DropdownMenuItem>
-                                </Link>
+                                <DropdownMenuItem
+                                  className='flex flex-row items-center gap-2'
+                                  onClick={() => openEditSheet(transaction)}
+                                >
+                                  <Pen className='h-4 w-4' /> {t('transactionList.edit')}
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -674,11 +767,12 @@ const TransactionList = ({
                                   <Trash className='h-4 w-4' /> {t('transactionList.delete')}
                                 </div>
                               </DropdownMenuItem>
-                              <Link to={`/dashboard/${isIncome(transaction.type)}/${transaction.id}`}>
-                                <DropdownMenuItem className='flex flex-row items-center gap-2'>
-                                  <Pen className='h-4 w-4' /> {t('transactionList.edit')}
-                                </DropdownMenuItem>
-                              </Link>
+                              <DropdownMenuItem
+                                className='flex flex-row items-center gap-2'
+                                onClick={() => openEditSheet(transaction)}
+                              >
+                                <Pen className='h-4 w-4' /> {t('transactionList.edit')}
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
@@ -702,15 +796,25 @@ const TransactionList = ({
           itemDetails={selectedTransaction!}
         />
       )}
-      <Sheet open={quickAddOpen} onOpenChange={setQuickAddOpen}>
+      {sheetOpen && (
+        <div
+          aria-hidden
+          className="fixed inset-0 z-[45] bg-black/30 dark:bg-black/40"
+          onPointerDown={() => handleSheetOpenChange(false)}
+        />
+      )}
+      <Sheet modal={false} open={sheetOpen} onOpenChange={handleSheetOpenChange}>
         <SheetContent
           side="right"
-          className="w-full overflow-y-auto sm:max-w-md sm:w-[min(100%,28rem)]"
-          overlayClassName="bg-black/30 dark:bg-black/40"
+          className="z-[50] w-full overflow-y-auto sm:max-w-md sm:w-[min(100%,28rem)]"
+          onPointerDownOutside={onQuickAddSheetDismissIntercept}
+          onInteractOutside={onQuickAddSheetDismissIntercept}
         >
           <SheetHeader className="mb-2 border-b border-border/50 pb-4">
             <SheetTitle>
-              {t('default.add')} {quickAddType === 'receita' ? t('default.receipt') : t('default.expense')}
+              {sheetEditId
+                ? `${t('default.edit')} ${sheetEditType === 'receita' ? t('default.receipt') : t('default.expense')}`
+                : `${t('default.add')} ${sheetCreateType === 'receita' ? t('default.receipt') : t('default.expense')}`}
             </SheetTitle>
             <SheetDescription>
               {t('transactionList.allHistory')}
@@ -718,9 +822,12 @@ const TransactionList = ({
           </SheetHeader>
           <div className="pb-6">
             <TransactionForm
-              type={quickAddType}
+              key={sheetEditId ?? `create-${sheetCreateType}`}
+              type={sheetEditId ? sheetEditType : sheetCreateType}
+              transactionId={sheetEditId ?? undefined}
               mode="sheet"
-              onSuccess={() => setQuickAddOpen(false)}
+              onSuccess={() => handleSheetOpenChange(false)}
+              onCancel={() => handleSheetOpenChange(false)}
             />
           </div>
         </SheetContent>

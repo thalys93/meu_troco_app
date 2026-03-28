@@ -27,6 +27,8 @@ interface TransactionFiltersDialogProps {
   filters: Filters;
   onChange: (key: keyof Filters, value: string | string[]) => void;
   filteredCount: number;
+  /** Se definido, substitui o reset padrão (ex.: realinhar datas ao mês selecionado). */
+  onClearAll?: () => void;
 }
 
 export default function TransactionFiltersDialog({
@@ -35,6 +37,7 @@ export default function TransactionFiltersDialog({
   filters,
   onChange,
   filteredCount,
+  onClearAll,
 }: TransactionFiltersDialogProps) {
   const { t } = useTranslation();
   const { uid } = useUserStore();
@@ -206,6 +209,10 @@ export default function TransactionFiltersDialog({
               variant="outline"
               className="gap-2"
               onClick={() => {
+                if (onClearAll) {
+                  onClearAll();
+                  return;
+                }
                 onChange('card', 'Todos');
                 onChange('categories', ['Todos']);
                 onChange('type', 'Todos');

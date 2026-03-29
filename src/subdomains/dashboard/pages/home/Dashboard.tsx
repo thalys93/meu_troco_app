@@ -193,7 +193,7 @@ function DashboardHomeBody() {
                 balance={totalBalance}
                 formatCurrency={formatCurrency}
                 scope="month"
-                monthTransactions={monthTransactions}
+                monthTransactions={filteredTransactions}
               />
               <div className={cn(
                 "hidden md:flex items-center justify-between p-4 md:p-6 rounded-3xl border transition-colors duration-500",
@@ -222,11 +222,12 @@ function DashboardHomeBody() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
             <div className="space-y-6">
               <motion.div variants={itemVariants}>
-                <BalanceCard
-                  balance={totalBalance}
-                  formatCurrency={formatCurrency}
-                  scope="global"
-                />
+                  <BalanceCard
+                    balance={totalBalance}
+                    formatCurrency={formatCurrency}
+                    scope="month"
+                    monthTransactions={filteredTransactions}
+                  />
               </motion.div>
 
               <motion.div variants={itemVariants} className="bg-card/30 p-3 sm:p-4 rounded-3xl border border-border/40 overflow-hidden">

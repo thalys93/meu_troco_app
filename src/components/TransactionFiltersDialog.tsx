@@ -1,8 +1,7 @@
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Filter, TrendingUp, TrendingDown, CreditCard, Tag, RotateCcw, List, CircleDollarSign, Calendar } from 'lucide-react';
+import { Filter, TrendingUp, TrendingDown, CreditCard, Tag, RotateCcw, List, CircleDollarSign } from 'lucide-react';
 import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '@/store/UserStore';

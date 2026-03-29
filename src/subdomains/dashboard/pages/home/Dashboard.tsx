@@ -12,10 +12,19 @@ import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDefaultCard } from '@/hooks/useDefaultCard';
 import { useDashboardPreferences } from '../../context/dashboard-preferences';
-import { getMonthRangeByKey, parseLocalDateInput } from '../../utils/month-range';
+import {
+  getMonthRangeByKey,
+  parseLocalDateInput,
+  parseLocalDateInputAtEndOfDay,
+  parseLocalDateInputAtStartOfDay,
+} from '../../utils/month-range';
 import ExpenseByCategoryChart from './components/ExpenseByCategoryChart';
 import MonthlyExpenseTrendChart from './components/MonthlyExpenseTrendChart';
 import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  filterTransactionsByPreferences,
+  summarizeIncomeExpense,
+} from '../../utils/transaction-filters';
 
 /** Conteúdo que usa `useDashboardPreferences` — deve ser filho de `PrivateLayout` (provider). */
 function DashboardHomeBody() {
@@ -29,40 +38,69 @@ function DashboardHomeBody() {
   useDefaultCard();
   const {
     selectedMonth,
-    setSelectedMonth,
     goToNextMonth,
     goToPreviousMonth,
     resetCurrentMonth,
-    layoutMode
+    layoutMode,
+    transactionListFilters
   } = useDashboardPreferences();
   const isMobile = useIsMobile();
   const isNotionDesktop = layoutMode === 'notion' && !isMobile;
   const monthRange = useMemo(() => getMonthRangeByKey(selectedMonth), [selectedMonth]);
 
   const monthTransactions = useMemo(() => {
-    const start = parseLocalDateInput(monthRange.startDate);
-    const end = parseLocalDateInput(monthRange.endDate);
+    const start = parseLocalDateInputAtStartOfDay(monthRange.startDate);
+    const end = parseLocalDateInputAtEndOfDay(monthRange.endDate);
+    const startMs = start.getTime();
+    const endMs = end.getTime();
+    if (Number.isNaN(startMs) || Number.isNaN(endMs)) return [];
     return transactions.filter((item) => {
       const date = parseLocalDateInput(item.date);
-      return date >= start && date <= end;
+      const dateMs = date.getTime();
+      if (Number.isNaN(dateMs)) return false;
+      return dateMs >= startMs && dateMs <= endMs;
     });
   }, [monthRange.endDate, monthRange.startDate, transactions]);
+  const effectiveFilters = useMemo(() => {
+    if (!transactionListFilters.dateRangeLockedToMonth) {
+      return transactionListFilters;
+    }
+    return {
+      ...transactionListFilters,
+      startDate: monthRange.startDate,
+      endDate: monthRange.endDate,
+    };
+  }, [monthRange.endDate, monthRange.startDate, transactionListFilters]);
+  const filteredTransactions = useMemo(
+    () => filterTransactionsByPreferences(transactions, effectiveFilters),
+    [effectiveFilters, transactions]
+  );
+  const trendFilters = useMemo(
+    () => ({
+      ...effectiveFilters,
+      // O gráfico de tendência precisa varrer os últimos meses completos.
+      startDate: "",
+      endDate: "",
+      dateRangeLockedToMonth: false,
+    }),
+    [effectiveFilters]
+  );
+  const trendTransactions = useMemo(
+    () => filterTransactionsByPreferences(transactions, trendFilters),
+    [transactions, trendFilters]
+  );
+  const summary = useMemo(
+    () => summarizeIncomeExpense(filteredTransactions),
+    [filteredTransactions]
+  );
 
   const monthIncome = useMemo(
-    () => monthTransactions.filter((item) => item.type === 'receita').reduce((acc, item) => acc + item.value, 0),
-    [monthTransactions]
+    () => summary.incomeTotal,
+    [summary.incomeTotal]
   );
   const monthExpense = useMemo(
-    () => monthTransactions.filter((item) => item.type === 'despesa').reduce((acc, item) => acc + item.value, 0),
-    [monthTransactions]
-  );
-  const incomeLength = useMemo(
-    () => monthTransactions.filter((item) => item.type === 'receita').length,
-    [monthTransactions]
-  );
-  const expenseLength = useMemo(
-    () => monthTransactions.filter((item) => item.type === 'despesa').length,
-    [monthTransactions]
+    () => summary.expenseTotal,
+    [summary.expenseTotal]
   );
   const monthTotal = monthIncome + monthExpense;
   const monthIncomePercentage = monthTotal > 0 ? (monthIncome / monthTotal) * 100 : 0;
@@ -139,9 +177,9 @@ function DashboardHomeBody() {
             variants={itemVariants}
             className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-6"
           >
-            <ExpenseByCategoryChart transactions={monthTransactions} />
+            <ExpenseByCategoryChart transactions={filteredTransactions} />
             <MonthlyExpenseTrendChart
-              transactions={transactions}
+              transactions={trendTransactions}
               selectedMonth={selectedMonth}
             />
           </motion.div>
@@ -235,9 +273,9 @@ function DashboardHomeBody() {
           </div>
 
           <motion.div variants={itemVariants} className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <ExpenseByCategoryChart transactions={monthTransactions} />
+            <ExpenseByCategoryChart transactions={filteredTransactions} />
             <MonthlyExpenseTrendChart
-              transactions={transactions}
+              transactions={trendTransactions}
               selectedMonth={selectedMonth}
             />
           </motion.div>

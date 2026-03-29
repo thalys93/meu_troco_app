@@ -4,6 +4,7 @@ import useUserStore from "@/store/UserStore";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { CardsService } from "./cards-service";
 import { NO_CARD_ID, isPocketCardId } from "@/constants/cards";
+import { normalizeLocalDateString } from "@/subdomains/dashboard/utils/month-range";
 
 export interface Transaction {
     id?: string;
@@ -14,6 +15,33 @@ export interface Transaction {
     type: 'receita' | 'despesa';
     cardId: string;
 }
+
+const formatDateToYmd = (value: Date) =>
+    `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(
+        value.getDate()
+    ).padStart(2, "0")}`;
+
+const normalizeTransactionDate = (rawDate: unknown): string => {
+    if (typeof rawDate === "string") {
+        return normalizeLocalDateString(rawDate) ?? rawDate;
+    }
+
+    if (rawDate instanceof Date) {
+        return Number.isNaN(rawDate.getTime()) ? "" : formatDateToYmd(rawDate);
+    }
+
+    if (
+        rawDate &&
+        typeof rawDate === "object" &&
+        "toDate" in rawDate &&
+        typeof rawDate.toDate === "function"
+    ) {
+        const parsed = rawDate.toDate() as Date;
+        return Number.isNaN(parsed.getTime()) ? "" : formatDateToYmd(parsed);
+    }
+
+    return "";
+};
 
 const createTransaction = async (data: Transaction, uid: string) => {
     const cardId = data.cardId?.trim() || NO_CARD_ID;
@@ -92,8 +120,10 @@ export const getUserTransaction = async (uid: string, id: string): Promise<Trans
     const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
     const docSnap = await getDoc(ref);
     if (docSnap.exists()) {
+        const raw = docSnap.data() as Transaction & { date?: unknown };
         return {
-            ...(docSnap.data() as Transaction),
+            ...raw,
+            date: normalizeTransactionDate(raw.date),
             id: docSnap.id,
         };
     }
@@ -113,10 +143,14 @@ export const getUserTransactions = async (uid: string): Promise<Transaction[]> =
     const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
     const snapshot = await getDocs(ref);
 
-    return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-    })) as Transaction[];
+    return snapshot.docs.map((doc) => {
+        const raw = doc.data() as Transaction & { date?: unknown };
+        return {
+            ...raw,
+            date: normalizeTransactionDate(raw.date),
+            id: doc.id,
+        };
+    }) as Transaction[];
 };
 export const useUserTransactions = () => {
     const { uid } = useUserStore();

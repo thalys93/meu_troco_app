@@ -2,7 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useUserTransactions } from "@/utils/services/api/transation";
 import { useDashboardPreferences } from "@/subdomains/dashboard/context/dashboard-preferences";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { getMonthRangeByKey, parseLocalDateInput } from "@/subdomains/dashboard/utils/month-range";
+import {
+    getMonthRangeByKey,
+    parseLocalDateInput,
+    parseLocalDateInputAtEndOfDay,
+    parseLocalDateInputAtStartOfDay
+} from "@/subdomains/dashboard/utils/month-range";
 import { netByCardId } from "@/subdomains/dashboard/utils/transaction-month-nets";
 import { NO_CARD_ID } from "@/constants/cards";
 import {
@@ -36,11 +41,16 @@ export function CardList() {
     const monthTransactions = useMemo(() => {
         if (!monthCardsMode) return [];
         const range = getMonthRangeByKey(selectedMonth);
-        const start = parseLocalDateInput(range.startDate);
-        const end = parseLocalDateInput(range.endDate);
+        const start = parseLocalDateInputAtStartOfDay(range.startDate);
+        const end = parseLocalDateInputAtEndOfDay(range.endDate);
+        const startMs = start.getTime();
+        const endMs = end.getTime();
+        if (Number.isNaN(startMs) || Number.isNaN(endMs)) return [];
         return allTransactions.filter((tr) => {
             const d = parseLocalDateInput(tr.date);
-            return d >= start && d <= end;
+            const time = d.getTime();
+            if (Number.isNaN(time)) return false;
+            return time >= startMs && time <= endMs;
         });
     }, [allTransactions, monthCardsMode, selectedMonth]);
 

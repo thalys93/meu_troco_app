@@ -21,7 +21,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { useCardsStore } from '@/store/useCardsStore';
 import { usePocketBalance } from '@/hooks/usePocketBalance';
-import { NO_CARD_ID, POCKET_CARD_NAME } from '@/constants/cards';
+import { NO_CARD_ID, POCKET_CARD_NAME, isPocketCardId } from '@/constants/cards';
 
 interface TransactionFormProps {
   type: 'receita' | 'despesa';
@@ -62,7 +62,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   const { mutate: create, isPending } = useCreateTransaction();
   const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(uid, id ?? '');
   const { refetch: refetchUserTransactions } = useUserTransactions()
-  const { cards, fetchCards } = useCardsStore();
+  const { cards, fetchCards, isLoading: cardsLoading } = useCardsStore();
   const pocketBalance = usePocketBalance();
   const { t, i18n } = useTranslation();
 
@@ -135,11 +135,25 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
     }
   }, [uid]);
 
+  /**
+   * Cartão apagado: `transaction.cardId` órfão → `no_card` (evita "Card not found" na API).
+   * Depender só de `transaction?.cardId` evita re-sync a cada novo objeto da query (refetch),
+   * que repunha o cartão do servidor por cima da escolha Bolso.
+   */
   React.useEffect(() => {
     if (!id || !transaction) return;
     const cardId = (transaction as { cardId?: string }).cardId;
-    setSelectedCardId(cardId && cardId !== '' ? cardId : NO_CARD_ID);
-  }, [id, transaction]);
+    if (!cardId || cardId === '' || isPocketCardId(cardId)) {
+      setSelectedCardId(NO_CARD_ID);
+      return;
+    }
+    if (cardsLoading) {
+      setSelectedCardId(cardId);
+      return;
+    }
+    const exists = realCards.some((c) => c.id === cardId);
+    setSelectedCardId(exists ? cardId : NO_CARD_ID);
+  }, [id, transaction?.cardId, realCards, cardsLoading]);
 
   const handleValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let s = e.target.value.replace(/[^0-9,.]/g, '');

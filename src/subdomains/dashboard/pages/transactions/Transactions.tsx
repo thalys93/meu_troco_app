@@ -9,8 +9,12 @@ import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
 import { TrendingUp, TrendingDown, Activity } from 'lucide-react'
 import { useDashboardPreferences } from '../../context/dashboard-preferences'
-import { getMonthRangeByKey, parseLocalDateInput } from '../../utils/month-range'
+import { getMonthRangeByKey } from '../../utils/month-range'
 import { useIsMobile } from '@/hooks/use-mobile'
+import {
+    filterTransactionsByPreferences,
+    summarizeIncomeExpense
+} from '../../utils/transaction-filters'
 
 /** Conteúdo que usa `useDashboardPreferences` — deve ser filho de `PrivateLayout` (provider). */
 function TransactionsPageBody() {
@@ -21,33 +25,33 @@ function TransactionsPageBody() {
     const { t } = useTranslation();
     const {
         selectedMonth,
-        setSelectedMonth,
         goToNextMonth,
         goToPreviousMonth,
         resetCurrentMonth,
-        layoutMode
+        layoutMode,
+        transactionListFilters
     } = useDashboardPreferences();
     const isMobile = useIsMobile();
     const isNotionDesktop = layoutMode === 'notion' && !isMobile;
     const monthRange = useMemo(() => getMonthRangeByKey(selectedMonth), [selectedMonth]);
-    const monthTransactions = useMemo(() => {
-        const start = parseLocalDateInput(monthRange.startDate);
-        const end = parseLocalDateInput(monthRange.endDate);
-        return (transactions || []).filter((item) => {
-            const date = parseLocalDateInput(item.date);
-            return date >= start && date <= end;
-        });
-    }, [monthRange.endDate, monthRange.startDate, transactions]);
-    const monthIncome = useMemo(
-        () => monthTransactions.filter((item) => item.type === 'receita').reduce((acc, item) => acc + item.value, 0),
-        [monthTransactions]
+    const effectiveFilters = useMemo(() => {
+        if (!transactionListFilters.dateRangeLockedToMonth) {
+            return transactionListFilters;
+        }
+        return {
+            ...transactionListFilters,
+            startDate: monthRange.startDate,
+            endDate: monthRange.endDate,
+        };
+    }, [monthRange.endDate, monthRange.startDate, transactionListFilters]);
+    const filteredTransactions = useMemo(
+        () => filterTransactionsByPreferences(transactions || [], effectiveFilters),
+        [effectiveFilters, transactions]
     );
-    const monthExpense = useMemo(
-        () => monthTransactions.filter((item) => item.type === 'despesa').reduce((acc, item) => acc + item.value, 0),
-        [monthTransactions]
+    const summary = useMemo(
+        () => summarizeIncomeExpense(filteredTransactions),
+        [filteredTransactions]
     );
-    const incomeLength = monthTransactions.filter((item) => item.type === 'receita').length;
-    const expenseLength = monthTransactions.filter((item) => item.type === 'despesa').length;
 
     const containerVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -102,7 +106,7 @@ function TransactionsPageBody() {
                                         <div className="space-y-1">
                                             <p className="text-sm font-medium text-muted-foreground">{t('sidebar.income')}</p>
                                             <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                                                {formatCurrency(monthIncome)}
+                                                {formatCurrency(summary.incomeTotal)}
                                             </p>
                                         </div>
                                         <div className="h-12 w-12 rounded-full bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
@@ -111,7 +115,7 @@ function TransactionsPageBody() {
                                     </div>
                                     <div className="mt-4 flex items-center text-xs text-muted-foreground">
                                         <span className="bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full mr-2 font-medium">
-                                            {incomeLength}
+                                            {summary.incomeCount}
                                         </span>
                                         {t('filters.items', { defaultValue: 'transações' })}
                                     </div>
@@ -126,7 +130,7 @@ function TransactionsPageBody() {
                                         <div className="space-y-1">
                                             <p className="text-sm font-medium text-muted-foreground">{t('sidebar.expenses')}</p>
                                             <p className="text-2xl font-bold text-red-600 dark:text-red-400">
-                                                {formatCurrency(monthExpense)}
+                                                {formatCurrency(summary.expenseTotal)}
                                             </p>
                                         </div>
                                         <div className="h-12 w-12 rounded-full bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/20 transition-colors">
@@ -135,7 +139,7 @@ function TransactionsPageBody() {
                                     </div>
                                     <div className="mt-4 flex items-center text-xs text-muted-foreground">
                                         <span className="bg-red-500/10 text-red-600 px-2 py-0.5 rounded-full mr-2 font-medium">
-                                            {expenseLength}
+                                            {summary.expenseCount}
                                         </span>
                                         {t('filters.items', { defaultValue: 'transações' })}
                                     </div>

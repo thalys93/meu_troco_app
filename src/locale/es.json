@@ -425,5 +425,10 @@
   "default": {
     "all": "Todos",
     "darkmode": "Modo Escuro"
+  },
+  "transactionList": {
+    "table": {
+      "card": "Tarjeta"
+    }
   }
 }

@@ -439,5 +439,10 @@
   "default": {
     "all": "All",
     "darkmode": "Darkmode"
+  },
+  "transactionList": {
+    "table": {
+      "card": "Card"
+    }
   }
 }

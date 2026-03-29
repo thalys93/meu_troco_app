@@ -15,12 +15,21 @@ import TransactionFiltersDialog from './TransactionFiltersDialog';
 import TransactionForm from './TransactionForm';
 import { useCategories } from '@/hooks/use-categories';
 import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
-import { getMonthRangeByKey, isCurrentMonthKey, parseLocalDateInput, parseMonthKey } from '@/subdomains/dashboard/utils/month-range';
+import {
+  getMonthRangeByKey,
+  isCurrentMonthKey,
+  parseLocalDateInput,
+  parseMonthKey,
+} from '@/subdomains/dashboard/utils/month-range';
 import {
   defaultTransactionListFiltersPreference,
   useDashboardPreferences,
 } from '@/subdomains/dashboard/context/dashboard-preferences';
 import { transactionSignedAmount } from '@/subdomains/dashboard/utils/transaction-month-nets';
+import {
+  filterTransactionsByPreferences,
+  summarizeIncomeExpense,
+} from '@/subdomains/dashboard/utils/transaction-filters';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './ui/sheet';
 import {
   Table,
@@ -31,10 +40,14 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useCardsStore } from '@/store/useCardsStore';
+import { NO_CARD_ID } from '@/constants/cards';
 
 /** Portais Radix + calendário (react-day-picker `.rdp`) ficam fora do nó do Dialog; precisamos ignorar esses cliques. */
 const QUICK_ADD_OUTSIDE_PORTAL_SELECTOR =
   '[data-radix-popper-content-wrapper],[data-radix-menu-content],[data-radix-select-viewport],.rdp';
+
+const isValidDate = (value: Date) => !Number.isNaN(value.getTime());
 
 function elementFromEventTarget(target: EventTarget | null): Element | null {
   if (!target) return null;
@@ -108,6 +121,7 @@ const TransactionList = ({
   const { refetch } = useUserTransactions()
   const { t, i18n } = useTranslation();
   const { getCategoryIcon } = useCategories();
+  const { cards, fetchCards } = useCardsStore();
   const { transactionListFilters, setTransactionListFilters } =
     useDashboardPreferences();
 
@@ -149,6 +163,11 @@ const TransactionList = ({
       };
     });
   }, [monthRange, dateRangeLockedToMonth, setTransactionListFilters]);
+
+  React.useEffect(() => {
+    if (!uid || cards.length > 0) return;
+    fetchCards(uid);
+  }, [cards.length, fetchCards, uid]);
 
   const handlePreviousMonthClick = React.useCallback(() => {
     setTransactionListFilters((prev) => ({
@@ -202,6 +221,7 @@ const TransactionList = ({
 
   const formatTableDate = (dateString: string) => {
     const date = parseLocalDateInput(dateString);
+    if (!isValidDate(date)) return dateString;
     return date.toLocaleDateString(i18n.language, {
       day: 'numeric',
       month: 'long',
@@ -211,6 +231,7 @@ const TransactionList = ({
 
   const formatDate = (dateString: string) => {
     const date = parseLocalDateInput(dateString);
+    if (!isValidDate(date)) return dateString;
     return date.toLocaleDateString(i18n.language, {
       month: 'short',
       day: 'numeric'
@@ -259,41 +280,51 @@ const TransactionList = ({
   }
 
   const getCategoryLabel = (category: string) => t(`categories.${category}`);
+  const cardsById = React.useMemo(
+    () => new Map(cards.map((card) => [card.id, card])),
+    [cards]
+  );
+
+  const getCardBadgeData = React.useCallback((cardId?: string) => {
+    if (!cardId || cardId === NO_CARD_ID) {
+      return {
+        name: t('cards.noCard', 'Sem Cartão'),
+        color: '#6b7280',
+      };
+    }
+    const card = cardsById.get(cardId);
+    if (!card) {
+      return {
+        name: t('cards.noCard', 'Sem Cartão'),
+        color: '#6b7280',
+      };
+    }
+    return {
+      name: card.name,
+      color: card.color || '#6b7280',
+    };
+  }, [cardsById, t]);
 
 
-  const filteredTransactions = React.useMemo(() => {
-    const min = minValue ? parseFloat(minValue) : undefined;
-    const max = maxValue ? parseFloat(maxValue) : undefined;
-    const start = startDate ? parseLocalDateInput(startDate) : undefined;
-    const end = endDate ? parseLocalDateInput(endDate) : undefined;
+  const effectiveFilters = React.useMemo(() => {
+    if (!selectedMonth || !dateRangeLockedToMonth || !monthRange) {
+      return transactionListFilters;
+    }
+    return {
+      ...transactionListFilters,
+      startDate: monthRange.startDate,
+      endDate: monthRange.endDate,
+    };
+  }, [dateRangeLockedToMonth, monthRange, selectedMonth, transactionListFilters]);
 
-    return (displayTransactions || []).filter((tr) => {
-      const trDate = parseLocalDateInput(tr.date);
-      const trCard = tr.cardId || 'no_card';
-
-      const matchCard = filterCard === 'Todos' ? true : trCard === filterCard;
-      const matchCategory =
-        filterCategories.includes('Todos') ? true : filterCategories.includes(tr.category);
-      const matchType = filterType === 'Todos' ? true : tr.type === filterType;
-      const matchMin = min !== undefined ? tr.value >= min : true;
-      const matchMax = max !== undefined ? tr.value <= max : true;
-      const matchStart = start ? trDate >= start : true;
-      const matchEnd = end ? trDate <= end : true;
-
-      return matchCard && matchCategory && matchType && matchMin && matchMax && matchStart && matchEnd;
-    }).sort((a, b) => parseLocalDateInput(b.date).getTime() - parseLocalDateInput(a.date).getTime());
-  }, [displayTransactions, filterCard, filterCategories, filterType, minValue, maxValue, startDate, endDate]);
+  const filteredTransactions = React.useMemo(
+    () => filterTransactionsByPreferences(displayTransactions || [], effectiveFilters),
+    [displayTransactions, effectiveFilters]
+  );
 
   /** Mesmos critérios da tabela (filtros), para os cards de receita/despesa não divergirem do rodapé/lista. */
   const tableFilteredIncomeExpenseSummary = React.useMemo(() => {
-    const income = filteredTransactions.filter((tr) => tr.type === 'receita');
-    const expense = filteredTransactions.filter((tr) => tr.type === 'despesa');
-    return {
-      incomeTotal: income.reduce((acc, tr) => acc + tr.value, 0),
-      expenseTotal: expense.reduce((acc, tr) => acc + tr.value, 0),
-      incomeCount: income.length,
-      expenseCount: expense.length,
-    };
+    return summarizeIncomeExpense(filteredTransactions);
   }, [filteredTransactions]);
 
   const tableNetSum = React.useMemo(
@@ -588,6 +619,9 @@ const TransactionList = ({
                         {t('transactionList.table.description')}
                       </TableHead>
                       <TableHead className="sticky top-0 z-20 h-11 w-[22%] border-b border-border/50 bg-background py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
+                        {t('transactionList.table.card')}
+                      </TableHead>
+                      <TableHead className="sticky top-0 z-20 h-11 w-[22%] border-b border-border/50 bg-background py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
                         {t('transactionList.table.date')}
                       </TableHead>
                       <TableHead className="sticky top-0 z-20 h-11 w-[18%] border-b border-border/50 bg-background py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
@@ -596,7 +630,7 @@ const TransactionList = ({
                       <TableHead className="sticky top-0 z-20 h-11 w-[14%] border-b border-border/50 bg-background py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
                         {t('transactionList.table.type')}
                       </TableHead>
-                      <TableHead className="sticky top-0 z-20 h-11 w-[14%] border-b border-border/50 bg-background py-2.5 px-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
+                      <TableHead className="sticky top-0 z-20 h-11 w-[18%] min-w-[140px] border-b border-border/50 bg-background py-2.5 px-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
                         {t('transactionList.table.value')}
                       </TableHead>
                       <TableHead className="sticky top-0 z-20 h-11 w-12 border-b border-border/50 bg-background py-2.5 pl-2 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
@@ -607,6 +641,7 @@ const TransactionList = ({
                   <TableBody>
                     {filteredTransactions.map((transaction, rowIndex) => {
                       const CatIcon = getCategoryIcon(transaction.category);
+                      const cardBadge = getCardBadgeData(transaction.cardId);
                       const zebra = rowIndex % 2 === 1;
                       return (
                         <TableRow
@@ -641,6 +676,16 @@ const TransactionList = ({
                               <span className="text-sm font-medium leading-snug line-clamp-2 text-foreground">{transaction.description}</span>
                             </div>
                           </TableCell>
+                          <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
+                            <Badge variant="secondary" className="h-6 max-w-[180px] gap-1.5 px-2 py-0 text-xs font-normal">
+                              <span
+                                className="h-2.5 w-2.5 shrink-0 rounded-full border border-border/50"
+                                style={{ backgroundColor: cardBadge.color }}
+                                aria-hidden
+                              />
+                              <span className="truncate">{cardBadge.name}</span>
+                            </Badge>
+                          </TableCell>
                           <TableCell className="border-b border-border/30 py-2 px-3 align-middle text-sm text-muted-foreground whitespace-nowrap">
                             {formatTableDate(transaction.date)}
                           </TableCell>
@@ -666,7 +711,7 @@ const TransactionList = ({
                             </Badge>
                           </TableCell>
                           <TableCell className={cn(
-                            "border-b border-border/30 py-2 px-3 text-right align-middle font-mono text-sm font-semibold tabular-nums",
+                            "border-b border-border/30 py-2 px-3 text-right align-middle font-mono text-sm font-semibold tabular-nums whitespace-nowrap",
                             transaction.type === 'receita' ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
                           )}>
                             {formatAmount(transaction.value, transaction.type)}
@@ -705,7 +750,7 @@ const TransactionList = ({
                   <TableFooter className="border-0 bg-transparent">
                     <TableRow className="border-0 hover:bg-transparent">
                       <TableCell
-                        colSpan={4}
+                        colSpan={5}
                         className="sticky bottom-0 z-10 border-t border-border/50 bg-muted py-2.5 pl-4 pr-2 text-sm font-semibold text-muted-foreground shadow-[0_-1px_0_0_hsl(var(--border)/0.35)]"
                       >
                         {t('transactionList.table.sum')}

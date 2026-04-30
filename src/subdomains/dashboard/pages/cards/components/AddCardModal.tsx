@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Lock, Palette, UserRound, WalletCards } from "lucide-react";
+import { Loader2, Palette, UserRound, WalletCards } from "lucide-react";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WalletForm } from "../../../../../utils/validators/wallet";
@@ -42,19 +42,17 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
     const { addWallet, updateWallet } = useWalletsStore();
     const { user } = useUserStore();
     const [loading, setLoading] = useState(false);
-    const linkedAccountName =
+    const initialAccountName =
         cardToEdit?.accountName ||
         user?.displayName ||
         user?.fullName ||
         user?.email ||
         t("wallets.defaultLinkedAccount", "Conta principal");
-    const linkedAvatar = user?.details?.avatar || "";
-    const linkedAccountInitial = linkedAccountName.trim().charAt(0).toUpperCase() || "U";
 
     const form = useForm<WalletForm>({
         defaultValues: {
             name: "",
-            accountName: linkedAccountName,
+            accountName: initialAccountName,
             balance: 0,
             type: "debit",
             color: "#000000",
@@ -68,6 +66,8 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
     );
 
     const cardType = form.watch('type');    
+    const linkedAccountName = form.watch("accountName") || initialAccountName;
+    const linkedAccountInitial = linkedAccountName.trim().charAt(0).toUpperCase() || "U";
 
     useEffect(() => {
         if (open) {
@@ -83,7 +83,7 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
             } else {
                 form.reset({
                     name: "",
-                    accountName: linkedAccountName,
+                    accountName: initialAccountName,
                     balance: 0,
                     type: "debit",
                     color: "#000000",
@@ -91,7 +91,7 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                 });
             }
         }
-    }, [cardToEdit, open, form, linkedAccountName]);
+    }, [cardToEdit, open, form, initialAccountName]);
 
     const onSubmit = async (data: WalletForm) => {
         if (!user?.uid) return;
@@ -100,7 +100,7 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
         try {
             const walletData: Omit<Wallet, "id"> = {
                 name: data.name.trim(),
-                accountName: linkedAccountName,
+                accountName: data.accountName.trim() || initialAccountName,
                 balance: data.balance ?? 0,
                 type: data.type ?? "debit",
                 color: data.color ?? "#000000",
@@ -191,20 +191,16 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                             <FormLabel className="m-0">
                                 {t("wallets.accountName", "Conta vinculada")}
                             </FormLabel>
-                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                <Lock className="h-3.5 w-3.5" />
-                                {t("wallets.linkedAccountLocked", "Bloqueado por enquanto")}
-                            </span>
                         </div>
                         <div className="flex items-center gap-3 rounded-md border bg-background px-3 py-2">
                             <Avatar className="h-9 w-9">
-                                <AvatarImage src={linkedAvatar} alt={linkedAccountName} />
+                                <AvatarImage src="" alt={linkedAccountName} />
                                 <AvatarFallback>{linkedAccountInitial}</AvatarFallback>
                             </Avatar>
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-sm font-medium">{linkedAccountName}</p>
                                 <p className="text-xs text-muted-foreground">
-                                    {t("wallets.linkedAccountHint", "Em breve: contas compartilhadas")}
+                                    {t("wallets.linkedAccountHint", "Conta vinculada editável")}
                                 </p>
                             </div>
                             <UserRound className="h-4 w-4 text-muted-foreground" />
@@ -213,7 +209,15 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                             control={form.control}
                             name="accountName"
                             render={({ field }) => (
-                                <input type="hidden" {...field} value={linkedAccountName} />
+                                <FormItem className="mt-3">
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            placeholder={t("wallets.accountNamePlaceholder", "Ex: Conta pessoal")}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
                             )}
                         />
                     </div>

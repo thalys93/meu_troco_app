@@ -8,8 +8,8 @@ import {
     parseLocalDateInputAtEndOfDay,
     parseLocalDateInputAtStartOfDay
 } from "@/subdomains/dashboard/utils/month-range";
-import { netByCardId } from "@/subdomains/dashboard/utils/transaction-month-nets";
-import { NO_CARD_ID } from "@/constants/cards";
+import { netByWalletId } from "@/subdomains/dashboard/utils/transaction-month-nets";
+import { LEGACY_POCKET_CARD_NAME, NO_WALLET_ID, POCKET_WALLET_NAME } from "@/constants/wallets";
 import {
     DndContext,
     DragEndEvent,
@@ -18,19 +18,21 @@ import {
     useSensors,
 } from "@dnd-kit/core";
 import { SortableContext, rectSortingStrategy } from "@dnd-kit/sortable";
-import { useCardsStore } from "../../../../../store/useCardsStore";
+import { useWalletsStore } from "../../../../../store/useWalletsStore";
 import useUserStore from "@/store/UserStore";
 import { SortableCardItem } from "./SortableCardItem";
 import { PocketCard } from "./PocketCard";
 import { AddCardModal } from "./AddCardModal";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-import { Card } from "../../../../../types/Card";
+import { Wallet } from "../../../../../types/Wallet";
 import { useTranslation } from "react-i18next";
-import { POCKET_CARD_NAME } from "@/constants/cards";
+import { WalletsService } from "@/utils/services/api/wallets-service";
+import { clearWalletMigrationCompleted, hasCompletedWalletMigration } from "@/subdomains/dashboard/utils/wallet-migration";
+import { LegacyCardsMigrationModal } from "@/subdomains/dashboard/pages/cards/components/LegacyCardsMigrationModal";
 
 export function CardList() {
-    const { cards, fetchCards, isLoading, reorderCards } = useCardsStore();
+    const { wallets, fetchWallets, isLoading, reorderWallets } = useWalletsStore();
     const { user } = useUserStore();
     const { t, i18n } = useTranslation();
     const { data: allTransactions = [] } = useUserTransactions();
@@ -55,11 +57,11 @@ export function CardList() {
     }, [allTransactions, monthCardsMode, selectedMonth]);
 
     const nets = useMemo(
-        () => (monthCardsMode ? netByCardId(monthTransactions) : null),
+        () => (monthCardsMode ? netByWalletId(monthTransactions) : null),
         [monthCardsMode, monthTransactions]
     );
 
-    const pocketMonthNet = nets ? (nets.get(NO_CARD_ID) ?? 0) : undefined;
+    const pocketMonthNet = nets ? (nets.get(NO_WALLET_ID) ?? 0) : undefined;
 
     const monthLabel = useMemo(() => {
         if (!monthCardsMode) return "";
@@ -69,11 +71,12 @@ export function CardList() {
         }).format(parseLocalDateInput(`${selectedMonth}-01`));
     }, [i18n.language, monthCardsMode, selectedMonth]);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [editingCard, setEditingCard] = useState<Card | null>(null);
+    const [editingWallet, setEditingWallet] = useState<Wallet | null>(null);
+    const [showLegacyMigrationModal, setShowLegacyMigrationModal] = useState(false);
 
-    const realCards = useMemo(
-        () => cards.filter((c) => c.name !== POCKET_CARD_NAME),
-        [cards]
+    const realWallets = useMemo(
+        () => wallets.filter((wallet) => wallet.name !== LEGACY_POCKET_CARD_NAME),
+        [wallets]
     );
 
     const sensors = useSensors(
@@ -86,35 +89,64 @@ export function CardList() {
         (event: DragEndEvent) => {
             const { active, over } = event;
             if (!over || active.id === over.id) return;
-            const ids = realCards.map((c) => c.id);
+            const ids = realWallets.map((wallet) => wallet.id);
             const oldIndex = ids.indexOf(active.id as string);
             const newIndex = ids.indexOf(over.id as string);
             if (oldIndex === -1 || newIndex === -1) return;
             const reordered = [...ids];
             const [removed] = reordered.splice(oldIndex, 1);
             reordered.splice(newIndex, 0, removed);
-            reorderCards(reordered);
+            reorderWallets(reordered);
         },
-        [realCards, reorderCards]
+        [realWallets, reorderWallets]
     );
 
     useEffect(() => {
         if (user?.uid) {
-            fetchCards(user.uid);
+            fetchWallets(user.uid);
         }
-    }, [user, fetchCards]);
+    }, [user, fetchWallets]);
 
-    const handleEdit = (card: Card) => {
-        setEditingCard(card);
+    useEffect(() => {
+        const uid = user?.uid;
+        if (!uid) {
+            setShowLegacyMigrationModal(false);
+            return;
+        }
+        const completedMigration = hasCompletedWalletMigration(uid);
+
+        let isMounted = true;
+        WalletsService.shouldRunLegacyMigration(uid)
+            .then((shouldRun) => {
+                if (isMounted) {
+                    if (shouldRun && completedMigration) {
+                        clearWalletMigrationCompleted(uid);
+                    }
+                    setShowLegacyMigrationModal(shouldRun);
+                }
+            })
+            .catch(() => {
+                if (isMounted) {
+                    setShowLegacyMigrationModal(false);
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [user?.uid]);
+
+    const handleEdit = (wallet: Wallet) => {
+        setEditingWallet(wallet);
         setIsModalOpen(true);
     };
 
     const handleAddNew = () => {
-        setEditingCard(null);
+        setEditingWallet(null);
         setIsModalOpen(true);
     };
 
-    if (isLoading && cards.length === 0) {
+    if (isLoading && wallets.length === 0) {
         return <div className="p-4 text-center">Loading...</div>;
     }
 
@@ -122,7 +154,7 @@ export function CardList() {
         <div className="space-y-6">
             <section className="space-y-2">
                 <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                    {t("cards.pocket", POCKET_CARD_NAME)}
+                    {t("wallets.pocket", POCKET_WALLET_NAME)}
                 </h2>
                 <div className="max-w-sm">
                     <PocketCard monthNet={pocketMonthNet} />
@@ -132,38 +164,38 @@ export function CardList() {
             <section className="space-y-4">
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div>
-                        <h2 className="text-xl font-bold tracking-tight">{t("cards.title", "Meus Cartões")}</h2>
+                        <h2 className="text-xl font-bold tracking-tight">{t("wallets.title", "Minhas Carteiras")}</h2>
                         {monthCardsMode && monthLabel && (
                             <p className="text-sm text-muted-foreground mt-1 capitalize">
-                                {t("cards.monthContextLabel", { month: monthLabel })}
+                                {t("wallets.monthContextLabel", { month: monthLabel })}
                             </p>
                         )}
                     </div>
                     <Button onClick={handleAddNew} size="sm">
-                        <Plus className="mr-2 h-4 w-4" /> {t("cards.add", "Adicionar")}
+                        <Plus className="mr-2 h-4 w-4" /> {t("wallets.add", "Adicionar")}
                     </Button>
                 </div>
 
                 <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
                     <SortableContext
-                        items={realCards.map((c) => c.id)}
+                        items={realWallets.map((wallet) => wallet.id)}
                         strategy={rectSortingStrategy}
                     >
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {realCards.map((card) => (
+                            {realWallets.map((wallet) => (
                                 <SortableCardItem
-                                    key={card.id}
-                                    card={card}
+                                    key={wallet.id}
+                                    card={wallet}
                                     onEdit={handleEdit}
-                                    monthNet={nets?.get(card.id)}
+                                    monthNet={nets?.get(wallet.id)}
                                 />
                             ))}
 
-                            {realCards.length === 0 && (
+                            {realWallets.length === 0 && (
                                 <div className="col-span-full flex flex-col items-center justify-center p-8 border rounded-lg border-dashed text-muted-foreground">
-                                    <p>{t("cards.empty", "Nenhum cartão cadastrado.")}</p>
+                                    <p>{t("wallets.empty", "Nenhuma carteira cadastrada.")}</p>
                                     <Button variant="link" onClick={handleAddNew}>
-                                        {t("cards.createFirst", "Cadastrar o primeiro")}
+                                        {t("wallets.createFirst", "Cadastrar a primeira")}
                                     </Button>
                                 </div>
                             )}
@@ -175,8 +207,18 @@ export function CardList() {
             <AddCardModal
                 open={isModalOpen}
                 onOpenChange={setIsModalOpen}
-                cardToEdit={editingCard}
+                cardToEdit={editingWallet}
             />
+            {user?.uid && (
+                <LegacyCardsMigrationModal
+                    uid={user.uid}
+                    open={showLegacyMigrationModal}
+                    onMigrationSuccess={async () => {
+                        await fetchWallets(user.uid);
+                        setShowLegacyMigrationModal(false);
+                    }}
+                />
+            )}
         </div>
     );
 }

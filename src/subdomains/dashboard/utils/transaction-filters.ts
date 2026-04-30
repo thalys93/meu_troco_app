@@ -1,3 +1,4 @@
+import { NO_WALLET_ID } from "@/constants/wallets";
 import { Transaction } from "@/utils/services/api/transation";
 import { TransactionListFiltersPreference } from "@/subdomains/dashboard/context/dashboard-preferences";
 import {
@@ -7,6 +8,7 @@ import {
 } from "@/subdomains/dashboard/utils/month-range";
 
 const isValidDate = (value: Date) => !Number.isNaN(value.getTime());
+const LEGACY_NO_CARD_ID = "no_card";
 
 export type IncomeExpenseSummary = {
   incomeTotal: number;
@@ -35,9 +37,15 @@ export const filterTransactionsByPreferences = (
       const trDate = parseLocalDateInput(tr.date);
       if (!isValidDate(trDate)) return false;
       const trDateMs = trDate.getTime();
-      const trCard = tr.cardId || "no_card";
+      const trWallet = tr.walletId || tr.cardId || NO_WALLET_ID;
 
-      const matchCard = filters.card === "Todos" ? true : trCard === filters.card;
+      const isPocketFilter = filters.card === NO_WALLET_ID || filters.card === LEGACY_NO_CARD_ID;
+      const isPocketTransaction = trWallet === NO_WALLET_ID || trWallet === LEGACY_NO_CARD_ID;
+      const matchCard = filters.card === "Todos"
+        ? true
+        : isPocketFilter
+          ? isPocketTransaction
+          : trWallet === filters.card;
       const matchCategory = filters.categories.includes("Todos")
         ? true
         : filters.categories.includes(tr.category);

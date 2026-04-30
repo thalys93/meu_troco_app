@@ -108,6 +108,7 @@
   "dashboard.actions.converter": "Conversor",
   "dashboard.actions.reports": "Relatórios",
   "dashboard.actions.cards": "Cartões",
+  "dashboard.actions.wallets": "Carteiras",
   "dashboard.balancePositive": "Seu saldo está positivo!",
   "dashboard.balanceWarning": "Atenção ao seu saldo!",
   "dashboard.insightText": "Continue gerenciando suas finanças com inteligência.",
@@ -173,6 +174,8 @@
   "transactionForm.form.selectCategory": "Selecione uma categoria",
   "transactionForm.form.value": "Valor",
   "transactionForm.form.card": "Cartão",
+  "transactionForm.form.wallet": "Carteira",
+  "transactionForm.form.selectWallet": "Selecione a carteira",
   "transactionForm.toast.description": "Por favor preencha todos os campos",
   "transactionForm.toast.missingFields": "Preencha os campos obrigatórios: {{fields}}",
   "transactionForm.toast.editDescription": "Editado com sucesso!",
@@ -188,6 +191,7 @@
   "filters.title": "Filtros",
   "filters.type": "Tipo",
   "filters.card": "Cartão",
+  "filters.wallet": "Carteira",
   "filters.showMore": "Mostrar mais...",
   "filters.minValue": "Valor mínimo",
   "filters.maxValue": "Valor máximo",
@@ -440,13 +444,68 @@
     "registeredBalance": "Saldo cadastrado: {{value}}",
     "monthContextLabel": "Mês: {{month}}"
   },
+  "wallets": {
+    "title": "Minhas Carteiras",
+    "add": "Adicionar",
+    "addTitle": "Adicionar Carteira",
+    "editTitle": "Editar Carteira",
+    "description": "Gerencie suas carteiras e contas vinculadas.",
+    "name": "Nome da Carteira",
+    "namePlaceholder": "Ex: Carteira principal",
+    "accountName": "Conta vinculada",
+    "accountNamePlaceholder": "Ex: Nubank, Inter...",
+    "balance": "Limite - Crédito",
+    "balancePlaceholder": "0,00",
+    "type": "Tipo",
+    "flag": "Bandeira",
+    "color": "Cor",
+    "noWallet": "Sem Carteira",
+    "pocket": "Sem Carteira (Bolso)",
+    "types": {
+      "debit": "Débito",
+      "credit": "Crédito",
+      "voucher": "Voucher"
+    },
+    "empty": "Nenhuma carteira cadastrada",
+    "createFirst": "Cadastrar a primeira",
+    "confirmDelete": "Tem certeza que deseja excluir esta carteira?",
+    "macroTitle": "Visão macro financeira",
+    "macroSubtitle": "Salário mensal, despesas e lançamentos sem carteira em um único painel.",
+    "totalIncomeMonth": "Entrou no mês",
+    "totalExpenseMonth": "Saiu no mês",
+    "netResultMonth": "Resultado do mês",
+    "noWalletSectionTitle": "Sem carteira",
+    "noWalletTransactions": "lançamentos",
+    "macroChartTitle": "Salário x despesas do mês",
+    "walletFlowChartTitle": "Entradas e saídas por carteira",
+    "monthFlowCaption": "Fluxo no mês (receitas − despesas)",
+    "registeredBalance": "Saldo cadastrado: {{value}}",
+    "monthContextLabel": "Mês: {{month}}",
+    "linkedAccount": "Conta vinculada: {{account}}",
+    "preview": "Prévia",
+    "defaultLinkedAccount": "Conta principal",
+    "linkedAccountLocked": "Bloqueado por enquanto",
+    "linkedAccountHint": "Em breve: contas compartilhadas",
+    "visualIdentity": "Identidade visual",
+    "migration": {
+      "title": "Atualização para Carteiras",
+      "description": "Encontramos cartões legados. Para continuar, atualize agora para o novo módulo de Carteiras.",
+      "cta": "Atualizar agora",
+      "running": "Migrando dados...",
+      "successTitle": "Migração concluída",
+      "successDescription": "{{wallets}} carteiras e {{transactions}} transações foram atualizadas.",
+      "errorTitle": "Falha na migração",
+      "errorDescription": "Não foi possível concluir a migração agora. Tente novamente."
+    }
+  },
   "default": {
     "all": "Todos",
     "darkmode": "Modo Escuro"
   },
   "transactionList": {
     "table": {
-      "card": "Cartão"
+      "card": "Cartão",
+      "wallet": "Carteira"
     }
   }
 }

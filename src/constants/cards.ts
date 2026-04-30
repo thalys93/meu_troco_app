@@ -1,9 +1,16 @@
-/** ID usado em transações para "Sem Cartão (Bolso)" — não corresponde a documento no Firebase. */
-export const NO_CARD_ID = 'no_card';
+import {
+    LEGACY_NO_CARD_ID,
+    LEGACY_POCKET_CARD_NAME,
+    NO_WALLET_ID,
+    POCKET_WALLET_NAME,
+    isPocketWalletId,
+} from "@/constants/wallets";
 
-/** Nome do cartão virtual Bolso (usado para filtrar cartões legados da lista "Meus cartões"). */
-export const POCKET_CARD_NAME = 'Sem Cartão (Bolso)';
+export const NO_CARD_ID = LEGACY_NO_CARD_ID;
+export const NO_WALLET_CARD_ID = NO_WALLET_ID;
+export const POCKET_CARD_NAME = LEGACY_POCKET_CARD_NAME;
+export const POCKET_WALLET_CARD_NAME = POCKET_WALLET_NAME;
 
 export function isPocketCardId(cardId: string | undefined): boolean {
-    return !cardId || cardId === NO_CARD_ID;
+    return isPocketWalletId(cardId);
 }

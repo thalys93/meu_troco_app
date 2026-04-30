@@ -40,8 +40,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useCardsStore } from '@/store/useCardsStore';
-import { NO_CARD_ID } from '@/constants/cards';
+import { useWalletsStore } from '@/store/useWalletsStore';
+import { NO_WALLET_ID } from '@/constants/wallets';
 
 /** Portais Radix + calendário (react-day-picker `.rdp`) ficam fora do nó do Dialog; precisamos ignorar esses cliques. */
 const QUICK_ADD_OUTSIDE_PORTAL_SELECTOR =
@@ -121,7 +121,7 @@ const TransactionList = ({
   const { refetch } = useUserTransactions()
   const { t, i18n } = useTranslation();
   const { getCategoryIcon } = useCategories();
-  const { cards, fetchCards } = useCardsStore();
+  const { wallets, fetchWallets } = useWalletsStore();
   const { transactionListFilters, setTransactionListFilters } =
     useDashboardPreferences();
 
@@ -165,9 +165,9 @@ const TransactionList = ({
   }, [monthRange, dateRangeLockedToMonth, setTransactionListFilters]);
 
   React.useEffect(() => {
-    if (!uid || cards.length > 0) return;
-    fetchCards(uid);
-  }, [cards.length, fetchCards, uid]);
+    if (!uid || wallets.length > 0) return;
+    fetchWallets(uid);
+  }, [wallets.length, fetchWallets, uid]);
 
   const handlePreviousMonthClick = React.useCallback(() => {
     setTransactionListFilters((prev) => ({
@@ -280,30 +280,30 @@ const TransactionList = ({
   }
 
   const getCategoryLabel = (category: string) => t(`categories.${category}`);
-  const cardsById = React.useMemo(
-    () => new Map(cards.map((card) => [card.id, card])),
-    [cards]
+  const walletsById = React.useMemo(
+    () => new Map(wallets.map((wallet) => [wallet.id, wallet])),
+    [wallets]
   );
 
-  const getCardBadgeData = React.useCallback((cardId?: string) => {
-    if (!cardId || cardId === NO_CARD_ID) {
+  const getWalletBadgeData = React.useCallback((walletId?: string) => {
+    if (!walletId || walletId === NO_WALLET_ID) {
       return {
-        name: t('cards.noCard', 'Sem Cartão'),
+        name: t('wallets.noWallet', 'Sem Carteira'),
         color: '#6b7280',
       };
     }
-    const card = cardsById.get(cardId);
-    if (!card) {
+    const wallet = walletsById.get(walletId);
+    if (!wallet) {
       return {
-        name: t('cards.noCard', 'Sem Cartão'),
+        name: t('wallets.noWallet', 'Sem Carteira'),
         color: '#6b7280',
       };
     }
     return {
-      name: card.name,
-      color: card.color || '#6b7280',
+      name: wallet.name,
+      color: wallet.color || '#6b7280',
     };
-  }, [cardsById, t]);
+  }, [walletsById, t]);
 
 
   const effectiveFilters = React.useMemo(() => {
@@ -619,7 +619,7 @@ const TransactionList = ({
                         {t('transactionList.table.description')}
                       </TableHead>
                       <TableHead className="sticky top-0 z-20 h-11 w-[22%] border-b border-border/50 bg-background py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
-                        {t('transactionList.table.card')}
+                        {t('transactionList.table.wallet')}
                       </TableHead>
                       <TableHead className="sticky top-0 z-20 h-11 w-[22%] border-b border-border/50 bg-background py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
                         {t('transactionList.table.date')}
@@ -641,7 +641,7 @@ const TransactionList = ({
                   <TableBody>
                     {filteredTransactions.map((transaction, rowIndex) => {
                       const CatIcon = getCategoryIcon(transaction.category);
-                      const cardBadge = getCardBadgeData(transaction.cardId);
+                      const walletBadge = getWalletBadgeData(transaction.walletId || transaction.cardId);
                       const zebra = rowIndex % 2 === 1;
                       return (
                         <TableRow
@@ -680,10 +680,10 @@ const TransactionList = ({
                             <Badge variant="secondary" className="h-6 max-w-[180px] gap-1.5 px-2 py-0 text-xs font-normal">
                               <span
                                 className="h-2.5 w-2.5 shrink-0 rounded-full border border-border/50"
-                                style={{ backgroundColor: cardBadge.color }}
+                                style={{ backgroundColor: walletBadge.color }}
                                 aria-hidden
                               />
-                              <span className="truncate">{cardBadge.name}</span>
+                              <span className="truncate">{walletBadge.name}</span>
                             </Badge>
                           </TableCell>
                           <TableCell className="border-b border-border/30 py-2 px-3 align-middle text-sm text-muted-foreground whitespace-nowrap">

@@ -26,6 +26,60 @@
     "registeredBalance": "Saldo registrado: {{value}}",
     "monthContextLabel": "Mes: {{month}}"
   },
+  "wallets": {
+    "title": "Mis Carteras",
+    "add": "Agregar",
+    "addTitle": "Agregar Cartera",
+    "editTitle": "Editar Cartera",
+    "description": "Administra tus carteras y cuentas vinculadas.",
+    "name": "Nombre de la Cartera",
+    "namePlaceholder": "Ej: Cartera principal",
+    "accountName": "Cuenta vinculada",
+    "accountNamePlaceholder": "Ej: Nubank, BBVA...",
+    "balance": "Límite - Crédito",
+    "balancePlaceholder": "0,00",
+    "type": "Tipo",
+    "flag": "Bandera",
+    "color": "Color",
+    "noWallet": "Sin Cartera",
+    "pocket": "Sin Cartera (Bolsillo)",
+    "types": {
+      "debit": "Débito",
+      "credit": "Crédito",
+      "voucher": "Voucher"
+    },
+    "empty": "No hay carteras registradas",
+    "createFirst": "Registrar la primera",
+    "confirmDelete": "¿Seguro que deseas eliminar esta cartera?",
+    "macroTitle": "Visión macro financiera",
+    "macroSubtitle": "Salario mensual, gastos y registros sin cartera en un solo panel.",
+    "totalIncomeMonth": "Entró en el mes",
+    "totalExpenseMonth": "Salió en el mes",
+    "netResultMonth": "Resultado del mes",
+    "noWalletSectionTitle": "Sin cartera",
+    "noWalletTransactions": "registros",
+    "macroChartTitle": "Salario vs gastos del mes",
+    "walletFlowChartTitle": "Entradas y salidas por cartera",
+    "monthFlowCaption": "Flujo del mes (ingresos − gastos)",
+    "registeredBalance": "Saldo registrado: {{value}}",
+    "monthContextLabel": "Mes: {{month}}",
+    "linkedAccount": "Cuenta vinculada: {{account}}",
+    "preview": "Vista previa",
+    "defaultLinkedAccount": "Cuenta principal",
+    "linkedAccountLocked": "Bloqueado por ahora",
+    "linkedAccountHint": "Pronto: cuentas compartidas",
+    "visualIdentity": "Identidad visual",
+    "migration": {
+      "title": "Actualización para Carteras",
+      "description": "Encontramos tarjetas heredadas. Para continuar, actualiza ahora al nuevo módulo de Carteras.",
+      "cta": "Actualizar ahora",
+      "running": "Migrando datos...",
+      "successTitle": "Migración completada",
+      "successDescription": "Se actualizaron {{wallets}} carteras y {{transactions}} transacciones.",
+      "errorTitle": "Error en la migración",
+      "errorDescription": "No se pudo completar la migración ahora. Inténtalo de nuevo."
+    }
+  },
   "lang.portuguese": "Portugués",
   "lang.spanish": "Español",
   "lang.english": "Inglés",
@@ -124,6 +178,7 @@
   "dashboard.actions.converter": "Conversor",
   "dashboard.actions.reports": "Informes",
   "dashboard.actions.cards": "Tarjetas",
+  "dashboard.actions.wallets": "Carteras",
   "dashboard.balancePositive": "¡Tu saldo es positivo!",
   "dashboard.balanceWarning": "¡Atención al saldo!",
   "dashboard.insightText": "Sigue gestionando tus finanças com inteligência.",
@@ -189,6 +244,8 @@
   "transactionForm.form.selectCategory": "Seleccione uma categoría",
   "transactionForm.form.value": "Valor",
   "transactionForm.form.card": "Tarjeta",
+  "transactionForm.form.wallet": "Cartera",
+  "transactionForm.form.selectWallet": "Seleccione la cartera",
   "transactionForm.toast.description": "Por favor, rellene todos los campos",
   "transactionForm.toast.missingFields": "Rellene los campos obligatorios: {{fields}}",
   "transactionForm.toast.editDescription": "¡Editado exitosamente!",
@@ -204,6 +261,7 @@
   "filters.title": "Filtros",
   "filters.type": "Tipo",
   "filters.card": "Tarjeta",
+  "filters.wallet": "Cartera",
   "filters.showMore": "Mostrar más...",
   "filters.minValue": "Valor mínimo",
   "filters.maxValue": "Valor máximo",
@@ -428,7 +486,8 @@
   },
   "transactionList": {
     "table": {
-      "card": "Tarjeta"
+      "card": "Tarjeta",
+      "wallet": "Cartera"
     }
   }
 }

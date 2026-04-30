@@ -11,9 +11,11 @@ import { User } from '@/types/entities/User'
 import { useNavigate } from 'react-router-dom'
 import { toast } from '@/hooks/use-toast'
 import { useTranslation } from 'react-i18next'
+import { onAuthStateChanged } from 'firebase/auth'
+import { AuthProvider } from '@/utils/services/api/firebase'
 
 function SessionValidation() {
-    const { uid } = useUserStore();
+    const { uid, setUid, removeUid, removeUser } = useUserStore();
     const { handleAddUser } = useUser();
     const [value, setValue] = useState(0);
     const { data, isFetching, isError } = useGetUserData(uid ?? undefined);
@@ -22,11 +24,21 @@ function SessionValidation() {
     const hasValidated = useRef(false);
 
     useEffect(() => {
-        if (!uid) {
-            navigate("/backoffice/login", { replace: true });
-            return;
-        }
-    }, [uid, navigate]);
+        const unsubscribe = onAuthStateChanged(AuthProvider, (firebaseUser) => {
+            if (!firebaseUser?.uid) {
+                removeUid();
+                removeUser();
+                navigate("/backoffice/login", { replace: true });
+                return;
+            }
+
+            if (uid !== firebaseUser.uid) {
+                setUid(firebaseUser.uid);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [navigate, removeUid, removeUser, setUid, uid]);
 
     useEffect(() => {
         if (isFetching && uid) setValue(10);
@@ -38,8 +50,8 @@ function SessionValidation() {
         hasValidated.current = true;
 
         const runValidation = async () => {
-            setValue(30);
-            await new Promise((r) => setTimeout(r, 500));
+            setValue(25);
+            await new Promise((r) => setTimeout(r, 800));
 
             if (isError || !data) {
                 setValue(20);
@@ -48,7 +60,7 @@ function SessionValidation() {
                     description: t('backoffice.security.toastError'),
                     variant: 'destructive',
                 });
-                setTimeout(() => navigate("/backoffice/login", { replace: true }), 1500);
+                setTimeout(() => navigate("/backoffice/login", { replace: true }), 1700);
                 return;
             }
 
@@ -59,20 +71,23 @@ function SessionValidation() {
                     description: t('backoffice.security.toastError'),
                     variant: 'destructive',
                 });
-                setTimeout(() => navigate("/backoffice/login", { replace: true }), 1500);
+                setTimeout(() => navigate("/backoffice/login", { replace: true }), 1700);
                 return;
             }
 
-            setValue(70);
+            setValue(55);
             handleAddUser(data as User);
-            await new Promise((r) => setTimeout(r, 500));
+            await new Promise((r) => setTimeout(r, 800));
+
+            setValue(85);
+            await new Promise((r) => setTimeout(r, 600));
 
             setValue(100);
             toast({
                 title: t('toast.successVar'),
                 description: t('toast.successDescription'),
             });
-            setTimeout(() => navigate("/backoffice/home", { replace: true }), 1000);
+            setTimeout(() => navigate("/backoffice/home", { replace: true }), 1200);
         };
 
         runValidation();

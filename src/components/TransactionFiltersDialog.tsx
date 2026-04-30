@@ -6,7 +6,7 @@ import { Input } from './ui/input';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '@/store/UserStore';
 import { useCategories, type CategoryWithIcon } from '@/hooks/use-categories';
-import { useCardsStore } from '@/store/useCardsStore';
+import { useWalletsStore } from '@/store/useWalletsStore';
 import { cn } from '@/lib/utils';
 import React from 'react';
 
@@ -41,20 +41,20 @@ export default function TransactionFiltersDialog({
   const { t } = useTranslation();
   const { uid } = useUserStore();
   const { allCategories } = useCategories();
-  const { cards, fetchCards } = useCardsStore();
+  const { wallets, fetchWallets } = useWalletsStore();
 
   React.useEffect(() => {
-    if (open && uid) fetchCards(uid);
-  }, [open, uid, fetchCards]);
+    if (open && uid) fetchWallets(uid);
+  }, [open, uid, fetchWallets]);
 
-  const cardOptions = React.useMemo(() => {
-    const mapped = cards.map((c) => ({ id: c.id, name: c.name, color: c.color }));
+  const walletOptions = React.useMemo(() => {
+    const mapped = wallets.map((wallet) => ({ id: wallet.id, name: wallet.name, color: wallet.color }));
     return [
       { id: 'Todos', name: t('filters.all', 'Todos'), color: undefined },
-      { id: 'no_card', name: t('cards.noCard', 'Sem Cartão'), color: '#6b7280' },
+      { id: 'no_wallet', name: t('wallets.noWallet', 'Sem Carteira'), color: '#6b7280' },
       ...mapped,
     ];
-  }, [cards, t]);
+  }, [wallets, t]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -104,10 +104,10 @@ export default function TransactionFiltersDialog({
           <div className="space-y-3">
             <Label className="text-sm font-medium flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
-              {t('filters.card', 'Cartão')}
+              {t('filters.wallet', 'Carteira')}
             </Label>
             <div className="flex flex-wrap gap-2">
-              {cardOptions.map((opt) => (
+              {walletOptions.map((opt) => (
                 <Button
                   key={opt.id}
                   variant="outline"

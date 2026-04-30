@@ -14,8 +14,10 @@ function PrivateLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    if (user.accountType !== AccountTypes.ADMIN) navigate("/backoffice/login");
-  }, [user])
+    if (!user || user.accountType !== AccountTypes.ADMIN) {
+      navigate("/backoffice/login", { replace: true });
+    }
+  }, [navigate, user])
 
   return (
     <div className="min-h-screen backoffice-page">

@@ -3,7 +3,7 @@ import { useUser } from "./use-user";
 import { useTranslation } from "react-i18next";
 import { FirebaseTimestamp } from "@/types/Firebase";
 import { useEffect } from "react";
-import { useCardsStore } from "@/store/useCardsStore";
+import { useWalletsStore } from "@/store/useWalletsStore";
 import { usePocketBalance } from "./usePocketBalance";
 export const useDashboardStats = () => {
     const { data: transactions = [] } = useUserTransactions();
@@ -30,17 +30,17 @@ export const useDashboardStats = () => {
     const totalIncome = incomeTransactions.reduce((acc, curr) => acc + curr.value, 0);
     const totalExpense = expenseTransactions.reduce((acc, curr) => acc + curr.value, 0);
 
-    const { selectTotalBalance, fetchCards, cards } = useCardsStore();
+    const { selectTotalBalance, fetchWallets, wallets } = useWalletsStore();
     const pocketBalance = usePocketBalance();
 
     useEffect(() => {
-        if (user?.uid && cards.length === 0) {
-            fetchCards(user.uid);
+        if (user?.uid && wallets.length === 0) {
+            fetchWallets(user.uid);
         }
-    }, [user, cards.length, fetchCards]);
+    }, [user, wallets.length, fetchWallets]);
 
-    const cardsTotal = selectTotalBalance();
-    const totalBalance = pocketBalance + cardsTotal;
+    const walletsTotal = selectTotalBalance();
+    const totalBalance = pocketBalance + walletsTotal;
 
     const totalMovimentado = totalIncome + totalExpense + Math.abs(totalBalance);
 

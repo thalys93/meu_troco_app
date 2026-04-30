@@ -17,6 +17,7 @@ import ProfilePage from "@/subdomains/dashboard/pages/profile/Profile";
 import TransactionsPage from "@/subdomains/dashboard/pages/transactions/Transactions";
 import CurrencyConverter from "@/subdomains/dashboard/pages/converter/CurrencyConverter";
 import CardsPage from "@/subdomains/dashboard/pages/cards/CardsPage";
+import WalletsPage from "@/subdomains/dashboard/pages/wallets/WalletsPage";
 import { ReactElement } from "react";
 
 
@@ -58,6 +59,7 @@ export const DashboardRoutes: RoutesGroup = {
         { path: 'profile', element: ProfilePage },
         { path: 'transactions', element: TransactionsPage },
         { path: 'converter', element: CurrencyConverter },
+        { path: 'wallets', element: WalletsPage },
         { path: 'cards', element: CardsPage },
     ]
 }

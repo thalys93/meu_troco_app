@@ -1,24 +1,23 @@
 import { useState } from "react";
-import { Card } from "../../../../../types/Card";
+import { Wallet } from "../../../../../types/Wallet";
 import { Button } from "@/components/ui/button";
 import { Card as UICard, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Edit, Trash } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useCardsStore } from "../../../../../store/useCardsStore";
+import { useWalletsStore } from "../../../../../store/useWalletsStore";
 import { getCardFlagIcon } from "../../../../../utils/cardUtils";
 import { Handbag } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
 
 interface CardItemProps {
-    card: Card;
-    onEdit: (card: Card) => void;
-    /** Fluxo líquido no mês selecionado (receitas − despesas) para este cartão. */
+    card: Wallet;
+    onEdit: (card: Wallet) => void;
     monthNet?: number;
 }
 
 export function CardItem({ card, onEdit, monthNet }: CardItemProps) {
     const { t, i18n } = useTranslation();
-    const { deleteCard } = useCardsStore();
+    const { deleteWallet } = useWalletsStore();
     const [isHovered, setIsHovered] = useState(false);
 
     const formatCurrency = (amount: number) => {
@@ -29,8 +28,8 @@ export function CardItem({ card, onEdit, monthNet }: CardItemProps) {
     }
 
     const handleDelete = () => {
-        if (confirm(t('cards.confirmDelete', 'Tem certeza que deseja excluir este cartão?'))) {
-            deleteCard(card.id);
+        if (confirm(t('wallets.confirmDelete', 'Tem certeza que deseja excluir esta carteira?'))) {
+            deleteWallet(card.id);
         }
     };
 
@@ -64,8 +63,11 @@ export function CardItem({ card, onEdit, monthNet }: CardItemProps) {
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     {monthNet !== undefined
-                        ? t("cards.registeredBalance", { value: formatCurrency(card.balance) })
-                        : `${card.flag} - ${t(`cards.types.${card.type}`, card.type)}`}
+                        ? t("wallets.registeredBalance", { value: formatCurrency(card.balance) })
+                        : `${card.accountName} - ${t(`wallets.types.${card.type}`, card.type)}`}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                    {t("wallets.linkedAccount", { account: card.accountName })}
                 </p>
             </CardContent>
             <CardFooter className="flex justify-end gap-2 p-2 bg-muted/50">

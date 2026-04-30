@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import React, { useRef, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, CreditCard } from 'lucide-react';
+import { Home, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { Bank } from '@phosphor-icons/react';
@@ -16,7 +16,7 @@ const MobileNav = () => {
     { name: t('sidebar.home'), href: '/dashboard', icon: Home },
     { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
     { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
-    { name: t('dashboard.actions.cards'), href: '/dashboard/cards', icon: CreditCard },
+    { name: t('dashboard.actions.wallets'), href: '/dashboard/wallets', icon: Wallet },
     { name: t('sidebar.transactions'), href: '/dashboard/transactions', icon: Bank },
   ];
 

@@ -2,8 +2,8 @@ import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, 
 import { FireStore } from "./firebase";
 import useUserStore from "@/store/UserStore";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CardsService } from "./cards-service";
-import { NO_CARD_ID, isPocketCardId } from "@/constants/cards";
+import { WalletsService } from "./wallets-service";
+import { NO_WALLET_ID, isPocketWalletId } from "@/constants/wallets";
 import { normalizeLocalDateString } from "@/subdomains/dashboard/utils/month-range";
 
 export interface Transaction {
@@ -13,7 +13,8 @@ export interface Transaction {
     description: string;
     category: string;
     type: 'receita' | 'despesa';
-    cardId: string;
+    walletId: string;
+    cardId?: string;
 }
 
 const formatDateToYmd = (value: Date) =>
@@ -43,24 +44,36 @@ const normalizeTransactionDate = (rawDate: unknown): string => {
     return "";
 };
 
-const createTransaction = async (data: Transaction, uid: string) => {
-    const cardId = data.cardId?.trim() || NO_CARD_ID;
-    const payload = { ...data, cardId };
+const resolveWalletId = (data: Partial<Transaction>): string => {
+    const walletId = data.walletId?.trim();
+    if (walletId) {
+        return walletId;
+    }
+    const legacyCardId = data.cardId?.trim();
+    if (legacyCardId) {
+        return legacyCardId;
+    }
+    return NO_WALLET_ID;
+};
 
-    if (isPocketCardId(cardId)) {
+const createTransaction = async (data: Transaction, uid: string) => {
+    const walletId = resolveWalletId(data);
+    const payload = { ...data, walletId };
+
+    if (isPocketWalletId(walletId)) {
         const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
         const docRef = await addDoc(ref, { ...payload, createdAt: new Date() });
         return docRef.id;
     }
 
-    const card = await CardsService.getById(cardId);
-    if (!card) throw new Error("Card not found");
+    const wallet = await WalletsService.getById(walletId);
+    if (!wallet) throw new Error("Wallet not found");
 
     const newBalance = data.type === 'receita'
-        ? card.balance + data.value
-        : card.balance - data.value;
+        ? wallet.balance + data.value
+        : wallet.balance - data.value;
 
-    await CardsService.update(cardId, { balance: newBalance });
+    await WalletsService.update(walletId, { balance: newBalance });
 
     const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
     const docRef = await addDoc(ref, { ...payload, createdAt: new Date() });
@@ -76,26 +89,27 @@ const editTransaction = async (uid: string, id: string, data: Transaction) => {
     const oldTransaction = await getUserTransaction(uid, id);
     if (!oldTransaction) throw new Error("Transaction not found");
 
-    const newCardId = data.cardId?.trim() || NO_CARD_ID;
-    const payload = { ...data, cardId: newCardId };
+    const oldWalletId = resolveWalletId(oldTransaction);
+    const newWalletId = resolveWalletId(data);
+    const payload = { ...data, walletId: newWalletId };
 
-    if (!isPocketCardId(oldTransaction.cardId)) {
-        const oldCard = await CardsService.getById(oldTransaction.cardId);
-        if (oldCard) {
+    if (!isPocketWalletId(oldWalletId)) {
+        const oldWallet = await WalletsService.getById(oldWalletId);
+        if (oldWallet) {
             const revertedBalance = oldTransaction.type === 'receita'
-                ? oldCard.balance - oldTransaction.value
-                : oldCard.balance + oldTransaction.value;
-            await CardsService.update(oldTransaction.cardId, { balance: revertedBalance });
+                ? oldWallet.balance - oldTransaction.value
+                : oldWallet.balance + oldTransaction.value;
+            await WalletsService.update(oldWalletId, { balance: revertedBalance });
         }
     }
 
-    if (!isPocketCardId(newCardId)) {
-        const newCard = await CardsService.getById(newCardId);
-        if (!newCard) throw new Error("Card not found");
+    if (!isPocketWalletId(newWalletId)) {
+        const newWallet = await WalletsService.getById(newWalletId);
+        if (!newWallet) throw new Error("Wallet not found");
         const newBalance = data.type === 'receita'
-            ? newCard.balance + data.value
-            : newCard.balance - data.value;
-        await CardsService.update(newCardId, { balance: newBalance });
+            ? newWallet.balance + data.value
+            : newWallet.balance - data.value;
+        await WalletsService.update(newWalletId, { balance: newBalance });
     }
 
     const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
@@ -123,6 +137,7 @@ export const getUserTransaction = async (uid: string, id: string): Promise<Trans
         const raw = docSnap.data() as Transaction & { date?: unknown };
         return {
             ...raw,
+            walletId: resolveWalletId(raw),
             date: normalizeTransactionDate(raw.date),
             id: docSnap.id,
         };
@@ -147,6 +162,7 @@ export const getUserTransactions = async (uid: string): Promise<Transaction[]> =
         const raw = doc.data() as Transaction & { date?: unknown };
         return {
             ...raw,
+            walletId: resolveWalletId(raw),
             date: normalizeTransactionDate(raw.date),
             id: doc.id,
         };

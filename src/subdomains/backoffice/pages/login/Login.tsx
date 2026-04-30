@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { usePublicAuthGuard } from '@/hooks/use-public-auth-guard'
 
 const initialValues: LoginForm = {
   email: '',
@@ -24,6 +25,12 @@ function BackofficeLoginPage() {
   const { t } = useTranslation()
   const { setUid } = useUserStore()
   const title = 'Meu Troco Backoffice'
+  const { isAuthChecking } = usePublicAuthGuard({
+    authenticatedRedirectTo: '/backoffice/session-validation',
+    unauthorizedRedirectTo: '/dashboard',
+    minLoadingMs: 2200,
+    requireAdmin: true,
+  })
 
   const loginForm = useForm<LoginForm>({
     defaultValues: initialValues,
@@ -51,7 +58,17 @@ function BackofficeLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-background">
+    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-background relative">
+      {isAuthChecking && (
+        <div className="absolute top-0 left-0 h-1 w-full bg-primary/15 z-50 overflow-hidden">
+          <motion.div
+            className="h-full bg-primary"
+            initial={{ x: '-100%' }}
+            animate={{ x: '100%' }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
+          />
+        </div>
+      )}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -201,7 +218,7 @@ function BackofficeLoginPage() {
               <Button
                 type="submit"
                 className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01]"
-                disabled={login.isPending}
+                disabled={login.isPending || isAuthChecking}
               >
                 {login.isPending ? (
                   <div className="flex items-center gap-2">

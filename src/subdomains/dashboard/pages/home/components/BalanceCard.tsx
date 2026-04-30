@@ -5,13 +5,13 @@ import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { useCardsStore } from '@/store/useCardsStore';
+import { useWalletsStore } from '@/store/useWalletsStore';
 import useUserStore from '@/store/UserStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePocketBalance } from '@/hooks/usePocketBalance';
-import { NO_CARD_ID, POCKET_CARD_NAME } from '@/constants/cards';
+import { LEGACY_POCKET_CARD_NAME, NO_WALLET_ID } from '@/constants/wallets';
 import type { Transaction } from '@/utils/services/api/transation';
-import { netByCardId } from '@/subdomains/dashboard/utils/transaction-month-nets';
+import { netByWalletId } from '@/subdomains/dashboard/utils/transaction-month-nets';
 
 const POCKET_COLOR = '#6b7280';
 
@@ -32,39 +32,39 @@ const BalanceCard = ({
 }: BalanceCardProps) => {
     const [isVisible, setIsVisible] = React.useState(true);
     const { t } = useTranslation();
-    const { cards, fetchCards } = useCardsStore();
+    const { wallets, fetchWallets } = useWalletsStore();
     const { user } = useUserStore();
     const pocketBalance = usePocketBalance();
-    const realCards = React.useMemo(
-        () => cards.filter((c) => c.name !== POCKET_CARD_NAME),
-        [cards]
+    const realWallets = React.useMemo(
+        () => wallets.filter((wallet) => wallet.name !== LEGACY_POCKET_CARD_NAME),
+        [wallets]
     );
 
     const isMonthScope = scope === 'month';
 
     const nets = useMemo(
-        () => (isMonthScope ? netByCardId(monthTransactions) : null),
+        () => (isMonthScope ? netByWalletId(monthTransactions) : null),
         [isMonthScope, monthTransactions]
     );
 
-    const pocketDisplay = isMonthScope && nets ? (nets.get(NO_CARD_ID) ?? 0) : pocketBalance;
+    const pocketDisplay = isMonthScope && nets ? (nets.get(NO_WALLET_ID) ?? 0) : pocketBalance;
 
     const cardDisplays = useMemo(() => {
         if (isMonthScope && nets) {
-            return realCards.map((card) => ({
-                id: card.id,
-                name: card.name,
-                color: card.color,
-                amount: nets.get(card.id) ?? 0,
+            return realWallets.map((wallet) => ({
+                id: wallet.id,
+                name: wallet.name,
+                color: wallet.color,
+                amount: nets.get(wallet.id) ?? 0,
             }));
         }
-        return realCards.map((card) => ({
-            id: card.id,
-            name: card.name,
-            color: card.color,
-            amount: card.balance,
+        return realWallets.map((wallet) => ({
+            id: wallet.id,
+            name: wallet.name,
+            color: wallet.color,
+            amount: wallet.balance,
         }));
-    }, [isMonthScope, nets, realCards]);
+    }, [isMonthScope, nets, realWallets]);
 
     const primaryBalance = isMonthScope
         ? monthTransactions.reduce(
@@ -101,9 +101,9 @@ const BalanceCard = ({
 
     React.useEffect(() => {
         if (user?.uid) {
-            fetchCards(user.uid);
+            fetchWallets(user.uid);
         }
-    }, [user?.uid, fetchCards]);
+    }, [user?.uid, fetchWallets]);
 
     return (
         <Card className={cn("overflow-hidden border-none text-white shadow-xl rounded-3xl transition-all duration-500", styles.card)}>
@@ -171,11 +171,11 @@ const BalanceCard = ({
                                 </TooltipTrigger>
                                 <TooltipContent>
                                     <div className="text-xs">
-                                        <p className="font-semibold">{t('cards.pocket', POCKET_CARD_NAME)}</p>
+                                        <p className="font-semibold">{t('wallets.pocket', LEGACY_POCKET_CARD_NAME)}</p>
                                         <p className="text-muted-foreground">{formatCurrency(pocketDisplay)}</p>
                                         {isMonthScope && (
                                             <p className="text-[10px] text-muted-foreground mt-1">
-                                                {t('cards.monthFlowCaption')}
+                                                {t('wallets.monthFlowCaption')}
                                             </p>
                                         )}
                                     </div>
@@ -195,7 +195,7 @@ const BalanceCard = ({
                                             <p className="text-muted-foreground">{formatCurrency(card.amount)}</p>
                                             {isMonthScope && (
                                                 <p className="text-[10px] text-muted-foreground mt-1">
-                                                    {t('cards.monthFlowCaption')}
+                                                    {t('wallets.monthFlowCaption')}
                                                 </p>
                                             )}
                                         </div>

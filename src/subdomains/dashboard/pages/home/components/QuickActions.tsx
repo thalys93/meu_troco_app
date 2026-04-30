@@ -32,8 +32,8 @@ const QuickActions = () => {
         },
         {
             icon: Wallet,
-            label: t('dashboard.actions.cards'),
-            href: '/dashboard/cards',
+            label: t('dashboard.actions.wallets'),
+            href: '/dashboard/wallets',
             color: 'text-orange-500',
             bg: 'bg-orange-500/10'
         },

@@ -1,12 +1,12 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Card } from "../../../../../types/Card";
+import { Wallet } from "../../../../../types/Wallet";
 import { CardItem } from "./CardItem";
 import { cn } from "@/lib/utils";
 
 interface SortableCardItemProps {
-    card: Card;
-    onEdit: (card: Card) => void;
+    card: Wallet;
+    onEdit: (card: Wallet) => void;
     monthNet?: number;
 }
 

@@ -32,7 +32,7 @@ const DashboardHeader = () => {
         <div className="flex items-center justify-between py-4 px-2 md:px-0">
             <Link to="/dashboard/profile" className="flex items-center gap-3 group transition-transform active:scale-95">
                 <Avatar className="h-12 w-12 border-2 border-primary/20 transition-all group-hover:border-primary/50 group-hover:shadow-md">
-                    <AvatarImage src={user?.details?.avatar} alt={user?.displayName} />
+                    <AvatarImage src={user?.details?.avatar} alt={user?.displayName} className='object-cover'/>
                     <AvatarFallback className="bg-primary/10 text-primary">
                         {user?.displayName?.charAt(0) ?? '?'}
                     </AvatarFallback>

@@ -9,7 +9,15 @@ const pathToLabel: Record<string, string> = {
   plan: 'backoffice.plans',
   notifications: 'sidebar.notifications',
   notification: 'notifications.backoffice.title',
+  categories: 'sidebar.categories',
+  category: 'categories.backoffice.title',
   profile: 'sidebar.profile',
+};
+
+const segmentToListHref: Record<string, string> = {
+  plan: '/backoffice/plans',
+  notification: '/backoffice/notifications',
+  category: '/backoffice/categories',
 };
 
 function BackOfficeHeader() {
@@ -20,7 +28,8 @@ function BackOfficeHeader() {
   const breadcrumbs = [
     { label: t('sidebar.backoffice'), href: '/backoffice/home' },
     ...segments.map((segment, i) => {
-      const href = '/backoffice/' + segments.slice(0, i + 1).join('/');
+      const href =
+        segmentToListHref[segment] ?? '/backoffice/' + segments.slice(0, i + 1).join('/');
       const key = segment;
       const labelKey = pathToLabel[key] ?? key;
       const label = pathToLabel[key] ? t(labelKey) : key;

@@ -90,6 +90,26 @@
   }
 }
 
+@keyframes toast-progress-shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.toast-progress-inner {
+  animation: toast-progress-shrink var(--toast-duration, 5000ms) linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-progress-inner {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+
 @layer base {
   * {
     @apply border-border;

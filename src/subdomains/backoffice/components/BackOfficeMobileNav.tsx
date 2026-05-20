@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import React from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Home, User, Moon, DoorOpen, ShoppingBag, Bell } from 'lucide-react';
+import { Home, User, Moon, ShoppingBag, Bell, Tags, DoorOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -20,6 +20,7 @@ const BackOfficeMobileNav = () => {
     { name: t('sidebar.home'), href: '/backoffice/home', icon: Home },
     { name: t('sidebar.plans'), href: '/backoffice/plans', icon: ShoppingBag },
     { name: t('sidebar.notifications'), href: '/backoffice/notifications', icon: Bell },
+    { name: t('sidebar.categories'), href: '/backoffice/categories', icon: Tags },
   ];
 
   return (

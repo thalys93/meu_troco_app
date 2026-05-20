@@ -1,24 +1,35 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Home, TrendingUp, TrendingDown, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { Bank } from '@phosphor-icons/react';
+import { useIsMobile } from '@/hooks/use-mobile';
+
+type NavItem = {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+};
 
 const MobileNav = () => {
   const location = useLocation();
   const { t } = useTranslation();
   const navRef = useRef<HTMLElement>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
+  const isMobile = useIsMobile();
 
-  const navigation = [
-    { name: t('sidebar.home'), href: '/dashboard', icon: Home },
-    { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
-    { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
-    { name: t('dashboard.actions.wallets'), href: '/dashboard/wallets', icon: Wallet },
-    { name: t('sidebar.transactions'), href: '/dashboard/transactions', icon: Bank },
-  ];
+  const navigation = useMemo((): NavItem[] => {
+    const items: (NavItem | null)[] = [
+      { name: t('sidebar.home'), href: '/dashboard', icon: Home },
+      { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
+      { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
+      { name: t('dashboard.actions.wallets'), href: '/dashboard/wallets', icon: Wallet },
+      isMobile ? { name: t('sidebar.transactions'), href: '/dashboard/transactions', icon: Bank } : null,
+    ];
+    return items.filter((item): item is NavItem => item !== null);
+  }, [t, isMobile]);
 
   useEffect(() => {
     const nav = navRef.current;

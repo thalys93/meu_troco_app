@@ -26,7 +26,6 @@ import {
   summarizeIncomeExpense,
 } from '../../utils/transaction-filters';
 
-/** Conteúdo que usa `useDashboardPreferences` — deve ser filho de `PrivateLayout` (provider). */
 function DashboardHomeBody() {
   const { data: transactions = [], isLoading } = useUserTransactions();
   const {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, User, LogOut, ShoppingBag, Bell, Search } from 'lucide-react';
+import { Home, User, LogOut, ShoppingBag, Bell, Tags, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuItem } from '@/components/ui/sidebar';
@@ -22,6 +22,7 @@ const AppSidebar = () => {
     { name: t('sidebar.home'), href: '/backoffice/home', icon: Home },
     { name: t('sidebar.plans'), href: '/backoffice/plans', icon: ShoppingBag },
     { name: t('sidebar.notifications'), href: '/backoffice/notifications', icon: Bell },
+    { name: t('sidebar.categories'), href: '/backoffice/categories', icon: Tags },
   ];
 
   return (

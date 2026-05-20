@@ -40,7 +40,7 @@ export default function TransactionFiltersDialog({
 }: TransactionFiltersDialogProps) {
   const { t } = useTranslation();
   const { uid } = useUserStore();
-  const { allCategories } = useCategories();
+  const { allCategories, getCategoryLabel } = useCategories();
   const { wallets, fetchWallets } = useWalletsStore();
 
   React.useEffect(() => {
@@ -285,7 +285,7 @@ function CategoryChips({
               }}
             >
               <Icon className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-              <span>{isAll ? allLabel : t(`categories.${cat.id}`, cat.id)}</span>
+              <span>{isAll ? allLabel : getCategoryLabel(cat.id)}</span>
             </Button>
           );
         })}

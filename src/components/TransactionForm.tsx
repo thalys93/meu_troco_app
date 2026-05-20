@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { Form } from './ui/form';
 import { Transaction, useCreateTransaction, useEditTransaction, useUserTransaction, useUserTransactions } from '@/utils/services/api/transation';
-import { Loader2, Calendar as CalendarIcon, ChevronLeft, InfoIcon, List, CreditCard, Tag } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, List, CreditCard, Tag } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useUserStore from '@/store/UserStore';
 import { useCategories } from '@/hooks/use-categories';
@@ -57,7 +57,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   const navigate = useNavigate();
   const { uid } = useUserStore();
   const { data: transaction, refetch: refetchTransaction } = useUserTransaction(uid, id ?? '')
-  const { expenseCategories, incomeCategories, getCategoryIcon } = useCategories();
+  const { expenseCategories, incomeCategories, getCategoryIcon, getCategoryLabel } = useCategories();
 
   const { mutate: create, isPending } = useCreateTransaction();
   const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(uid, id ?? '');
@@ -72,7 +72,6 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   );
 
   const categories = type === 'receita' ? incomeCategories : expenseCategories;
-  const getCategoryLabel = (category: string) => t(`categories.${category}`);
   const CategoryTriggerIcon = category ? (getCategoryIcon(category) ?? Tag) : Tag;
 
   const currencySymbol = useMemo(() => {
@@ -211,6 +210,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
         toast({
           title: t('transactionForm.toast.success'),
           description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses')} ${t('transactionForm.toast.successDescription')}`,
+          variant: "success",
         });
         transactionForm.reset(initialValues);
         setCategory('');
@@ -256,6 +256,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
         toast({
           title: 'Sucesso!',
           description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses')} ${t('transactionForm.toast.editDescription')}`,
+          variant: "success",
         });
         refetchUserTransactions();
         refetchTransaction();
@@ -277,29 +278,38 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
     });
   }
 
+  const isEditing = Boolean(id && String(id).length > 0);
+
   return (
     <Form
       form={transactionForm}
-      onSubmit={id && String(id).length > 0 ? handleEdit : handleCreate}
+      onSubmit={isEditing ? handleEdit : handleCreate}
       className={cn(
-        "space-y-0 flex flex-col gap-5 md:gap-6",
-        mode === 'sheet' ? "mx-0 max-w-none" : "sm:max-w-lg mx-auto"
+        "space-y-0 flex flex-col",
+        mode === 'sheet' ? "h-full min-h-0" : "w-full max-w-lg mx-auto gap-4 sm:gap-5"
       )}
     >
-      {/* Value Display */}
-      <div className="text-center space-y-2 py-6 md:py-8">
+      <div
+        className={cn(
+          "flex flex-col gap-4 sm:gap-5",
+          mode === 'sheet' && "min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        )}
+      >
+      <div className="w-full text-center space-y-2 py-6 md:py-8">
         <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">
           {t('transactionForm.form.value')}
         </p>
-        <div className="flex items-center justify-center gap-1 group">
-          <span className={cn(
-            "text-4xl font-bold",
-            type === 'receita' ? "text-emerald-400" : "text-red-400"
-          )}>
+        <div className="mx-auto flex w-full items-center justify-center gap-1">
+          <span
+            className={cn(
+              "shrink-0 text-4xl font-bold",
+              type === 'receita' ? "text-emerald-400" : "text-red-400"
+            )}
+          >
             {type === 'receita' ? '+' : '-'}
           </span>
-          <div className="relative flex items-center">
-            <span className="text-muted-foreground text-4xl font-medium mr-1 select-none">
+          <div className="relative inline-flex items-center">
+            <span className="mr-1 shrink-0 select-none text-4xl font-medium text-muted-foreground">
               {currencySymbol}
             </span>
             <input
@@ -308,15 +318,16 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
               value={displayValue}
               onChange={handleValueChange}
               placeholder="0"
+              style={{ width: `${Math.max(displayValue.length || 1, 2) + 0.75}ch` }}
               className={cn(
-                "text-6xl font-black tracking-tighter bg-transparent border-none outline-none w-auto max-w-[250px] text-center focus-visible:ring-0 p-0 placeholder:text-muted-foreground/60",
+                "max-w-[250px] bg-transparent border-none p-0 text-6xl font-black tracking-tighter text-center outline-none focus-visible:ring-0 placeholder:text-muted-foreground/60",
                 type === 'receita' ? "text-emerald-200" : "text-red-200",
                 fieldErrors.value && "ring-2 ring-red-500 ring-offset-2 rounded-lg"
               )}
               autoFocus
             />
           </div>
-          <span className="text-muted-foreground text-2xl font-medium self-end mb-2 ml-1">
+          <span className="mb-2 ml-1 shrink-0 self-end text-2xl font-medium text-muted-foreground">
             {currencyName}
           </span>
         </div>
@@ -442,33 +453,30 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
           </div>
         </div>
       </div>
+      </div>
 
-      {/* Action Button */}
-      <Button
-        type="submit"
-        disabled={isPending || isPendingEdit}
-        className="w-full h-16 text-lg font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98] mt-2 md:sticky md:bottom-24 z-10"
-      >
-        {(isPending || isPendingEdit) ? (
-          <Loader2 className="animate-spin h-6 w-6" />
-        ) : (
-          <>
-            {id && String(id).length > 0 ? t('default.edit') : t('default.add')} {type === 'receita' ? t('default.receipt') : t('default.expense')}
-          </>
+      <div
+        className={cn(
+          "shrink-0",
+          mode === 'sheet'
+            ? "border-t border-border/50 bg-background pt-4 mt-2"
+            : "pt-1 pb-2"
         )}
-      </Button>
-
-      {id && String(id).length > 0 && (
+      >
         <Button
-          variant="ghost"
-          type="button"
-          onClick={() => (onCancel ? onCancel() : navigate(-1))}
-          className="flex items-center gap-2 text-muted-foreground"
+          type="submit"
+          disabled={isPending || isPendingEdit}
+          className="w-full h-14 sm:h-16 text-base sm:text-lg font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]"
         >
-          <ChevronLeft className="w-4 h-4" />
-          Voltar
+          {(isPending || isPendingEdit) ? (
+            <Loader2 className="animate-spin h-6 w-6" />
+          ) : (
+            <>
+              {isEditing ? t('default.edit') : t('default.add')} {type === 'receita' ? t('default.receipt') : t('default.expense')}
+            </>
+          )}
         </Button>
-      )}
+      </div>
     </Form>
   );
 };

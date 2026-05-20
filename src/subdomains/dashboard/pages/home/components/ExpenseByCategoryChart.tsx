@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/chart";
 import { Transaction } from "@/utils/services/api/transation";
 import { useTranslation } from "react-i18next";
+import { useCategories } from "@/hooks/use-categories";
 
 /** Cores explícitas por fatia — `fill` vai nos dados do Pie (Recharts mescla no setor). */
 const SLICE_COLORS = [
@@ -31,6 +32,7 @@ export default function ExpenseByCategoryChart({
   transactions,
 }: ExpenseByCategoryChartProps) {
   const { t, i18n } = useTranslation();
+  const { getCategoryLabel } = useCategories();
   const currencyCode = React.useMemo(() => {
     if (i18n.language === "pt-BR") return "BRL";
     if (i18n.language === "es") return "EUR";
@@ -59,7 +61,7 @@ export default function ExpenseByCategoryChart({
     return Array.from(grouped.entries())
       .map(([category, total]) => ({
         category,
-        label: t(`categories.${category}`, category),
+        label: getCategoryLabel(category),
         total: Number(total.toFixed(2)),
       }))
       .sort((a, b) => b.total - a.total)
@@ -70,12 +72,11 @@ export default function ExpenseByCategoryChart({
         fill: SLICE_COLORS[index % SLICE_COLORS.length],
         stroke: "hsl(var(--background))",
       }));
-  }, [transactions, t]);
+  }, [transactions, getCategoryLabel, i18n.language]);
 
-  /** Só `label`: chaves com espaço/acento (ex. "Fatura Cartão") geram `--color-…` inválido no ChartStyle. */
   const chartConfig = React.useMemo(() => {
     return data.reduce<Record<string, { label: string }>>((acc, item) => {
-      acc[item.category] = { label: item.label };
+      acc[item.label] = { label: item.label };
       return acc;
     }, {});
   }, [data]);
@@ -114,11 +115,11 @@ export default function ExpenseByCategoryChart({
               <ChartTooltip
                 content={
                   <ChartTooltipContent
-                    nameKey="category"
-                    formatter={(value, name) => (
+                    nameKey="label"
+                    formatter={(value, _name, item) => (
                       <div className="flex flex-1 items-center justify-between leading-none gap-1">
                         <span className="text-muted-foreground">
-                          {String(name)}:
+                          {String(item.payload?.label ?? _name)}:
                         </span>
                         <span className="font-mono font-medium tabular-nums text-foreground">
                           {formatCurrency(Number(value))}
@@ -131,7 +132,7 @@ export default function ExpenseByCategoryChart({
               <Pie
                 data={data}
                 dataKey="total"
-                nameKey="category"
+                nameKey="label"
                 innerRadius={56}
                 outerRadius={90}
                 paddingAngle={2}

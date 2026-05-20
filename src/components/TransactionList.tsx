@@ -6,6 +6,13 @@ import { cn } from '@/lib/utils';
 import { Transaction, useDeleteTransaction, useUserTransactions } from '@/utils/services/api/transation';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
+import TransactionRowActionsMenu, { TransactionRowActionsDropdown } from './transaction-table/TransactionRowActionsMenu';
+import TransactionTableInlineRow from './transaction-table/TransactionTableInlineRow';
+import {
+  createEmptyDraft,
+  draftFromTransaction,
+  InlineTransactionDraft,
+} from './transaction-table/transaction-inline-utils';
 import DeleteDialog from './DeleteDialog';
 import { toast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
@@ -47,6 +54,10 @@ import { NO_WALLET_ID } from '@/constants/wallets';
 const QUICK_ADD_OUTSIDE_PORTAL_SELECTOR =
   '[data-radix-popper-content-wrapper],[data-radix-menu-content],[data-radix-select-viewport],.rdp';
 
+const TRANSACTION_INLINE_ROW_SELECTOR = '[data-transaction-inline-row]';
+const TRANSACTION_DATA_ROW_SELECTOR = '[data-transaction-row-id]';
+const TRANSACTION_ADD_ROW_SELECTOR = '[data-transaction-add-row]';
+
 const isValidDate = (value: Date) => !Number.isNaN(value.getTime());
 
 function elementFromEventTarget(target: EventTarget | null): Element | null {
@@ -60,6 +71,19 @@ function isInsideQuickAddNestedLayer(node: EventTarget | null): boolean {
   const el = elementFromEventTarget(node);
   if (!el) return false;
   return Boolean(el.closest(QUICK_ADD_OUTSIDE_PORTAL_SELECTOR));
+}
+
+function hasOpenInlineEditOverlay(): boolean {
+  const poppers = document.querySelectorAll('[data-radix-popper-content-wrapper]');
+  for (const popper of poppers) {
+    if (
+      popper.querySelector('[data-state="open"]') ||
+      popper.querySelector('[cmdk-list]')
+    ) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /** Evita fechar o Sheet ao interagir com Popover/Select/Calendar em portal (usa composedPath por causa de shadow/text nodes). */
@@ -114,13 +138,14 @@ const TransactionList = ({
   formatCurrency,
   showQuickAdd = false,
 }: TransactionListProps) => {
+  const useInlineTable = variant === 'table' && showQuickAdd;
   const displayTransactions = limit ? transactions?.slice(0, limit) : transactions;
   const { uid } = useUserStore();
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction>()
   const { mutate, isPending } = useDeleteTransaction()
   const { refetch } = useUserTransactions()
   const { t, i18n } = useTranslation();
-  const { getCategoryIcon } = useCategories();
+  const { getCategoryIcon, getCategoryLabel } = useCategories();
   const { wallets, fetchWallets } = useWalletsStore();
   const { transactionListFilters, setTransactionListFilters } =
     useDashboardPreferences();
@@ -139,6 +164,11 @@ const TransactionList = ({
   const [sheetCreateType, setSheetCreateType] = React.useState<'receita' | 'despesa'>('receita');
   const [sheetEditId, setSheetEditId] = React.useState<string | null>(null);
   const [sheetEditType, setSheetEditType] = React.useState<'receita' | 'despesa'>('receita');
+  const [inlineSession, setInlineSession] = React.useState<{
+    mode: 'create' | 'edit';
+    transactionId?: string;
+    draft: InlineTransactionDraft;
+  } | null>(null);
   const [filtersOpen, setFiltersOpen] = React.useState<boolean>(false);
   const monthRange = React.useMemo(
     () => (selectedMonth ? getMonthRangeByKey(selectedMonth) : undefined),
@@ -279,7 +309,6 @@ const TransactionList = ({
     return isPending && selectedTransaction?.id === id
   }
 
-  const getCategoryLabel = (category: string) => t(`categories.${category}`);
   const walletsById = React.useMemo(
     () => new Map(wallets.map((wallet) => [wallet.id, wallet])),
     [wallets]
@@ -391,6 +420,99 @@ const TransactionList = ({
     setSheetOpen(true);
   }, []);
 
+  const defaultCreateDate = React.useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    if (!selectedMonth || !monthRange) return today;
+    if (isCurrentMonthKey(selectedMonth)) return today;
+    return monthRange.endDate;
+  }, [monthRange, selectedMonth]);
+
+  const defaultCreateType = React.useMemo((): 'receita' | 'despesa' => {
+    if (filterType === 'receita' || filterType === 'despesa') return filterType;
+    return 'despesa';
+  }, [filterType]);
+
+  const clearInlineSession = React.useCallback(() => {
+    setInlineSession(null);
+  }, []);
+
+  const openInlineCreate = React.useCallback(
+    (type: 'receita' | 'despesa') => {
+      setInlineSession({
+        mode: 'create',
+        draft: createEmptyDraft(type, defaultCreateDate),
+      });
+    },
+    [defaultCreateDate]
+  );
+
+  const openInlineEdit = React.useCallback((transaction: Transaction) => {
+    if (!transaction.id) return;
+    setInlineSession({
+      mode: 'edit',
+      transactionId: transaction.id,
+      draft: draftFromTransaction(transaction),
+    });
+  }, []);
+
+  const transactionsById = React.useMemo(
+    () => new Map(filteredTransactions.map((tr) => [tr.id, tr])),
+    [filteredTransactions]
+  );
+
+  React.useEffect(() => {
+    if (!useInlineTable || !inlineSession) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (isInsideQuickAddNestedLayer(event.target)) return;
+
+      const el = elementFromEventTarget(event.target);
+      if (!el) return;
+
+      if (el.closest(TRANSACTION_INLINE_ROW_SELECTOR)) return;
+
+      const dataRow = el.closest(TRANSACTION_DATA_ROW_SELECTOR);
+      if (dataRow) {
+        const transactionId = dataRow.getAttribute('data-transaction-row-id');
+        const transaction = transactionId ? transactionsById.get(transactionId) : undefined;
+        if (transaction) openInlineEdit(transaction);
+        return;
+      }
+
+      if (el.closest(TRANSACTION_ADD_ROW_SELECTOR)) {
+        openInlineCreate(defaultCreateType);
+        return;
+      }
+
+      clearInlineSession();
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown, true);
+    return () => document.removeEventListener('pointerdown', handlePointerDown, true);
+  }, [
+    useInlineTable,
+    inlineSession,
+    transactionsById,
+    openInlineEdit,
+    openInlineCreate,
+    defaultCreateType,
+    clearInlineSession,
+  ]);
+
+  React.useEffect(() => {
+    if (!useInlineTable || !inlineSession) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      if (hasOpenInlineEditOverlay()) return;
+      event.preventDefault();
+      clearInlineSession();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [useInlineTable, inlineSession, clearInlineSession]);
+
   const onQuickAddSheetDismissIntercept = React.useCallback(
     (event: { preventDefault: () => void; target: EventTarget; detail?: { originalEvent?: Event } }) => {
       preventQuickAddSheetDismissIfFromNestedPortal(event);
@@ -461,7 +583,7 @@ const TransactionList = ({
                   <Button
                     size="sm"
                     className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
-                    onClick={() => openCreateSheet('receita')}
+                    onClick={() => openInlineCreate('receita')}
                   >
                     <Plus className="h-4 w-4 shrink-0" />
                     {t('dashboard.actions.receipt')}
@@ -469,7 +591,7 @@ const TransactionList = ({
                   <Button
                     size="sm"
                     className="gap-1.5 bg-red-600 text-white hover:bg-red-700 shadow-sm"
-                    onClick={() => openCreateSheet('despesa')}
+                    onClick={() => openInlineCreate('despesa')}
                   >
                     <Plus className="h-4 w-4 shrink-0" />
                     {t('dashboard.actions.expense')}
@@ -604,7 +726,7 @@ const TransactionList = ({
                 scrollClassName || 'h-[min(78vh,760px)]'
               )}
             >
-              {filteredTransactions?.length === 0 ? (
+              {!useInlineTable && filteredTransactions?.length === 0 ? (
                 <p className="text-muted-foreground text-center py-12 px-4 text-sm">
                   {t('transactionList.empty')}
                 </p>
@@ -640,40 +762,94 @@ const TransactionList = ({
                   </TableHeader>
                   <TableBody>
                     {filteredTransactions.map((transaction, rowIndex) => {
+                      const isEditingRow =
+                        useInlineTable &&
+                        inlineSession?.mode === 'edit' &&
+                        inlineSession.transactionId === transaction.id;
+
+                      if (isEditingRow && inlineSession) {
+                        return (
+                          <TransactionTableInlineRow
+                            key={transaction.id}
+                            mode="edit"
+                            draft={inlineSession.draft}
+                            onDraftChange={(draft) =>
+                              setInlineSession((prev) =>
+                                prev ? { ...prev, draft } : prev
+                              )
+                            }
+                            onCancel={clearInlineSession}
+                            onSaved={clearInlineSession}
+                            editTransactionId={transaction.id}
+                            allTransactions={displayTransactions || []}
+                            rowIndex={rowIndex}
+                            zebra={rowIndex % 2 === 1}
+                          />
+                        );
+                      }
+
                       const CatIcon = getCategoryIcon(transaction.category);
                       const walletBadge = getWalletBadgeData(transaction.walletId || transaction.cardId);
                       const zebra = rowIndex % 2 === 1;
-                      return (
+
+                      const rowContent = (
                         <TableRow
-                          key={transaction.id}
-                          role="button"
-                          tabIndex={0}
+                          role={useInlineTable ? 'button' : 'button'}
+                          tabIndex={useInlineTable ? 0 : 0}
                           className={cn(
-                            "border-0 transition-colors cursor-pointer",
-                            zebra ? "bg-muted/30 hover:bg-muted/45 dark:bg-muted/15 dark:hover:bg-muted/25" : "bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20",
-                            isPendingTransaction(transaction.id) && "pointer-events-none opacity-60"
+                            'border-0 transition-colors',
+                            useInlineTable && 'cursor-pointer',
+                            zebra
+                              ? 'bg-muted/30 hover:bg-muted/45 dark:bg-muted/15 dark:hover:bg-muted/25'
+                              : 'bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20',
+                            isPendingTransaction(transaction.id) && 'pointer-events-none opacity-60',
+                            useInlineTable &&
+                              inlineSession &&
+                              inlineSession.mode === 'edit' &&
+                              inlineSession.transactionId !== transaction.id &&
+                              'opacity-50'
                           )}
-                          onClick={() => openEditSheet(transaction)}
+                          data-transaction-row-id={useInlineTable ? transaction.id : undefined}
+                          onClick={() => {
+                            if (!useInlineTable) {
+                              openEditSheet(transaction);
+                              return;
+                            }
+                            openInlineEdit(transaction);
+                          }}
                           onKeyDown={(e) => {
+                            if (!useInlineTable) {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                openEditSheet(transaction);
+                              }
+                              return;
+                            }
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault();
-                              openEditSheet(transaction);
+                              openInlineEdit(transaction);
                             }
                           }}
                         >
                           <TableCell className="border-b border-border/30 py-2 pl-4 pr-2 align-middle">
                             <div className="flex items-center gap-2.5">
-                              <span className={cn(
-                                "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
-                                transaction.type === 'receita' ? "bg-emerald-500/12 text-emerald-600 dark:text-emerald-400" : "bg-red-500/12 text-red-600 dark:text-red-400"
-                              )}>
+                              <span
+                                className={cn(
+                                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-md',
+                                  transaction.type === 'receita'
+                                    ? 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400'
+                                    : 'bg-red-500/12 text-red-600 dark:text-red-400'
+                                )}
+                              >
                                 {transaction.type === 'receita' ? (
                                   <TrendingUp className="h-4 w-4" />
                                 ) : (
                                   <TrendingDown className="h-4 w-4" />
                                 )}
                               </span>
-                              <span className="text-sm font-medium leading-snug line-clamp-2 text-foreground">{transaction.description}</span>
+                              <span className="text-sm font-medium leading-snug line-clamp-2 text-foreground">
+                                {transaction.description}
+                              </span>
                             </div>
                           </TableCell>
                           <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
@@ -699,10 +875,10 @@ const TransactionList = ({
                             <Badge
                               variant="secondary"
                               className={cn(
-                                "h-6 border-0 px-2 py-0 text-xs font-medium",
+                                'h-6 border-0 px-2 py-0 text-xs font-medium',
                                 transaction.type === 'receita'
-                                  ? "bg-emerald-500/12 text-emerald-700 dark:text-emerald-400"
-                                  : "bg-red-500/12 text-red-700 dark:text-red-400"
+                                  ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
+                                  : 'bg-red-500/12 text-red-700 dark:text-red-400'
                               )}
                             >
                               {transaction.type === 'receita'
@@ -710,42 +886,117 @@ const TransactionList = ({
                                 : t('landing_v2.transactions.expense')}
                             </Badge>
                           </TableCell>
-                          <TableCell className={cn(
-                            "border-b border-border/30 py-2 px-3 text-right align-middle font-mono text-sm font-semibold tabular-nums whitespace-nowrap",
-                            transaction.type === 'receita' ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-                          )}>
+                          <TableCell
+                            className={cn(
+                              'border-b border-border/30 py-2 px-3 text-right align-middle font-mono text-sm font-semibold tabular-nums whitespace-nowrap',
+                              transaction.type === 'receita'
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-red-600 dark:text-red-400'
+                            )}
+                          >
                             {formatAmount(transaction.value, transaction.type)}
                           </TableCell>
                           <TableCell
                             className="border-b border-border/30 py-2 pr-4 pl-2 text-right align-middle"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                                  <EllipsisVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel className='select-none'>{t('transactionList.actions')}</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => setSelectedTransaction(transaction)}>
-                                  <div className='flex flex-row items-center gap-2'>
-                                    <Trash className='h-4 w-4' /> {t('transactionList.delete')}
-                                  </div>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className='flex flex-row items-center gap-2'
-                                  onClick={() => openEditSheet(transaction)}
-                                >
-                                  <Pen className='h-4 w-4' /> {t('transactionList.edit')}
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            {useInlineTable ? (
+                              <TransactionRowActionsDropdown
+                                onEdit={() => openInlineEdit(transaction)}
+                                onDelete={() => setSelectedTransaction(transaction)}
+                              />
+                            ) : (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                  >
+                                    <EllipsisVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel className="select-none">
+                                    {t('transactionList.actions')}
+                                  </DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => setSelectedTransaction(transaction)}>
+                                    <div className="flex flex-row items-center gap-2">
+                                      <Trash className="h-4 w-4" /> {t('transactionList.delete')}
+                                    </div>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="flex flex-row items-center gap-2"
+                                    onClick={() => openEditSheet(transaction)}
+                                  >
+                                    <Pen className="h-4 w-4" /> {t('transactionList.edit')}
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
                           </TableCell>
                         </TableRow>
                       );
+
+                      if (useInlineTable) {
+                        return (
+                          <TransactionRowActionsMenu
+                            key={transaction.id}
+                            onEdit={() => openInlineEdit(transaction)}
+                            onDelete={() => setSelectedTransaction(transaction)}
+                          >
+                            {rowContent}
+                          </TransactionRowActionsMenu>
+                        );
+                      }
+
+                      return <React.Fragment key={transaction.id}>{rowContent}</React.Fragment>;
                     })}
+                    {useInlineTable &&
+                      (inlineSession?.mode === 'create' ? (
+                        <TransactionTableInlineRow
+                          key="inline-create"
+                          mode="create"
+                          draft={inlineSession.draft}
+                          onDraftChange={(draft) =>
+                            setInlineSession((prev) =>
+                              prev ? { ...prev, draft } : prev
+                            )
+                          }
+                          onCancel={clearInlineSession}
+                          onSaved={clearInlineSession}
+                          allTransactions={displayTransactions || []}
+                          zebra={filteredTransactions.length % 2 === 1}
+                        />
+                      ) : (
+                        <TableRow
+                          role="button"
+                          tabIndex={0}
+                          data-transaction-add-row
+                          className={cn(
+                            'border-0 cursor-pointer border-dashed hover:bg-muted/30 dark:hover:bg-muted/15',
+                            inlineSession?.mode === 'edit' && 'opacity-50'
+                          )}
+                          onClick={() => openInlineCreate(defaultCreateType)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              openInlineCreate(defaultCreateType);
+                            }
+                          }}
+                        >
+                          <TableCell
+                            colSpan={7}
+                            className="border-b border-border/30 py-3 pl-4 text-sm text-muted-foreground"
+                          >
+                            <span className="flex items-center gap-2">
+                              <Plus className="h-4 w-4 shrink-0 opacity-70" />
+                              {t('transactionList.inline.addPlaceholder')}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
                   </TableBody>
                   <TableFooter className="border-0 bg-transparent">
                     <TableRow className="border-0 hover:bg-transparent">
@@ -757,8 +1008,10 @@ const TransactionList = ({
                       </TableCell>
                       <TableCell
                         className={cn(
-                          "sticky bottom-0 z-10 border-t border-border/50 bg-muted py-2.5 px-3 text-right align-middle font-mono text-sm font-bold tabular-nums shadow-[0_-1px_0_0_hsl(var(--border)/0.35)]",
-                          tableNetSum >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                          'sticky bottom-0 z-10 border-t border-border/50 bg-muted py-2.5 px-3 text-right align-middle font-mono text-sm font-bold tabular-nums shadow-[0_-1px_0_0_hsl(var(--border)/0.35)]',
+                          tableNetSum >= 0
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : 'text-red-600 dark:text-red-400'
                         )}
                       >
                         {tableSumDisplay}
@@ -874,21 +1127,22 @@ const TransactionList = ({
           itemDetails={selectedTransaction!}
         />
       )}
-      {sheetOpen && (
+      {!useInlineTable && sheetOpen && (
         <div
           aria-hidden
           className="fixed inset-0 z-[45] bg-black/30 dark:bg-black/40"
           onPointerDown={() => handleSheetOpenChange(false)}
         />
       )}
+      {!useInlineTable && (
       <Sheet modal={false} open={sheetOpen} onOpenChange={handleSheetOpenChange}>
         <SheetContent
           side="right"
-          className="z-[50] w-full overflow-y-auto sm:max-w-md sm:w-[min(100%,28rem)]"
+          className="z-[50] flex h-svh max-h-svh w-full max-w-[min(100vw,28rem)] flex-col gap-0 overflow-hidden p-0 sm:w-[28rem]"
           onPointerDownOutside={onQuickAddSheetDismissIntercept}
           onInteractOutside={onQuickAddSheetDismissIntercept}
         >
-          <SheetHeader className="mb-2 border-b border-border/50 pb-4">
+          <SheetHeader className="shrink-0 space-y-1 border-b border-border/50 px-6 pb-4 pt-6 text-left">
             <SheetTitle>
               {sheetEditId
                 ? `${t('default.edit')} ${sheetEditType === 'receita' ? t('default.receipt') : t('default.expense')}`
@@ -898,7 +1152,7 @@ const TransactionList = ({
               {t('transactionList.allHistory')}
             </SheetDescription>
           </SheetHeader>
-          <div className="pb-6">
+          <div className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-4">
             <TransactionForm
               key={sheetEditId ?? `create-${sheetCreateType}`}
               type={sheetEditId ? sheetEditType : sheetCreateType}
@@ -910,6 +1164,7 @@ const TransactionList = ({
           </div>
         </SheetContent>
       </Sheet>
+      )}
     </>
   );
 };

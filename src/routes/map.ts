@@ -9,6 +9,8 @@ import PlansPage from "@/subdomains/backoffice/pages/plans/Plans";
 import BackOfficeProfilePage from "@/subdomains/backoffice/pages/profile/Profile";
 import NotificationsPage from "@/subdomains/backoffice/pages/notifications/Notifications";
 import NotificationFormPage from "@/subdomains/backoffice/pages/notifications/NotificationForm";
+import CategoriesPage from "@/subdomains/backoffice/pages/categories/Categories";
+import CategoryFormPage from "@/subdomains/backoffice/pages/categories/CategoryForm";
 import DashboardPage from "@/subdomains/dashboard/pages/home/Dashboard";
 import ExpensesPage from "@/subdomains/dashboard/pages/expenses/Expenses";
 import IncomePage from "@/subdomains/dashboard/pages/income/Income";
@@ -78,6 +80,8 @@ export const BackOfficeRoutes: RoutesGroup = {
         { path: "plan/:id?", element: PlansFormComponent },
         { path: "notifications", element: NotificationsPage },
         { path: "notification/:id?", element: NotificationFormPage },
+        { path: "categories", element: CategoriesPage },
+        { path: "category/:id?", element: CategoryFormPage },
         { path: "profile", element: BackOfficeProfilePage }
     ]
 }

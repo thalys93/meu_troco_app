@@ -11,6 +11,7 @@ import { TrendingUp, TrendingDown, Activity } from 'lucide-react'
 import { useDashboardPreferences } from '../../context/dashboard-preferences'
 import { getMonthRangeByKey } from '../../utils/month-range'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { useCategories } from '@/hooks/use-categories'
 import {
     filterTransactionsByPreferences,
     summarizeIncomeExpense
@@ -32,6 +33,7 @@ function TransactionsPageBody() {
         transactionListFilters
     } = useDashboardPreferences();
     const isMobile = useIsMobile();
+    const { categoryLookup } = useCategories();
     const isNotionDesktop = layoutMode === 'notion' && !isMobile;
     const monthRange = useMemo(() => getMonthRangeByKey(selectedMonth), [selectedMonth]);
     const effectiveFilters = useMemo(() => {
@@ -45,8 +47,11 @@ function TransactionsPageBody() {
         };
     }, [monthRange.endDate, monthRange.startDate, transactionListFilters]);
     const filteredTransactions = useMemo(
-        () => filterTransactionsByPreferences(transactions || [], effectiveFilters),
-        [effectiveFilters, transactions]
+        () =>
+            filterTransactionsByPreferences(transactions || [], effectiveFilters, {
+                categoryLookup,
+            }),
+        [categoryLookup, effectiveFilters, transactions]
     );
     const summary = useMemo(
         () => summarizeIncomeExpense(filteredTransactions),

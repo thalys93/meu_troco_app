@@ -1,4 +1,6 @@
 import { NO_WALLET_ID } from "@/constants/wallets";
+import { transactionCategoryMatchesFilter } from "@/hooks/use-categories";
+import type { Category } from "@/types/Category";
 import { Transaction } from "@/utils/services/api/transation";
 import { TransactionListFiltersPreference } from "@/subdomains/dashboard/context/dashboard-preferences";
 import {
@@ -17,10 +19,16 @@ export type IncomeExpenseSummary = {
   expenseCount: number;
 };
 
+export type TransactionFilterOptions = {
+  categoryLookup?: Map<string, Category>;
+};
+
 export const filterTransactionsByPreferences = (
   transactions: Transaction[],
-  filters: TransactionListFiltersPreference
+  filters: TransactionListFiltersPreference,
+  options?: TransactionFilterOptions
 ): Transaction[] => {
+  const categoryLookup = options?.categoryLookup;
   const min = filters.minValue ? parseFloat(filters.minValue) : undefined;
   const max = filters.maxValue ? parseFloat(filters.maxValue) : undefined;
   const start = filters.startDate
@@ -46,9 +54,11 @@ export const filterTransactionsByPreferences = (
         : isPocketFilter
           ? isPocketTransaction
           : trWallet === filters.card;
-      const matchCategory = filters.categories.includes("Todos")
-        ? true
-        : filters.categories.includes(tr.category);
+      const matchCategory = transactionCategoryMatchesFilter(
+        tr.category,
+        filters.categories,
+        categoryLookup
+      );
       const matchType = filters.type === "Todos" ? true : tr.type === filters.type;
       const matchMin = min !== undefined ? tr.value >= min : true;
       const matchMax = max !== undefined ? tr.value <= max : true;

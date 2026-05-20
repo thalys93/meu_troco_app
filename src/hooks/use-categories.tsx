@@ -80,6 +80,34 @@ function resolveCategory(
   return lookup.get(categoryRef);
 }
 
+function categoryRefsEquivalent(
+  refA: string,
+  refB: string,
+  lookup: Map<string, Category>
+): boolean {
+  if (refA === refB) return true;
+  const catA = resolveCategory(refA, lookup);
+  const catB = resolveCategory(refB, lookup);
+  if (catA && catB) return catA.id === catB.id;
+  if (catA) return catA.id === refB || catA.legacyKey === refB;
+  if (catB) return refA === catB.id || refA === catB.legacyKey;
+  return false;
+}
+
+export function transactionCategoryMatchesFilter(
+  transactionCategory: string,
+  selectedCategories: string[],
+  lookup: Map<string, Category> | undefined
+): boolean {
+  if (selectedCategories.includes('Todos')) return true;
+  if (!lookup || lookup.size === 0) {
+    return selectedCategories.includes(transactionCategory);
+  }
+  return selectedCategories.some((selected) =>
+    categoryRefsEquivalent(selected, transactionCategory, lookup)
+  );
+}
+
 export const useCategories = () => {
   const { t, i18n } = useTranslation();
   const { data: remoteCategories, isLoading, isError } = useGetCategories();
@@ -148,6 +176,7 @@ export const useCategories = () => {
     expenseCategories,
     allCategories,
     allCategoryIds,
+    categoryLookup,
     getCategoryIcon,
     getCategoryLabel,
     isLoading,

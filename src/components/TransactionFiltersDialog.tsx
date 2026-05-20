@@ -6,6 +6,7 @@ import { Input } from './ui/input';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '@/store/UserStore';
 import { useCategories, type CategoryWithIcon } from '@/hooks/use-categories';
+import { NO_WALLET_ID } from '@/constants/wallets';
 import { useWalletsStore } from '@/store/useWalletsStore';
 import { cn } from '@/lib/utils';
 import React from 'react';
@@ -40,7 +41,18 @@ export default function TransactionFiltersDialog({
 }: TransactionFiltersDialogProps) {
   const { t } = useTranslation();
   const { uid } = useUserStore();
-  const { allCategories, getCategoryLabel } = useCategories();
+  const { incomeCategories, expenseCategories, allCategories } = useCategories();
+
+  const categoriesForFilter = React.useMemo(() => {
+    const todosEntry = { id: 'Todos', icon: List } as CategoryWithIcon;
+    if (filters.type === 'receita') {
+      return [...incomeCategories, todosEntry];
+    }
+    if (filters.type === 'despesa') {
+      return [...expenseCategories, todosEntry];
+    }
+    return allCategories;
+  }, [allCategories, expenseCategories, filters.type, incomeCategories]);
   const { wallets, fetchWallets } = useWalletsStore();
 
   React.useEffect(() => {
@@ -51,7 +63,7 @@ export default function TransactionFiltersDialog({
     const mapped = wallets.map((wallet) => ({ id: wallet.id, name: wallet.name, color: wallet.color }));
     return [
       { id: 'Todos', name: t('filters.all', 'Todos'), color: undefined },
-      { id: 'no_wallet', name: t('wallets.noWallet', 'Sem Carteira'), color: '#6b7280' },
+      { id: NO_WALLET_ID, name: t('wallets.noWallet', 'Sem Carteira'), color: '#6b7280' },
       ...mapped,
     ];
   }, [wallets, t]);
@@ -146,7 +158,7 @@ export default function TransactionFiltersDialog({
             </Label>
             <CategoryChips
               values={filters.categories}
-              categories={allCategories}
+              categories={categoriesForFilter}
               onChange={(v) => onChange('categories', v)}
               allLabel={t('filters.all', 'Todos')}
               showMoreLabel={t('filters.showMore', 'Mostrar mais...')}
@@ -247,7 +259,7 @@ function CategoryChips({
   allLabel: string;
   showMoreLabel: string;
 }) {
-  const { t } = useTranslation();
+  const { getCategoryLabel } = useCategories();
   const [showMore, setShowMore] = React.useState(false);
   const normalized = React.useMemo(
     () => categories.filter((c) => c.id !== allLabel && c.id !== 'Todos'),

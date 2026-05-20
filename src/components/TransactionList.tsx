@@ -145,7 +145,7 @@ const TransactionList = ({
   const { mutate, isPending } = useDeleteTransaction()
   const { refetch } = useUserTransactions()
   const { t, i18n } = useTranslation();
-  const { getCategoryIcon, getCategoryLabel } = useCategories();
+  const { getCategoryIcon, getCategoryLabel, categoryLookup } = useCategories();
   const { wallets, fetchWallets } = useWalletsStore();
   const { transactionListFilters, setTransactionListFilters } =
     useDashboardPreferences();
@@ -347,8 +347,11 @@ const TransactionList = ({
   }, [dateRangeLockedToMonth, monthRange, selectedMonth, transactionListFilters]);
 
   const filteredTransactions = React.useMemo(
-    () => filterTransactionsByPreferences(displayTransactions || [], effectiveFilters),
-    [displayTransactions, effectiveFilters]
+    () =>
+      filterTransactionsByPreferences(displayTransactions || [], effectiveFilters, {
+        categoryLookup,
+      }),
+    [categoryLookup, displayTransactions, effectiveFilters]
   );
 
   /** Mesmos critérios da tabela (filtros), para os cards de receita/despesa não divergirem do rodapé/lista. */

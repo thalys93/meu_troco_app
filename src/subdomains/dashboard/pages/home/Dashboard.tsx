@@ -21,6 +21,7 @@ import {
 import ExpenseByCategoryChart from './components/ExpenseByCategoryChart';
 import MonthlyExpenseTrendChart from './components/MonthlyExpenseTrendChart';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useCategories } from '@/hooks/use-categories';
 import {
   filterTransactionsByPreferences,
   summarizeIncomeExpense,
@@ -44,6 +45,7 @@ function DashboardHomeBody() {
     transactionListFilters
   } = useDashboardPreferences();
   const isMobile = useIsMobile();
+  const { categoryLookup } = useCategories();
   const isNotionDesktop = layoutMode === 'notion' && !isMobile;
   const monthRange = useMemo(() => getMonthRangeByKey(selectedMonth), [selectedMonth]);
 
@@ -71,8 +73,11 @@ function DashboardHomeBody() {
     };
   }, [monthRange.endDate, monthRange.startDate, transactionListFilters]);
   const filteredTransactions = useMemo(
-    () => filterTransactionsByPreferences(transactions, effectiveFilters),
-    [effectiveFilters, transactions]
+    () =>
+      filterTransactionsByPreferences(transactions, effectiveFilters, {
+        categoryLookup,
+      }),
+    [categoryLookup, effectiveFilters, transactions]
   );
   const trendFilters = useMemo(
     () => ({
@@ -85,8 +90,11 @@ function DashboardHomeBody() {
     [effectiveFilters]
   );
   const trendTransactions = useMemo(
-    () => filterTransactionsByPreferences(transactions, trendFilters),
-    [transactions, trendFilters]
+    () =>
+      filterTransactionsByPreferences(transactions, trendFilters, {
+        categoryLookup,
+      }),
+    [categoryLookup, transactions, trendFilters]
   );
   const summary = useMemo(
     () => summarizeIncomeExpense(filteredTransactions),

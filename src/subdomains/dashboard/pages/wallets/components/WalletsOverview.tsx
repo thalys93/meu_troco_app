@@ -13,6 +13,7 @@ import { useDashboardPreferences } from "@/subdomains/dashboard/context/dashboar
 import { useWalletsStore } from "@/store/useWalletsStore";
 import { useUserTransactions } from "@/utils/services/api/transation";
 import { NO_WALLET_ID } from "@/constants/wallets";
+import { resolveAllocations } from "@/utils/transaction-allocations";
 import useUserStore from "@/store/UserStore";
 
 type WalletFlowRow = {
@@ -119,24 +120,26 @@ export function WalletsOverview() {
         });
 
         for (const transaction of monthTransactions) {
-            const walletId = transaction.walletId || NO_WALLET_ID;
-            const currentRow = rowsById.get(walletId) ?? {
-                walletId,
-                walletName: t("wallets.noWallet", "Sem carteira"),
-                walletColor: "#6b7280",
-                income: 0,
-                expense: 0,
-                net: 0,
-            };
+            for (const allocation of resolveAllocations(transaction)) {
+                const walletId = allocation.walletId || NO_WALLET_ID;
+                const currentRow = rowsById.get(walletId) ?? {
+                    walletId,
+                    walletName: t("wallets.noWallet", "Sem carteira"),
+                    walletColor: "#6b7280",
+                    income: 0,
+                    expense: 0,
+                    net: 0,
+                };
 
-            if (transaction.type === "receita") {
-                currentRow.income += transaction.value;
-            } else {
-                currentRow.expense += transaction.value;
+                if (transaction.type === "receita") {
+                    currentRow.income += allocation.amount;
+                } else {
+                    currentRow.expense += allocation.amount;
+                }
+
+                currentRow.net = currentRow.income - currentRow.expense;
+                rowsById.set(walletId, currentRow);
             }
-
-            currentRow.net = currentRow.income - currentRow.expense;
-            rowsById.set(walletId, currentRow);
         }
 
         return Array.from(rowsById.values()).sort((a, b) => {

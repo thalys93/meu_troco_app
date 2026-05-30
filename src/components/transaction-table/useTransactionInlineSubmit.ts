@@ -13,8 +13,14 @@ import {
   buildTransactionPayload,
   InlineFieldErrors,
   InlineTransactionDraft,
+  parseInlineValue,
   validateInlineDraft,
 } from './transaction-inline-utils';
+import {
+  describeAllocationValidationFailure,
+  parseAllocationDraftInputs,
+  validateAllocationsForSave,
+} from '@/utils/transaction-allocations';
 
 type UseTransactionInlineSubmitOptions = {
   editTransactionId?: string;
@@ -44,6 +50,10 @@ export function useTransactionInlineSubmit({
         errors.category && t('transactionForm.form.category'),
         errors.wallet && t('transactionForm.form.wallet'),
         errors.description && t('transactionForm.form.description'),
+        errors.allocations &&
+          t('transactionList.inline.splitWallets', {
+            defaultValue: 'Rateio entre carteiras',
+          }),
       ].filter(Boolean).join(', ');
       return t('transactionForm.toast.missingFields', { fields: missing });
     },
@@ -53,10 +63,28 @@ export function useTransactionInlineSubmit({
   const submitDraft = useCallback(
     (draft: InlineTransactionDraft) => {
       const errors = validateInlineDraft(draft);
-      if (errors.value || errors.category || errors.wallet || errors.description) {
+      if (
+        errors.value ||
+        errors.category ||
+        errors.wallet ||
+        errors.description ||
+        errors.allocations
+      ) {
+        let description = getMissingFieldsMessage(errors);
+        if (errors.allocations && draft.splitAcrossWallets) {
+          const allocationCheck = validateAllocationsForSave(
+            parseInlineValue(draft.valueDisplay),
+            parseAllocationDraftInputs(draft.allocationRows, parseInlineValue)
+          );
+          if (!allocationCheck.ok) {
+            description = describeAllocationValidationFailure(
+              allocationCheck.reason
+            );
+          }
+        }
         toast({
           title: t('transactionForm.toast.title'),
-          description: getMissingFieldsMessage(errors),
+          description,
           variant: 'destructive',
         });
         return { ok: false as const, errors };

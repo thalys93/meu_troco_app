@@ -22,6 +22,18 @@ import { Calendar } from '@/components/ui/calendar';
 import { useWalletsStore } from '@/store/useWalletsStore';
 import { usePocketBalance } from '@/hooks/usePocketBalance';
 import { LEGACY_POCKET_CARD_NAME, NO_WALLET_ID, isPocketWalletId } from '@/constants/wallets';
+import TransactionAllocationsEditor, {
+  allocationRowsFromTransaction,
+  createAllocationDraftRows,
+  type AllocationDraftRow,
+} from '@/components/TransactionAllocationsEditor';
+import {
+  describeAllocationValidationFailure,
+  hasMultipleAllocations,
+  parseAllocationDraftInputs,
+  resolveAllocations,
+  validateAllocationsForSave,
+} from '@/utils/transaction-allocations';
 
 interface TransactionFormProps {
   type: 'receita' | 'despesa';
@@ -41,13 +53,29 @@ const initialValues = {
   type: ''
 }
 
-type FieldErrors = { value: boolean; category: boolean; wallet: boolean; description: boolean };
+type FieldErrors = {
+  value: boolean;
+  category: boolean;
+  wallet: boolean;
+  description: boolean;
+  allocations: boolean;
+};
 
 const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, onCancel, mode = 'page' }: TransactionFormProps) => {
   const [category, setCategory] = useState<string>('');
   const [selectedWalletId, setSelectedWalletId] = useState<string>('');
   const [displayValue, setDisplayValue] = useState<string>('');
-  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({ value: false, category: false, wallet: false, description: false });
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({
+    value: false,
+    category: false,
+    wallet: false,
+    description: false,
+    allocations: false,
+  });
+  const [splitAcrossWallets, setSplitAcrossWallets] = useState(false);
+  const [allocationRows, setAllocationRows] = useState<AllocationDraftRow[]>(
+    createAllocationDraftRows
+  );
   const transactionForm = useForm({
     defaultValues: initialValues
   })
@@ -121,6 +149,16 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
     const v = transaction.value;
     if (v === 0) setDisplayValue('')
     else setDisplayValue(v.toFixed(2).replace('.', i18n.language === 'pt-BR' ? ',' : '.'))
+
+    if (hasMultipleAllocations(transaction)) {
+      setSplitAcrossWallets(true);
+      setAllocationRows(
+        allocationRowsFromTransaction(resolveAllocations(transaction), i18n.language)
+      );
+    } else {
+      setSplitAcrossWallets(false);
+      setAllocationRows(createAllocationDraftRows());
+    }
   }, [id, transaction, i18n.language])
 
   React.useEffect(() => {
@@ -177,29 +215,91 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
     setFieldErrors((prev) => ({ ...prev, value: false }));
   };
 
-  const getValidationErrors = (): FieldErrors => ({
-    value: !displayValue.trim() || parseDisplayValue(displayValue) <= 0,
-    category: !category,
-    wallet: !selectedWalletId?.trim(),
-    description: !transactionForm.getValues('description')?.trim?.(),
-  });
+  const parseAllocationRows = () =>
+    parseAllocationDraftInputs(allocationRows, parseDisplayValue);
+
+  const getValidationErrors = (): FieldErrors => {
+    const valueNum = parseDisplayValue(displayValue);
+    const baseErrors: FieldErrors = {
+      value: !displayValue.trim() || valueNum <= 0,
+      category: !category,
+      wallet: false,
+      description: !transactionForm.getValues('description')?.trim?.(),
+      allocations: false,
+    };
+
+    if (splitAcrossWallets) {
+      const validation = validateAllocationsForSave(valueNum, parseAllocationRows());
+      baseErrors.allocations = !validation.ok;
+      return baseErrors;
+    }
+
+    return {
+      ...baseErrors,
+      wallet: !selectedWalletId?.trim(),
+    };
+  };
+
+  const buildFinalTransactionData = (data: Transaction): Transaction => {
+    const valueNum = parseDisplayValue(displayValue);
+    const base: Transaction = {
+      ...data,
+      value: valueNum,
+      type,
+      category,
+      walletId: selectedWalletId?.trim() || NO_WALLET_ID,
+    };
+
+    if (!splitAcrossWallets) {
+      const { allocations: _removed, ...withoutAllocations } = base;
+      return withoutAllocations;
+    }
+
+    const validation = validateAllocationsForSave(valueNum, parseAllocationRows());
+    if (!validation.ok) return base;
+
+    return {
+      ...base,
+      walletId: validation.walletId,
+      allocations: validation.allocations,
+    };
+  };
 
   const handleCreate = async (data: Transaction) => {
-    const valueNum = parseDisplayValue(displayValue);
-    const finalData = { ...data, value: valueNum, walletId: selectedWalletId?.trim() || NO_WALLET_ID };
+    const finalData = buildFinalTransactionData(data);
     const errors = getValidationErrors();
 
-    if (errors.value || errors.category || errors.wallet || errors.description) {
+    if (
+      errors.value ||
+      errors.category ||
+      errors.wallet ||
+      errors.description ||
+      errors.allocations
+    ) {
       setFieldErrors(errors);
-      const missing = [
+      let description = [
         errors.value && t('transactionForm.form.value'),
         errors.category && t('transactionForm.form.category'),
         errors.wallet && t('transactionForm.form.wallet'),
         errors.description && t('transactionForm.form.description'),
-      ].filter(Boolean).join(', ');
+        errors.allocations && 'Rateio entre carteiras',
+      ]
+        .filter(Boolean)
+        .join(', ');
+      if (errors.allocations && splitAcrossWallets) {
+        const allocationCheck = validateAllocationsForSave(
+          parseDisplayValue(displayValue),
+          parseAllocationRows()
+        );
+        if (!allocationCheck.ok) {
+          description = describeAllocationValidationFailure(allocationCheck.reason);
+        }
+      }
       toast({
         title: t('transactionForm.toast.title'),
-        description: t('transactionForm.toast.missingFields', { fields: missing }),
+        description: errors.allocations && splitAcrossWallets
+          ? description
+          : t('transactionForm.toast.missingFields', { fields: description }),
         variant: "destructive",
       });
       return;
@@ -215,7 +315,15 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
         transactionForm.reset(initialValues);
         setCategory('');
         setDisplayValue('');
-        setFieldErrors({ value: false, category: false, wallet: false, description: false });
+        setFieldErrors({
+          value: false,
+          category: false,
+          wallet: false,
+          description: false,
+          allocations: false,
+        });
+        setSplitAcrossWallets(false);
+        setAllocationRows(createAllocationDraftRows());
         refetchUserTransactions();
         if (uid) fetchWallets(uid);
         onSuccess?.();
@@ -231,21 +339,40 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   };
 
   const handleEdit = async (data: Transaction) => {
-    const valueNum = parseDisplayValue(displayValue);
-    const finalData = { ...data, value: valueNum, walletId: selectedWalletId?.trim() || NO_WALLET_ID };
+    const finalData = buildFinalTransactionData(data);
     const errors = getValidationErrors();
 
-    if (errors.value || errors.category || errors.wallet || errors.description) {
+    if (
+      errors.value ||
+      errors.category ||
+      errors.wallet ||
+      errors.description ||
+      errors.allocations
+    ) {
       setFieldErrors(errors);
-      const missing = [
+      let description = [
         errors.value && t('transactionForm.form.value'),
         errors.category && t('transactionForm.form.category'),
         errors.wallet && t('transactionForm.form.wallet'),
         errors.description && t('transactionForm.form.description'),
-      ].filter(Boolean).join(', ');
+        errors.allocations && 'Rateio entre carteiras',
+      ]
+        .filter(Boolean)
+        .join(', ');
+      if (errors.allocations && splitAcrossWallets) {
+        const allocationCheck = validateAllocationsForSave(
+          parseDisplayValue(displayValue),
+          parseAllocationRows()
+        );
+        if (!allocationCheck.ok) {
+          description = describeAllocationValidationFailure(allocationCheck.reason);
+        }
+      }
       toast({
         title: t('transactionForm.toast.title'),
-        description: t('transactionForm.toast.missingFields', { fields: missing }),
+        description: errors.allocations && splitAcrossWallets
+          ? description
+          : t('transactionForm.toast.missingFields', { fields: description }),
         variant: "destructive",
       });
       return;
@@ -372,48 +499,72 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
         </Select>
       </div>
 
-      {/* Wallet Selection */}
-      <div className="space-y-3">
-        <Label className="text-xs font-semibold text-muted-foreground uppercase ml-1">
-          {t('transactionForm.form.wallet')}
-        </Label>
-        <Select
-          value={selectedWalletId}
-          onValueChange={(val) => {
-            setSelectedWalletId(val);
-            setFieldErrors((prev) => ({ ...prev, wallet: false }));
-          }}
-        >
-          <SelectTrigger className={cn("w-full bg-background/40 border-accent h-12 rounded-2xl px-4", fieldErrors.wallet && "border-red-500 ring-2 ring-red-500/20")}>
-            <div className='flex flex-row gap-5 items-center'>
-              <CreditCard className='text-muted-foreground opacity-50 w-5 h-5' />
-              <SelectValue placeholder={t('transactionForm.form.selectWallet')} />
-            </div>
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NO_WALLET_ID}>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-gray-500" />
-                <span>{t('wallets.pocket', LEGACY_POCKET_CARD_NAME)}</span>
-                <span className="text-muted-foreground text-xs">
-                  ({currencySymbol} {pocketBalance.toFixed(2)})
-                </span>
+      <TransactionAllocationsEditor
+        enabled={splitAcrossWallets}
+        onEnabledChange={(enabled) => {
+          setSplitAcrossWallets(enabled);
+          setFieldErrors((prev) => ({ ...prev, allocations: false, wallet: false }));
+        }}
+        rows={allocationRows}
+        onRowsChange={(rows) => {
+          setAllocationRows(rows);
+          setFieldErrors((prev) => ({ ...prev, allocations: false }));
+        }}
+        totalValue={parseDisplayValue(displayValue)}
+        realWallets={realWallets}
+        pocketLabel={t('wallets.pocket', LEGACY_POCKET_CARD_NAME)}
+        pocketBalanceLabel={`${currencySymbol} ${pocketBalance.toFixed(2)}`}
+        currencySymbol={currencySymbol}
+        locale={i18n.language}
+        hasError={fieldErrors.allocations}
+        configuredWalletCount={
+          allocationRows.filter((row) => row.walletId?.trim()).length
+        }
+      />
+
+      {!splitAcrossWallets && (
+        <div className="space-y-3">
+          <Label className="text-xs font-semibold text-muted-foreground uppercase ml-1">
+            {t('transactionForm.form.wallet')}
+          </Label>
+          <Select
+            value={selectedWalletId}
+            onValueChange={(val) => {
+              setSelectedWalletId(val);
+              setFieldErrors((prev) => ({ ...prev, wallet: false }));
+            }}
+          >
+            <SelectTrigger className={cn("w-full bg-background/40 border-accent h-12 rounded-2xl px-4", fieldErrors.wallet && "border-red-500 ring-2 ring-red-500/20")}>
+              <div className='flex flex-row gap-5 items-center'>
+                <CreditCard className='text-muted-foreground opacity-50 w-5 h-5' />
+                <SelectValue placeholder={t('transactionForm.form.selectWallet')} />
               </div>
-            </SelectItem>
-            {realWallets.map((wallet) => (
-              <SelectItem key={wallet.id} value={wallet.id!}>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NO_WALLET_ID}>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: wallet.color }} />
-                  <span>{wallet.name}</span>
+                  <div className="w-3 h-3 rounded-full bg-gray-500" />
+                  <span>{t('wallets.pocket', LEGACY_POCKET_CARD_NAME)}</span>
                   <span className="text-muted-foreground text-xs">
-                    ({currencySymbol} {wallet.balance.toFixed(2)})
+                    ({currencySymbol} {pocketBalance.toFixed(2)})
                   </span>
                 </div>
               </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+              {realWallets.map((wallet) => (
+                <SelectItem key={wallet.id} value={wallet.id!}>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: wallet.color }} />
+                    <span>{wallet.name}</span>
+                    <span className="text-muted-foreground text-xs">
+                      ({currencySymbol} {wallet.balance.toFixed(2)})
+                    </span>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="space-y-3">
         <div className="flex flex-col md:grid md:grid-cols-2 md:gap-5 md:divide-x md:divide-accent/10">

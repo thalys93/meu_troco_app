@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Loader2, EllipsisVertical, Trash, Pen, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { TrendingUp, TrendingDown, Loader2, EllipsisVertical, Trash, Pen, ChevronLeft, ChevronRight, Plus, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Transaction, useDeleteTransaction, useUserTransactions } from '@/utils/services/api/transation';
 import { Button } from './ui/button';
@@ -50,6 +50,12 @@ import {
 } from '@/components/ui/table';
 import { useWalletsStore } from '@/store/useWalletsStore';
 import { NO_WALLET_ID } from '@/constants/wallets';
+import {
+  getAllocationCount,
+  getSplitAllocationVisual,
+  hasMultipleAllocations,
+  resolveAllocations,
+} from '@/utils/transaction-allocations';
 
 /** Portais Radix + calendário (react-day-picker `.rdp`) ficam fora do nó do Dialog; precisamos ignorar esses cliques. */
 const QUICK_ADD_OUTSIDE_PORTAL_SELECTOR =
@@ -57,6 +63,7 @@ const QUICK_ADD_OUTSIDE_PORTAL_SELECTOR =
 
 const TRANSACTION_INLINE_ROW_SELECTOR = '[data-transaction-inline-row]';
 const TRANSACTION_DATA_ROW_SELECTOR = '[data-transaction-row-id]';
+const TRANSACTION_INSTALLMENT_ROW_SELECTOR = '[data-transaction-installment-row]';
 const TRANSACTION_ADD_ROW_SELECTOR = '[data-transaction-add-row]';
 
 type TransactionDayGroup = {
@@ -176,7 +183,11 @@ const TransactionList = ({
     transactionId?: string;
     draft: InlineTransactionDraft;
   } | null>(null);
+  const [expandedTransactionIds, setExpandedTransactionIds] = React.useState<Set<string>>(
+    () => new Set()
+  );
   const [filtersOpen, setFiltersOpen] = React.useState<boolean>(false);
+  const isTableVariant = variant === 'table';
   const monthRange = React.useMemo(
     () => (selectedMonth ? getMonthRangeByKey(selectedMonth) : undefined),
     [selectedMonth]
@@ -469,9 +480,32 @@ const TransactionList = ({
     setInlineSession({
       mode: 'edit',
       transactionId: transaction.id,
-      draft: draftFromTransaction(transaction),
+      draft: draftFromTransaction(transaction, i18n.language),
+    });
+  }, [i18n.language]);
+
+  const toggleExpandedTransaction = React.useCallback((transactionId: string) => {
+    setExpandedTransactionIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(transactionId)) {
+        next.delete(transactionId);
+      } else {
+        next.add(transactionId);
+      }
+      return next;
     });
   }, []);
+
+  const openTableRowEdit = React.useCallback(
+    (transaction: Transaction) => {
+      if (!useInlineTable) {
+        openEditSheet(transaction);
+        return;
+      }
+      openInlineEdit(transaction);
+    },
+    [openEditSheet, openInlineEdit, useInlineTable]
+  );
 
   const transactionsById = React.useMemo(
     () => new Map(filteredTransactions.map((tr) => [tr.id, tr])),
@@ -488,14 +522,10 @@ const TransactionList = ({
       if (!el) return;
 
       if (el.closest(TRANSACTION_INLINE_ROW_SELECTOR)) return;
+      if (el.closest(TRANSACTION_INSTALLMENT_ROW_SELECTOR)) return;
 
       const dataRow = el.closest(TRANSACTION_DATA_ROW_SELECTOR);
-      if (dataRow) {
-        const transactionId = dataRow.getAttribute('data-transaction-row-id');
-        const transaction = transactionId ? transactionsById.get(transactionId) : undefined;
-        if (transaction) openInlineEdit(transaction);
-        return;
-      }
+      if (dataRow) return;
 
       if (el.closest(TRANSACTION_ADD_ROW_SELECTOR)) {
         openInlineCreate(defaultCreateType);
@@ -511,7 +541,6 @@ const TransactionList = ({
     useInlineTable,
     inlineSession,
     transactionsById,
-    openInlineEdit,
     openInlineCreate,
     defaultCreateType,
     clearInlineSession,
@@ -592,16 +621,45 @@ const TransactionList = ({
         }
 
         const CatIcon = getCategoryIcon(transaction.category);
-        const walletBadge = getWalletBadgeData(transaction.walletId || transaction.cardId);
+        const isSplitTransaction = hasMultipleAllocations(transaction);
+        const allocationCount = getAllocationCount(transaction);
+        const splitVisual = getSplitAllocationVisual(allocationCount);
+        const isExpanded =
+          Boolean(transaction.id) && expandedTransactionIds.has(transaction.id!);
+        const walletBadge = isSplitTransaction
+          ? {
+              name: t('transactionList.splitWallets', {
+                defaultValue: '{{count}} carteiras',
+                count: allocationCount,
+              }),
+              color: allocationCount >= 3 ? '#8b5cf6' : '#6366f1',
+            }
+          : getWalletBadgeData(transaction.walletId || transaction.cardId);
         const zebra = currentRowIndex % 2 === 1;
 
+        const handleTableRowClick = () => {
+          if (!isTableVariant) {
+            openEditSheet(transaction);
+            return;
+          }
+          if (isSplitTransaction && transaction.id) {
+            toggleExpandedTransaction(transaction.id);
+          }
+        };
+
+        const handleTableRowDoubleClick = () => {
+          if (!isTableVariant) return;
+          openTableRowEdit(transaction);
+        };
+
         const rowContent = (
+          <>
           <TableRow
-            role={useInlineTable ? 'button' : 'button'}
-            tabIndex={useInlineTable ? 0 : 0}
+            role={isTableVariant ? 'button' : 'button'}
+            tabIndex={isTableVariant ? 0 : 0}
             className={cn(
               'border-0 transition-colors',
-              useInlineTable && 'cursor-pointer',
+              isTableVariant && 'cursor-pointer select-none',
               zebra
                 ? 'bg-muted/30 hover:bg-muted/45 dark:bg-muted/15 dark:hover:bg-muted/25'
                 : 'bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20',
@@ -610,18 +668,14 @@ const TransactionList = ({
                 inlineSession &&
                 inlineSession.mode === 'edit' &&
                 inlineSession.transactionId !== transaction.id &&
-                'opacity-50'
+                'opacity-50',
+              isSplitTransaction && isExpanded && 'bg-muted/40 dark:bg-muted/20'
             )}
-            data-transaction-row-id={useInlineTable ? transaction.id : undefined}
-            onClick={() => {
-              if (!useInlineTable) {
-                openEditSheet(transaction);
-                return;
-              }
-              openInlineEdit(transaction);
-            }}
+            data-transaction-row-id={isTableVariant ? transaction.id : undefined}
+            onClick={handleTableRowClick}
+            onDoubleClick={handleTableRowDoubleClick}
             onKeyDown={(e) => {
-              if (!useInlineTable) {
+              if (!isTableVariant) {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
                   openEditSheet(transaction);
@@ -630,12 +684,25 @@ const TransactionList = ({
               }
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                openInlineEdit(transaction);
+                if (isSplitTransaction && transaction.id) {
+                  toggleExpandedTransaction(transaction.id);
+                } else {
+                  openTableRowEdit(transaction);
+                }
               }
             }}
           >
             <TableCell className="border-b border-border/30 py-2 pl-4 pr-2 align-middle">
               <div className="flex items-center gap-2.5">
+                {isSplitTransaction && (
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center text-muted-foreground">
+                    {isExpanded ? (
+                      <ChevronDown className="h-4 w-4" />
+                    ) : (
+                      <ChevronRightIcon className="h-4 w-4" />
+                    )}
+                  </span>
+                )}
                 <span
                   className={cn(
                     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md',
@@ -653,6 +720,17 @@ const TransactionList = ({
                 <span className="text-sm font-medium leading-snug line-clamp-2 text-foreground">
                   {transaction.description}
                 </span>
+                {isSplitTransaction && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'h-5 shrink-0 px-1.5 text-[10px] font-semibold',
+                      splitVisual.badge
+                    )}
+                  >
+                    {allocationCount}x
+                  </Badge>
+                )}
               </div>
             </TableCell>
             <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
@@ -705,7 +783,7 @@ const TransactionList = ({
             >
               {useInlineTable ? (
                 <TransactionRowActionsDropdown
-                  onEdit={() => openInlineEdit(transaction)}
+                  onEdit={() => openTableRowEdit(transaction)}
                   onDelete={() => setSelectedTransaction(transaction)}
                 />
               ) : (
@@ -740,13 +818,79 @@ const TransactionList = ({
               )}
             </TableCell>
           </TableRow>
+          {isSplitTransaction &&
+            isExpanded &&
+            resolveAllocations(transaction).map((allocation, allocationIndex) => {
+              const installmentWallet = getWalletBadgeData(allocation.walletId);
+              return (
+                <TableRow
+                  key={`${transaction.id}-installment-${allocationIndex}`}
+                  data-transaction-installment-row
+                  className="border-0 bg-muted/20 hover:bg-muted/30 dark:bg-muted/10"
+                >
+                  <TableCell
+                    className={cn(
+                      'border-b border-border/20 border-l-2 py-1.5 pl-12 pr-2 align-middle',
+                      splitVisual.rowBorder[allocationIndex] ?? 'border-l-border'
+                    )}
+                  >
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span
+                        className={cn(
+                          'h-1.5 w-1.5 rounded-full',
+                          allocationCount >= 3
+                            ? ['bg-violet-500', 'bg-fuchsia-500', 'bg-purple-500'][
+                                allocationIndex
+                              ]
+                            : ['bg-indigo-500', 'bg-sky-500'][allocationIndex] ?? 'bg-border'
+                        )}
+                      />
+                      <span>
+                        {t('transactionList.installment', {
+                          defaultValue: 'Parcela {{index}}',
+                          index: allocationIndex + 1,
+                        })}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="border-b border-border/20 py-1.5 px-3 align-middle">
+                    <Badge
+                      variant="secondary"
+                      className="h-6 max-w-[180px] gap-1.5 px-2 py-0 text-xs font-normal"
+                    >
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full border border-border/50"
+                        style={{ backgroundColor: installmentWallet.color }}
+                        aria-hidden
+                      />
+                      <span className="truncate">{installmentWallet.name}</span>
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="border-b border-border/20 py-1.5 px-3" />
+                  <TableCell className="border-b border-border/20 py-1.5 px-3" />
+                  <TableCell className="border-b border-border/20 py-1.5 px-3" />
+                  <TableCell
+                    className={cn(
+                      'border-b border-border/20 py-1.5 px-3 text-right align-middle font-mono text-xs font-semibold tabular-nums whitespace-nowrap',
+                      transaction.type === 'receita'
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-red-600 dark:text-red-400'
+                    )}
+                  >
+                    {formatAmount(allocation.amount, transaction.type)}
+                  </TableCell>
+                  <TableCell className="border-b border-border/20 py-1.5 pr-4" />
+                </TableRow>
+              );
+            })}
+          </>
         );
 
         if (useInlineTable) {
           return (
             <TransactionRowActionsMenu
               key={transaction.id}
-              onEdit={() => openInlineEdit(transaction)}
+              onEdit={() => openTableRowEdit(transaction)}
               onDelete={() => setSelectedTransaction(transaction)}
             >
               {rowContent}

@@ -1,4 +1,5 @@
-import { NO_WALLET_ID } from "@/constants/wallets";
+import { NO_WALLET_ID, isPocketWalletId } from "@/constants/wallets";
+import { resolveAllocations } from "@/utils/transaction-allocations";
 import { transactionCategoryMatchesFilter } from "@/hooks/use-categories";
 import type { Category } from "@/types/Category";
 import { Transaction } from "@/utils/services/api/transation";
@@ -45,15 +46,16 @@ export const filterTransactionsByPreferences = (
       const trDate = parseLocalDateInput(tr.date);
       if (!isValidDate(trDate)) return false;
       const trDateMs = trDate.getTime();
-      const trWallet = tr.walletId || tr.cardId || NO_WALLET_ID;
-
       const isPocketFilter = filters.card === NO_WALLET_ID || filters.card === LEGACY_NO_CARD_ID;
-      const isPocketTransaction = trWallet === NO_WALLET_ID || trWallet === LEGACY_NO_CARD_ID;
-      const matchCard = filters.card === "Todos"
-        ? true
-        : isPocketFilter
-          ? isPocketTransaction
-          : trWallet === filters.card;
+      const matchCard =
+        filters.card === "Todos"
+          ? true
+          : resolveAllocations(tr).some((allocation) => {
+              const walletId = allocation.walletId || NO_WALLET_ID;
+              return isPocketFilter
+                ? isPocketWalletId(walletId) || walletId === LEGACY_NO_CARD_ID
+                : walletId === filters.card;
+            });
       const matchCategory = transactionCategoryMatchesFilter(
         tr.category,
         filters.categories,

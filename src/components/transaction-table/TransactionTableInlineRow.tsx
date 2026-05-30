@@ -27,10 +27,9 @@ import { Transaction } from '@/utils/services/api/transation';
 import { useCategories } from '@/hooks/use-categories';
 import { useWalletsStore } from '@/store/useWalletsStore';
 import useUserStore from '@/store/UserStore';
-import {
-  LEGACY_POCKET_CARD_NAME,
-  NO_WALLET_ID,
-} from '@/constants/wallets';
+import { LEGACY_POCKET_CARD_NAME } from '@/constants/wallets';
+import InlineWalletSplitControl from './InlineWalletSplitControl';
+import { parseInlineValue } from './transaction-inline-utils';
 import DescriptionAutocomplete from './DescriptionAutocomplete';
 import {
   InlineFieldErrors,
@@ -76,6 +75,7 @@ const TransactionTableInlineRow = ({
     category: false,
     wallet: false,
     description: false,
+    allocations: false,
   });
 
   const { submitDraft, isSaving } = useTransactionInlineSubmit({
@@ -200,38 +200,31 @@ const TransactionTableInlineRow = ({
         </div>
       </TableCell>
       <TableCell className="border-b border-border/30 py-1.5 px-2 align-middle">
-        <Select
-          value={draft.walletId}
-          onValueChange={(walletId) => {
+        <InlineWalletSplitControl
+          splitAcrossWallets={draft.splitAcrossWallets}
+          onSplitAcrossWalletsChange={(splitAcrossWallets) => {
+            updateDraft({ splitAcrossWallets });
+            setFieldErrors((prev) => ({
+              ...prev,
+              wallet: false,
+              allocations: false,
+            }));
+          }}
+          allocationRows={draft.allocationRows}
+          onAllocationRowsChange={(allocationRows) => {
+            updateDraft({ allocationRows });
+            setFieldErrors((prev) => ({ ...prev, allocations: false }));
+          }}
+          walletId={draft.walletId}
+          onWalletIdChange={(walletId) => {
             updateDraft({ walletId });
             setFieldErrors((prev) => ({ ...prev, wallet: false }));
           }}
-        >
-          <SelectTrigger
-            className={cn(
-              'h-8 text-xs border-border/60 bg-background/80',
-              fieldErrors.wallet && 'border-red-500'
-            )}
-          >
-            <SelectValue placeholder={t('transactionForm.form.selectWallet')} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={NO_WALLET_ID}>
-              <span className="text-xs">{t('wallets.noWallet', 'Sem Carteira')}</span>
-            </SelectItem>
-            {realWallets.map((wallet) => (
-              <SelectItem key={wallet.id} value={wallet.id!}>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="h-2 w-2 rounded-full shrink-0"
-                    style={{ backgroundColor: wallet.color }}
-                  />
-                  <span className="text-xs truncate">{wallet.name}</span>
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          totalValue={parseInlineValue(draft.valueDisplay)}
+          realWallets={realWallets}
+          walletFieldError={fieldErrors.wallet}
+          allocationsFieldError={fieldErrors.allocations}
+        />
       </TableCell>
       <TableCell className="border-b border-border/30 py-1.5 px-2 align-middle">
         <Popover>

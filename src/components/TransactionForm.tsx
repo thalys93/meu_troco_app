@@ -502,6 +502,12 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
       <TransactionAllocationsEditor
         enabled={splitAcrossWallets}
         onEnabledChange={(enabled) => {
+          if (!enabled) {
+            const firstWallet = allocationRows.find((row) => row.walletId?.trim())?.walletId;
+            if (firstWallet) {
+              setSelectedWalletId(firstWallet);
+            }
+          }
           setSplitAcrossWallets(enabled);
           setFieldErrors((prev) => ({ ...prev, allocations: false, wallet: false }));
         }}

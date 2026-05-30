@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import { FireStore } from "./firebase";
 import useUserStore from "@/store/UserStore";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -6,6 +6,7 @@ import { WalletsService } from "./wallets-service";
 import { NO_WALLET_ID, isPocketWalletId } from "@/constants/wallets";
 import { normalizeLocalDateString } from "@/subdomains/dashboard/utils/month-range";
 import {
+    MIN_WALLET_ALLOCATIONS,
     resolveAllocations,
     resolveWalletIdFromTransaction,
     stripAllocationsFromPayload,
@@ -92,6 +93,18 @@ const applyAllocationsToWallets = async (
     }
 };
 
+const toFirestoreUpdatePayload = (payload: Transaction) => {
+    const stripped = stripAllocationsFromPayload(payload);
+    const keepsAllocations =
+        payload.allocations && payload.allocations.length >= MIN_WALLET_ALLOCATIONS;
+
+    if (keepsAllocations) {
+        return stripped;
+    }
+
+    return { ...stripped, allocations: deleteField() };
+};
+
 const normalizeTransactionPayload = (data: Transaction): Transaction => {
     const walletId = resolveWalletId(data);
     const base = { ...data, walletId };
@@ -144,7 +157,7 @@ const editTransaction = async (uid: string, id: string, data: Transaction) => {
     await applyAllocationsToWallets(newAllocations, payload.type, 'apply');
 
     const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
-    await updateDoc(ref, stripAllocationsFromPayload(payload));
+    await updateDoc(ref, toFirestoreUpdatePayload(payload));
 }
 
 export const useDeleteTransaction = () => {

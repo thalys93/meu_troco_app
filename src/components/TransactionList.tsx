@@ -25,6 +25,7 @@ import { ToggleGroup, ToggleGroupItem } from './ui/toggle-group';
 import {
   getMonthRangeByKey,
   isCurrentMonthKey,
+  normalizeLocalDateString,
   parseLocalDateInput,
   parseMonthKey,
 } from '@/subdomains/dashboard/utils/month-range';
@@ -57,6 +58,12 @@ const QUICK_ADD_OUTSIDE_PORTAL_SELECTOR =
 const TRANSACTION_INLINE_ROW_SELECTOR = '[data-transaction-inline-row]';
 const TRANSACTION_DATA_ROW_SELECTOR = '[data-transaction-row-id]';
 const TRANSACTION_ADD_ROW_SELECTOR = '[data-transaction-add-row]';
+
+type TransactionDayGroup = {
+  dateKey: string;
+  label: string;
+  items: Transaction[];
+};
 
 const isValidDate = (value: Date) => !Number.isNaN(value.getTime());
 
@@ -364,27 +371,35 @@ const TransactionList = ({
     [filteredTransactions]
   );
 
-  const groupedByDay = React.useMemo(() => {
-    const groups: { label: string; items: Transaction[] }[] = [];
+  const resolveDayGroupLabel = React.useCallback(
+    (dateString: string) => {
+      const date = parseLocalDateInput(dateString);
+      if (!isValidDate(date)) return dateString;
+      if (isToday(date)) return t('landing_v2.transactions.today');
+      if (isYesterday(date)) return t('landing_v2.transactions.yesterday');
+      return formatDate(dateString);
+    },
+    [formatDate, t]
+  );
+
+  const groupedByDay = React.useMemo((): TransactionDayGroup[] => {
     const map = new Map<string, Transaction[]>();
 
     filteredTransactions.forEach((tr) => {
-      const d = parseLocalDateInput(tr.date);
-      let label = formatDate(tr.date);
-      if (isToday(d)) label = t('landing_v2.transactions.today');
-      else if (isYesterday(d)) label = t('landing_v2.transactions.yesterday');
-
-      const list = map.get(label) || [];
+      const dateKey = normalizeLocalDateString(tr.date) ?? tr.date;
+      const list = map.get(dateKey) ?? [];
       list.push(tr);
-      map.set(label, list);
+      map.set(dateKey, list);
     });
 
-    map.forEach((items, label) => {
-      groups.push({ label, items });
-    });
-
-    return groups;
-  }, [filteredTransactions, i18n.language, t, formatDate]);
+    return Array.from(map.entries())
+      .sort(([a], [b]) => b.localeCompare(a))
+      .map(([dateKey, items]) => ({
+        dateKey,
+        label: resolveDayGroupLabel(items[0]?.date ?? dateKey),
+        items,
+      }));
+  }, [filteredTransactions, resolveDayGroupLabel]);
 
   const selectedMonthLabel = React.useMemo(() => {
     if (!selectedMonth) return '';
@@ -522,6 +537,229 @@ const TransactionList = ({
     },
     []
   );
+
+  const renderTableTransactionRows = () => {
+    let rowIndex = 0;
+
+    return groupedByDay.flatMap((group) => {
+      const daySeparatorRow = (
+        <TableRow
+          key={`day-separator-${group.dateKey}`}
+          className="border-0 hover:bg-transparent bg-muted/25 dark:bg-muted/10"
+        >
+          <TableCell
+            colSpan={7}
+            className="border-b border-border/40 py-2 pl-4 pr-4 text-xs font-semibold tracking-wide text-muted-foreground"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="capitalize text-base">{group.label}</span>
+              <span className="text-[11px] font-medium tabular-nums text-muted-foreground/80">
+                {group.items.length}
+              </span>
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+
+      const transactionRows = group.items.map((transaction) => {
+        const currentRowIndex = rowIndex;
+        rowIndex += 1;
+
+        const isEditingRow =
+          useInlineTable &&
+          inlineSession?.mode === 'edit' &&
+          inlineSession.transactionId === transaction.id;
+
+        if (isEditingRow && inlineSession) {
+          return (
+            <TransactionTableInlineRow
+              key={transaction.id}
+              mode="edit"
+              draft={inlineSession.draft}
+              onDraftChange={(draft) =>
+                setInlineSession((prev) =>
+                  prev ? { ...prev, draft } : prev
+                )
+              }
+              onCancel={clearInlineSession}
+              onSaved={clearInlineSession}
+              editTransactionId={transaction.id}
+              allTransactions={displayTransactions || []}
+              rowIndex={currentRowIndex}
+              zebra={currentRowIndex % 2 === 1}
+            />
+          );
+        }
+
+        const CatIcon = getCategoryIcon(transaction.category);
+        const walletBadge = getWalletBadgeData(transaction.walletId || transaction.cardId);
+        const zebra = currentRowIndex % 2 === 1;
+
+        const rowContent = (
+          <TableRow
+            role={useInlineTable ? 'button' : 'button'}
+            tabIndex={useInlineTable ? 0 : 0}
+            className={cn(
+              'border-0 transition-colors',
+              useInlineTable && 'cursor-pointer',
+              zebra
+                ? 'bg-muted/30 hover:bg-muted/45 dark:bg-muted/15 dark:hover:bg-muted/25'
+                : 'bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20',
+              isPendingTransaction(transaction.id) && 'pointer-events-none opacity-60',
+              useInlineTable &&
+                inlineSession &&
+                inlineSession.mode === 'edit' &&
+                inlineSession.transactionId !== transaction.id &&
+                'opacity-50'
+            )}
+            data-transaction-row-id={useInlineTable ? transaction.id : undefined}
+            onClick={() => {
+              if (!useInlineTable) {
+                openEditSheet(transaction);
+                return;
+              }
+              openInlineEdit(transaction);
+            }}
+            onKeyDown={(e) => {
+              if (!useInlineTable) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  openEditSheet(transaction);
+                }
+                return;
+              }
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openInlineEdit(transaction);
+              }
+            }}
+          >
+            <TableCell className="border-b border-border/30 py-2 pl-4 pr-2 align-middle">
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={cn(
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-md',
+                    transaction.type === 'receita'
+                      ? 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-red-500/12 text-red-600 dark:text-red-400'
+                  )}
+                >
+                  {transaction.type === 'receita' ? (
+                    <TrendingUp className="h-4 w-4" />
+                  ) : (
+                    <TrendingDown className="h-4 w-4" />
+                  )}
+                </span>
+                <span className="text-sm font-medium leading-snug line-clamp-2 text-foreground">
+                  {transaction.description}
+                </span>
+              </div>
+            </TableCell>
+            <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
+              <Badge variant="secondary" className="h-6 max-w-[180px] gap-1.5 px-2 py-0 text-xs font-normal">
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full border border-border/50"
+                  style={{ backgroundColor: walletBadge.color }}
+                  aria-hidden
+                />
+                <span className="truncate">{walletBadge.name}</span>
+              </Badge>
+            </TableCell>
+            <TableCell className="border-b border-border/30 py-2 px-3 align-middle text-sm text-muted-foreground whitespace-nowrap">
+              {formatTableDate(transaction.date)}
+            </TableCell>
+            <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
+              <Badge variant="secondary" className="h-6 gap-1.5 px-2 py-0 text-xs font-normal">
+                {CatIcon && <CatIcon className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />}
+                {getCategoryLabel(transaction.category)}
+              </Badge>
+            </TableCell>
+            <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
+              <Badge
+                variant="secondary"
+                className={cn(
+                  'h-6 border-0 px-2 py-0 text-xs font-medium',
+                  transaction.type === 'receita'
+                    ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
+                    : 'bg-red-500/12 text-red-700 dark:text-red-400'
+                )}
+              >
+                {transaction.type === 'receita'
+                  ? t('landing_v2.transactions.income')
+                  : t('landing_v2.transactions.expense')}
+              </Badge>
+            </TableCell>
+            <TableCell
+              className={cn(
+                'border-b border-border/30 py-2 px-3 text-right align-middle font-mono text-sm font-semibold tabular-nums whitespace-nowrap',
+                transaction.type === 'receita'
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-red-600 dark:text-red-400'
+              )}
+            >
+              {formatAmount(transaction.value, transaction.type)}
+            </TableCell>
+            <TableCell
+              className="border-b border-border/30 py-2 pr-4 pl-2 text-right align-middle"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {useInlineTable ? (
+                <TransactionRowActionsDropdown
+                  onEdit={() => openInlineEdit(transaction)}
+                  onDelete={() => setSelectedTransaction(transaction)}
+                />
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                    >
+                      <EllipsisVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel className="select-none">
+                      {t('transactionList.actions')}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => setSelectedTransaction(transaction)}>
+                      <div className="flex flex-row items-center gap-2">
+                        <Trash className="h-4 w-4" /> {t('transactionList.delete')}
+                      </div>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="flex flex-row items-center gap-2"
+                      onClick={() => openEditSheet(transaction)}
+                    >
+                      <Pen className="h-4 w-4" /> {t('transactionList.edit')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </TableCell>
+          </TableRow>
+        );
+
+        if (useInlineTable) {
+          return (
+            <TransactionRowActionsMenu
+              key={transaction.id}
+              onEdit={() => openInlineEdit(transaction)}
+              onDelete={() => setSelectedTransaction(transaction)}
+            >
+              {rowContent}
+            </TransactionRowActionsMenu>
+          );
+        }
+
+        return <React.Fragment key={transaction.id}>{rowContent}</React.Fragment>;
+      });
+
+      return [daySeparatorRow, ...transactionRows];
+    });
+  };
 
   return (
     <>
@@ -764,198 +1002,7 @@ const TransactionList = ({
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredTransactions.map((transaction, rowIndex) => {
-                      const isEditingRow =
-                        useInlineTable &&
-                        inlineSession?.mode === 'edit' &&
-                        inlineSession.transactionId === transaction.id;
-
-                      if (isEditingRow && inlineSession) {
-                        return (
-                          <TransactionTableInlineRow
-                            key={transaction.id}
-                            mode="edit"
-                            draft={inlineSession.draft}
-                            onDraftChange={(draft) =>
-                              setInlineSession((prev) =>
-                                prev ? { ...prev, draft } : prev
-                              )
-                            }
-                            onCancel={clearInlineSession}
-                            onSaved={clearInlineSession}
-                            editTransactionId={transaction.id}
-                            allTransactions={displayTransactions || []}
-                            rowIndex={rowIndex}
-                            zebra={rowIndex % 2 === 1}
-                          />
-                        );
-                      }
-
-                      const CatIcon = getCategoryIcon(transaction.category);
-                      const walletBadge = getWalletBadgeData(transaction.walletId || transaction.cardId);
-                      const zebra = rowIndex % 2 === 1;
-
-                      const rowContent = (
-                        <TableRow
-                          role={useInlineTable ? 'button' : 'button'}
-                          tabIndex={useInlineTable ? 0 : 0}
-                          className={cn(
-                            'border-0 transition-colors',
-                            useInlineTable && 'cursor-pointer',
-                            zebra
-                              ? 'bg-muted/30 hover:bg-muted/45 dark:bg-muted/15 dark:hover:bg-muted/25'
-                              : 'bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20',
-                            isPendingTransaction(transaction.id) && 'pointer-events-none opacity-60',
-                            useInlineTable &&
-                              inlineSession &&
-                              inlineSession.mode === 'edit' &&
-                              inlineSession.transactionId !== transaction.id &&
-                              'opacity-50'
-                          )}
-                          data-transaction-row-id={useInlineTable ? transaction.id : undefined}
-                          onClick={() => {
-                            if (!useInlineTable) {
-                              openEditSheet(transaction);
-                              return;
-                            }
-                            openInlineEdit(transaction);
-                          }}
-                          onKeyDown={(e) => {
-                            if (!useInlineTable) {
-                              if (e.key === 'Enter' || e.key === ' ') {
-                                e.preventDefault();
-                                openEditSheet(transaction);
-                              }
-                              return;
-                            }
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              openInlineEdit(transaction);
-                            }
-                          }}
-                        >
-                          <TableCell className="border-b border-border/30 py-2 pl-4 pr-2 align-middle">
-                            <div className="flex items-center gap-2.5">
-                              <span
-                                className={cn(
-                                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-md',
-                                  transaction.type === 'receita'
-                                    ? 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400'
-                                    : 'bg-red-500/12 text-red-600 dark:text-red-400'
-                                )}
-                              >
-                                {transaction.type === 'receita' ? (
-                                  <TrendingUp className="h-4 w-4" />
-                                ) : (
-                                  <TrendingDown className="h-4 w-4" />
-                                )}
-                              </span>
-                              <span className="text-sm font-medium leading-snug line-clamp-2 text-foreground">
-                                {transaction.description}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
-                            <Badge variant="secondary" className="h-6 max-w-[180px] gap-1.5 px-2 py-0 text-xs font-normal">
-                              <span
-                                className="h-2.5 w-2.5 shrink-0 rounded-full border border-border/50"
-                                style={{ backgroundColor: walletBadge.color }}
-                                aria-hidden
-                              />
-                              <span className="truncate">{walletBadge.name}</span>
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="border-b border-border/30 py-2 px-3 align-middle text-sm text-muted-foreground whitespace-nowrap">
-                            {formatTableDate(transaction.date)}
-                          </TableCell>
-                          <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
-                            <Badge variant="secondary" className="h-6 gap-1.5 px-2 py-0 text-xs font-normal">
-                              {CatIcon && <CatIcon className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />}
-                              {getCategoryLabel(transaction.category)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
-                            <Badge
-                              variant="secondary"
-                              className={cn(
-                                'h-6 border-0 px-2 py-0 text-xs font-medium',
-                                transaction.type === 'receita'
-                                  ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
-                                  : 'bg-red-500/12 text-red-700 dark:text-red-400'
-                              )}
-                            >
-                              {transaction.type === 'receita'
-                                ? t('landing_v2.transactions.income')
-                                : t('landing_v2.transactions.expense')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell
-                            className={cn(
-                              'border-b border-border/30 py-2 px-3 text-right align-middle font-mono text-sm font-semibold tabular-nums whitespace-nowrap',
-                              transaction.type === 'receita'
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-red-600 dark:text-red-400'
-                            )}
-                          >
-                            {formatAmount(transaction.value, transaction.type)}
-                          </TableCell>
-                          <TableCell
-                            className="border-b border-border/30 py-2 pr-4 pl-2 text-right align-middle"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {useInlineTable ? (
-                              <TransactionRowActionsDropdown
-                                onEdit={() => openInlineEdit(transaction)}
-                                onDelete={() => setSelectedTransaction(transaction)}
-                              />
-                            ) : (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    size="icon"
-                                    variant="ghost"
-                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                  >
-                                    <EllipsisVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel className="select-none">
-                                    {t('transactionList.actions')}
-                                  </DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => setSelectedTransaction(transaction)}>
-                                    <div className="flex flex-row items-center gap-2">
-                                      <Trash className="h-4 w-4" /> {t('transactionList.delete')}
-                                    </div>
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="flex flex-row items-center gap-2"
-                                    onClick={() => openEditSheet(transaction)}
-                                  >
-                                    <Pen className="h-4 w-4" /> {t('transactionList.edit')}
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      );
-
-                      if (useInlineTable) {
-                        return (
-                          <TransactionRowActionsMenu
-                            key={transaction.id}
-                            onEdit={() => openInlineEdit(transaction)}
-                            onDelete={() => setSelectedTransaction(transaction)}
-                          >
-                            {rowContent}
-                          </TransactionRowActionsMenu>
-                        );
-                      }
-
-                      return <React.Fragment key={transaction.id}>{rowContent}</React.Fragment>;
-                    })}
+                    {renderTableTransactionRows()}
                     {useInlineTable &&
                       (inlineSession?.mode === 'create' ? (
                         <TransactionTableInlineRow
@@ -1033,9 +1080,10 @@ const TransactionList = ({
                 </p>
               ) : (
                 groupedByDay.map((group) => (
-                  <div key={group.label} className="mb-3">
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="text-xs font-medium text-muted-foreground">{group.label}</p>
+                  <div key={group.dateKey} className="mb-3">
+                    <div className="flex items-center justify-between mb-2 px-1">
+                      <p className="text-xs font-semibold capitalize text-muted-foreground">{group.label}</p>
+                      <span className="text-[11px] tabular-nums text-muted-foreground/80">{group.items.length}</span>
                     </div>
                     {group.items.map((transaction) => (
                       <div

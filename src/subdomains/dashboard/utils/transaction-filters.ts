@@ -3,7 +3,7 @@ import { resolveAllocations } from "@/utils/transaction-allocations";
 import { transactionCategoryMatchesFilter } from "@/hooks/use-categories";
 import type { Category } from "@/types/Category";
 import { Transaction } from "@/utils/services/api/transation";
-import { TransactionListFiltersPreference } from "@/subdomains/dashboard/context/dashboard-preferences";
+import { TransactionListFiltersPreference, type TransactionSortOrder, type TransactionTableSortColumn } from "@/subdomains/dashboard/context/dashboard-preferences";
 import {
   parseLocalDateInput,
   parseLocalDateInputAtEndOfDay,
@@ -22,7 +22,68 @@ export type IncomeExpenseSummary = {
 
 export type TransactionFilterOptions = {
   categoryLookup?: Map<string, Category>;
+  resolveWalletName?: (walletId?: string) => string;
+  resolveCategoryLabel?: (categoryId: string) => string;
 };
+
+const DESC_DEFAULT_COLUMNS: TransactionTableSortColumn[] = ["date", "value"];
+
+export function getDefaultSortOrderForColumn(
+  column: TransactionTableSortColumn
+): TransactionSortOrder {
+  return DESC_DEFAULT_COLUMNS.includes(column) ? "desc" : "asc";
+}
+
+export function compareTransactionsByColumn(
+  a: Transaction,
+  b: Transaction,
+  column: TransactionTableSortColumn,
+  order: TransactionSortOrder,
+  options?: TransactionFilterOptions
+): number {
+  const direction = order === "asc" ? 1 : -1;
+
+  switch (column) {
+    case "date": {
+      const aTime = parseLocalDateInput(a.date).getTime();
+      const bTime = parseLocalDateInput(b.date).getTime();
+      const safeA = Number.isNaN(aTime) ? Number.NEGATIVE_INFINITY : aTime;
+      const safeB = Number.isNaN(bTime) ? Number.NEGATIVE_INFINITY : bTime;
+      return (safeA - safeB) * direction;
+    }
+    case "description":
+      return (
+        a.description.localeCompare(b.description, undefined, { sensitivity: "base" }) *
+        direction
+      );
+    case "wallet": {
+      const resolveWalletName = options?.resolveWalletName ?? (() => "");
+      return (
+        resolveWalletName(a.walletId).localeCompare(
+          resolveWalletName(b.walletId),
+          undefined,
+          { sensitivity: "base" }
+        ) * direction
+      );
+    }
+    case "category": {
+      const resolveCategoryLabel = options?.resolveCategoryLabel ?? ((value) => value);
+      return (
+        resolveCategoryLabel(a.category).localeCompare(
+          resolveCategoryLabel(b.category),
+          undefined,
+          { sensitivity: "base" }
+        ) * direction
+      );
+    }
+    case "type":
+      return a.type.localeCompare(b.type) * direction;
+    case "value":
+      return (a.value - b.value) * direction;
+    default:
+      return 0;
+  }
+}
 
 export const filterTransactionsByPreferences = (
   transactions: Transaction[],
@@ -77,13 +138,15 @@ export const filterTransactionsByPreferences = (
         matchEnd
       );
     })
-    .sort((a, b) => {
-      const bTime = parseLocalDateInput(b.date).getTime();
-      const aTime = parseLocalDateInput(a.date).getTime();
-      const safeB = Number.isNaN(bTime) ? Number.NEGATIVE_INFINITY : bTime;
-      const safeA = Number.isNaN(aTime) ? Number.NEGATIVE_INFINITY : aTime;
-      return safeB - safeA;
-    });
+    .sort((a, b) =>
+      compareTransactionsByColumn(
+        a,
+        b,
+        filters.tableSortColumn,
+        filters.tableSortOrder,
+        options
+      )
+    );
 };
 
 export const summarizeIncomeExpense = (

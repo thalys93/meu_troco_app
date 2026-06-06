@@ -10,8 +10,10 @@ import useUserStore from '@/store/UserStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { usePocketBalance } from '@/hooks/usePocketBalance';
 import { LEGACY_POCKET_CARD_NAME, NO_WALLET_ID } from '@/constants/wallets';
-import type { Transaction } from '@/utils/services/api/transation';
+import { useUserTransactions, type Transaction } from '@/utils/services/api/transation';
 import { netByWalletId } from '@/subdomains/dashboard/utils/transaction-month-nets';
+import { computeWalletDisplayBalance } from '@/utils/wallet-balance';
+import { getCurrentMonthKey } from '@/subdomains/dashboard/utils/month-range';
 
 const POCKET_COLOR = '#6b7280';
 
@@ -34,6 +36,7 @@ const BalanceCard = ({
     const { t } = useTranslation();
     const { wallets, fetchWallets } = useWalletsStore();
     const { user } = useUserStore();
+    const { data: allTransactions = [] } = useUserTransactions();
     const pocketBalance = usePocketBalance();
     const realWallets = React.useMemo(
         () => wallets.filter((wallet) => wallet.name !== LEGACY_POCKET_CARD_NAME),
@@ -62,9 +65,9 @@ const BalanceCard = ({
             id: wallet.id,
             name: wallet.name,
             color: wallet.color,
-            amount: wallet.balance,
+            amount: computeWalletDisplayBalance(wallet, allTransactions, getCurrentMonthKey()),
         }));
-    }, [isMonthScope, nets, realWallets]);
+    }, [allTransactions, isMonthScope, nets, realWallets]);
 
     const primaryBalance = isMonthScope
         ? monthTransactions.reduce(

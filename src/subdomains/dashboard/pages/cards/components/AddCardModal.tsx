@@ -54,6 +54,11 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
             name: "",
             accountName: initialAccountName,
             balance: 0,
+            initialBalance: 0,
+            creditLimit: 0,
+            billingClosingDay: 1,
+            reloadAmount: 0,
+            reloadDay: 1,
             type: "debit",
             color: "#000000",
             flag: "Visa",
@@ -76,6 +81,11 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                     name: cardToEdit.name,
                     accountName: cardToEdit.accountName,
                     balance: cardToEdit.balance,
+                    initialBalance: cardToEdit.initialBalance ?? cardToEdit.balance ?? 0,
+                    creditLimit: cardToEdit.creditLimit ?? cardToEdit.balance ?? 0,
+                    billingClosingDay: cardToEdit.billingClosingDay ?? 1,
+                    reloadAmount: cardToEdit.reloadAmount ?? 0,
+                    reloadDay: cardToEdit.reloadDay ?? 1,
                     type: cardToEdit.type,
                     color: cardToEdit.color,
                     flag: cardToEdit.flag,
@@ -85,6 +95,11 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                     name: "",
                     accountName: initialAccountName,
                     balance: 0,
+                    initialBalance: 0,
+                    creditLimit: 0,
+                    billingClosingDay: 1,
+                    reloadAmount: 0,
+                    reloadDay: 1,
                     type: "debit",
                     color: "#000000",
                     flag: "Visa",
@@ -98,15 +113,31 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
         setLoading(true);
 
         try {
+            const balance = data.type === "credit"
+                ? data.creditLimit ?? data.balance ?? 0
+                : data.initialBalance ?? data.balance ?? 0;
+
             const walletData: Omit<Wallet, "id"> = {
                 name: data.name.trim(),
                 accountName: data.accountName.trim() || initialAccountName,
-                balance: data.balance ?? 0,
+                balance,
                 type: data.type ?? "debit",
                 color: data.color ?? "#000000",
                 flag: data.flag ?? "Visa",
                 userId: user.uid,
             };
+
+            if (walletData.type === "credit") {
+                walletData.creditLimit = data.creditLimit ?? 0;
+                walletData.billingClosingDay = data.billingClosingDay ?? 1;
+            } else {
+                walletData.initialBalance = data.initialBalance ?? 0;
+            }
+
+            if (walletData.type === "voucher") {
+                walletData.reloadAmount = data.reloadAmount ?? 0;
+                walletData.reloadDay = data.reloadDay ?? 1;
+            }
 
             if (cardToEdit) {
                 await updateWallet(cardToEdit.id, walletData);
@@ -245,13 +276,13 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                         )}
                     />
 
-                    {(cardType === 'credit' || cardType === 'voucher') && (
+                    {cardType !== "credit" && (
                         <FormField
                             control={form.control}
-                            name="balance"
+                            name="initialBalance"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('wallets.balance', 'Limite')}</FormLabel>
+                                    <FormLabel>{t('wallets.initialBalance', 'Saldo atual')}</FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
@@ -265,6 +296,96 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                                 </FormItem>
                             )}
                         />
+                    )}
+
+                    {cardType === "credit" && (
+                        <>
+                            <FormField
+                                control={form.control}
+                                name="creditLimit"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t("wallets.creditLimit", "Limite total")}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="billingClosingDay"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t("wallets.billingClosingDay", "Dia de fechamento")}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="number"
+                                                min={1}
+                                                max={28}
+                                                step={1}
+                                                onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </>
+                    )}
+
+                    {cardType === "voucher" && (
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <FormField
+                                control={form.control}
+                                name="reloadAmount"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t("wallets.reloadAmount", "Recarga mensal")}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="reloadDay"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t("wallets.reloadDay", "Dia da recarga")}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="number"
+                                                min={1}
+                                                max={28}
+                                                step={1}
+                                                onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                     )}
 
                     <div className="rounded-lg border p-3">

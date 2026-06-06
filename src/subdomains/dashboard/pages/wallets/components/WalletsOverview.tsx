@@ -15,6 +15,7 @@ import { useUserTransactions } from "@/utils/services/api/transation";
 import { NO_WALLET_ID } from "@/constants/wallets";
 import { resolveAllocations } from "@/utils/transaction-allocations";
 import useUserStore from "@/store/UserStore";
+import { computeWalletFlowRow, computeWalletIncome, computeWalletOutflow } from "@/utils/wallet-balance";
 
 type WalletFlowRow = {
     walletId: string;
@@ -97,57 +98,24 @@ export function WalletsOverview() {
     }, [monthTransactions]);
 
     const walletFlowRows = React.useMemo<WalletFlowRow[]>(() => {
-        const rowsById = new Map<string, WalletFlowRow>();
-
-        for (const wallet of wallets) {
-            rowsById.set(wallet.id, {
-                walletId: wallet.id,
-                walletName: wallet.name,
-                walletColor: wallet.color || "#6366f1",
-                income: 0,
-                expense: 0,
-                net: 0,
-            });
-        }
-
-        rowsById.set(NO_WALLET_ID, {
+        const rows = wallets.map((wallet) => computeWalletFlowRow(wallet, transactions, selectedMonth));
+        const noWalletIncome = computeWalletIncome(NO_WALLET_ID, transactions, selectedMonth);
+        const noWalletExpense = computeWalletOutflow(NO_WALLET_ID, transactions, selectedMonth);
+        rows.push({
             walletId: NO_WALLET_ID,
             walletName: t("wallets.noWallet", "Sem carteira"),
             walletColor: "#6b7280",
-            income: 0,
-            expense: 0,
-            net: 0,
+            income: noWalletIncome,
+            expense: noWalletExpense,
+            net: noWalletIncome - noWalletExpense,
         });
 
-        for (const transaction of monthTransactions) {
-            for (const allocation of resolveAllocations(transaction)) {
-                const walletId = allocation.walletId || NO_WALLET_ID;
-                const currentRow = rowsById.get(walletId) ?? {
-                    walletId,
-                    walletName: t("wallets.noWallet", "Sem carteira"),
-                    walletColor: "#6b7280",
-                    income: 0,
-                    expense: 0,
-                    net: 0,
-                };
-
-                if (transaction.type === "receita") {
-                    currentRow.income += allocation.amount;
-                } else {
-                    currentRow.expense += allocation.amount;
-                }
-
-                currentRow.net = currentRow.income - currentRow.expense;
-                rowsById.set(walletId, currentRow);
-            }
-        }
-
-        return Array.from(rowsById.values()).sort((a, b) => {
+        return rows.sort((a, b) => {
             const moveA = a.income + a.expense;
             const moveB = b.income + b.expense;
             return moveB - moveA;
         });
-    }, [monthTransactions, t, wallets]);
+    }, [selectedMonth, t, transactions, wallets]);
 
     const macroChartData = React.useMemo(
         () => [{ period: monthLabel, income: macro.income, expense: macro.expense }],

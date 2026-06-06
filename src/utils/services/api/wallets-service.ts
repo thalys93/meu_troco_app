@@ -2,6 +2,7 @@ import {
     addDoc,
     collection,
     deleteDoc,
+    deleteField,
     doc,
     getDoc,
     getDocs,
@@ -14,11 +15,32 @@ import {
 import { FireStore } from "@/utils/services/api/firebase";
 import { Wallet } from "@/types/Wallet";
 import { LEGACY_POCKET_CARD_NAME, NO_WALLET_ID } from "@/constants/wallets";
+import type { Transaction, WalletAllocation } from "@/utils/services/api/transation";
 
 const COLLECTION_NAME = "wallets";
 const LEGACY_COLLECTION_NAME = "cards";
 
 type LegacyCard = Omit<Wallet, "accountName"> & { accountName?: string };
+
+const resolveFinancialFields = (data: LegacyCard): Pick<Wallet, "initialBalance" | "creditLimit" | "billingClosingDay" | "reloadAmount" | "reloadDay"> => {
+    const balance = data.balance ?? 0;
+    if (data.type === "credit") {
+        return {
+            initialBalance: data.initialBalance,
+            creditLimit: data.creditLimit ?? balance,
+            billingClosingDay: data.billingClosingDay,
+            reloadAmount: data.reloadAmount,
+            reloadDay: data.reloadDay,
+        };
+    }
+    return {
+        initialBalance: data.initialBalance ?? balance,
+        creditLimit: data.creditLimit,
+        billingClosingDay: data.billingClosingDay,
+        reloadAmount: data.reloadAmount,
+        reloadDay: data.reloadDay,
+    };
+};
 
 const toWallet = (id: string, data: LegacyCard): Wallet => ({
     id,
@@ -26,6 +48,7 @@ const toWallet = (id: string, data: LegacyCard): Wallet => ({
     name: data.name,
     accountName: data.accountName ?? data.name,
     balance: data.balance ?? 0,
+    ...resolveFinancialFields(data),
     type: data.type,
     color: data.color,
     flag: data.flag,
@@ -43,6 +66,71 @@ const fetchWalletsFromCollection = async (collectionName: string, userId: string
 
 const isLegacyPocket = (wallet: Wallet) => wallet.name === LEGACY_POCKET_CARD_NAME;
 
+const getFinancialMigrationPayload = (wallet: Wallet): Partial<Wallet> | null => {
+    if (wallet.type === "credit" && wallet.creditLimit === undefined) {
+        return { creditLimit: wallet.balance ?? 0 };
+    }
+    if (wallet.type !== "credit" && wallet.initialBalance === undefined) {
+        return { initialBalance: wallet.balance ?? 0 };
+    }
+    return null;
+};
+
+const migrateMissingFinancialFields = async (wallets: Wallet[]) => {
+    await Promise.all(
+        wallets.map(async (wallet) => {
+            const payload = getFinancialMigrationPayload(wallet);
+            if (!payload) return;
+            await WalletsService.update(wallet.id, payload);
+            Object.assign(wallet, payload);
+        })
+    );
+};
+
+const transactionUsesWallet = (data: Partial<Transaction>, walletId: string) => {
+    if (data.walletId === walletId || data.cardId === walletId) return true;
+    return data.allocations?.some((allocation) => allocation.walletId === walletId) ?? false;
+};
+
+const mergeAllocationsByWallet = (allocations: WalletAllocation[]) => {
+    const byWalletId = new Map<string, number>();
+    for (const allocation of allocations) {
+        const walletId = allocation.walletId || NO_WALLET_ID;
+        byWalletId.set(walletId, (byWalletId.get(walletId) ?? 0) + allocation.amount);
+    }
+    return Array.from(byWalletId.entries()).map(([walletId, amount]) => ({ walletId, amount }));
+};
+
+const buildReassignedTransactionPayload = (
+    data: Partial<Transaction>,
+    fromWalletId: string,
+    toWalletId: string
+) => {
+    const payload: Record<string, unknown> = {};
+    if (data.walletId === fromWalletId || data.cardId === fromWalletId) {
+        payload.walletId = toWalletId;
+    }
+
+    if (data.allocations?.some((allocation) => allocation.walletId === fromWalletId)) {
+        const allocations = mergeAllocationsByWallet(
+            data.allocations.map((allocation) => ({
+                ...allocation,
+                walletId: allocation.walletId === fromWalletId ? toWalletId : allocation.walletId,
+            }))
+        );
+
+        if (allocations.length >= 2) {
+            payload.allocations = allocations;
+            payload.walletId = allocations[0].walletId;
+        } else {
+            payload.allocations = deleteField();
+            payload.walletId = allocations[0]?.walletId ?? toWalletId;
+        }
+    }
+
+    return payload;
+};
+
 const resolveUnmigratedLegacyCards = (legacyCards: Wallet[], wallets: Wallet[]) => {
     const migratedLegacyIds = new Set(
         wallets
@@ -55,6 +143,7 @@ const resolveUnmigratedLegacyCards = (legacyCards: Wallet[], wallets: Wallet[]) 
 export const WalletsService = {
     getAll: async (userId: string): Promise<Wallet[]> => {
         const wallets = await fetchWalletsFromCollection(COLLECTION_NAME, userId);
+        await migrateMissingFinancialFields(wallets);
         const legacyCards = await fetchWalletsFromCollection(LEGACY_COLLECTION_NAME, userId);
         const unmigratedLegacyCards = resolveUnmigratedLegacyCards(legacyCards, wallets);
         return [...wallets, ...unmigratedLegacyCards];
@@ -120,6 +209,57 @@ export const WalletsService = {
         }
     },
 
+    getTransactionsByWallet: async (userId: string, walletId: string): Promise<Transaction[]> => {
+        const txRef = collection(FireStore, "transactions", userId, "userTransactions");
+        const txSnapshot = await getDocs(txRef);
+        return txSnapshot.docs
+            .map((transactionDoc) => ({
+                ...(transactionDoc.data() as Transaction),
+                id: transactionDoc.id,
+            }))
+            .filter((transaction) => transactionUsesWallet(transaction, walletId));
+    },
+
+    reassignTransactions: async (userId: string, fromWalletId: string, toWalletId: string): Promise<number> => {
+        const txRef = collection(FireStore, "transactions", userId, "userTransactions");
+        const txSnapshot = await getDocs(txRef);
+        const batch = writeBatch(FireStore);
+        let updated = 0;
+
+        txSnapshot.docs.forEach((transactionDoc) => {
+            const data = transactionDoc.data() as Partial<Transaction>;
+            if (!transactionUsesWallet(data, fromWalletId)) return;
+            batch.update(transactionDoc.ref, buildReassignedTransactionPayload(data, fromWalletId, toWalletId));
+            updated += 1;
+        });
+
+        if (updated > 0) {
+            await batch.commit();
+        }
+
+        return updated;
+    },
+
+    deleteTransactionsByWallet: async (userId: string, walletId: string): Promise<number> => {
+        const txRef = collection(FireStore, "transactions", userId, "userTransactions");
+        const txSnapshot = await getDocs(txRef);
+        const batch = writeBatch(FireStore);
+        let deleted = 0;
+
+        txSnapshot.docs.forEach((transactionDoc) => {
+            const data = transactionDoc.data() as Partial<Transaction>;
+            if (!transactionUsesWallet(data, walletId)) return;
+            batch.delete(transactionDoc.ref);
+            deleted += 1;
+        });
+
+        if (deleted > 0) {
+            await batch.commit();
+        }
+
+        return deleted;
+    },
+
     shouldRunLegacyMigration: async (userId: string): Promise<boolean> => {
         const wallets = await fetchWalletsFromCollection(COLLECTION_NAME, userId);
         const legacyCards = await fetchWalletsFromCollection(LEGACY_COLLECTION_NAME, userId);
@@ -156,6 +296,7 @@ export const WalletsService = {
                 name: legacyCard.name,
                 accountName: legacyCard.accountName ?? legacyCard.name,
                 balance: legacyCard.balance,
+                ...resolveFinancialFields(legacyCard),
                 type: legacyCard.type,
                 color: legacyCard.color,
                 flag: legacyCard.flag,

@@ -34,6 +34,8 @@ import {
   resolveAllocations,
   validateAllocationsForSave,
 } from '@/utils/transaction-allocations';
+import { computeWalletDisplayBalance } from '@/utils/wallet-balance';
+import { getCurrentMonthKey } from '@/subdomains/dashboard/utils/month-range';
 
 interface TransactionFormProps {
   type: 'receita' | 'despesa';
@@ -89,7 +91,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
 
   const { mutate: create, isPending } = useCreateTransaction();
   const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(uid, id ?? '');
-  const { refetch: refetchUserTransactions } = useUserTransactions()
+  const { data: allTransactions = [], refetch: refetchUserTransactions } = useUserTransactions()
   const { wallets, fetchWallets, isLoading: walletsLoading } = useWalletsStore();
   const pocketBalance = usePocketBalance();
   const { t, i18n } = useTranslation();
@@ -101,6 +103,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
 
   const categories = type === 'receita' ? incomeCategories : expenseCategories;
   const CategoryTriggerIcon = category ? (getCategoryIcon(category) ?? Tag) : Tag;
+  const currentMonthKey = getCurrentMonthKey();
 
   const currencySymbol = useMemo(() => {
     try {
@@ -562,7 +565,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: wallet.color }} />
                     <span>{wallet.name}</span>
                     <span className="text-muted-foreground text-xs">
-                      ({currencySymbol} {wallet.balance.toFixed(2)})
+                      ({currencySymbol} {computeWalletDisplayBalance(wallet, allTransactions, currentMonthKey).toFixed(2)})
                     </span>
                   </div>
                 </SelectItem>

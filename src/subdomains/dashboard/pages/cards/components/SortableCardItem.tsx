@@ -7,10 +7,14 @@ import { cn } from "@/lib/utils";
 interface SortableCardItemProps {
     card: Wallet;
     onEdit: (card: Wallet) => void;
-    monthNet?: number;
+    onAdjust: (card: Wallet) => void;
+    onDelete: (card: Wallet) => void;
+    displayBalance: number;
+    monthOutflow: number;
+    monthLabel: string;
 }
 
-export function SortableCardItem({ card, onEdit, monthNet }: SortableCardItemProps) {
+export function SortableCardItem({ card, onEdit, onAdjust, onDelete, displayBalance, monthOutflow, monthLabel }: SortableCardItemProps) {
     const {
         attributes,
         listeners,
@@ -36,7 +40,15 @@ export function SortableCardItem({ card, onEdit, monthNet }: SortableCardItemPro
                 isDragging && "opacity-60 z-10 shadow-lg rounded-lg"
             )}
         >
-            <CardItem card={card} onEdit={onEdit} monthNet={monthNet} />
+            <CardItem
+                card={card}
+                onEdit={onEdit}
+                onAdjust={onAdjust}
+                onDelete={onDelete}
+                displayBalance={displayBalance}
+                monthOutflow={monthOutflow}
+                monthLabel={monthLabel}
+            />
         </div>
     );
 }

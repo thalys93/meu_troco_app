@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Loader2, EllipsisVertical, Trash, Pen, ChevronLeft, ChevronRight, Plus, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { TrendingUp, TrendingDown, Loader2, EllipsisVertical, Trash, Pen, ChevronLeft, ChevronRight, Plus, ChevronDown, ChevronRight as ChevronRightIcon, ArrowDown, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Transaction, useDeleteTransaction, useUserTransactions } from '@/utils/services/api/transation';
 import { Button } from './ui/button';
@@ -32,10 +32,13 @@ import {
 import {
   defaultTransactionListFiltersPreference,
   useDashboardPreferences,
+  type TransactionTableSortColumn,
 } from '@/subdomains/dashboard/context/dashboard-preferences';
 import { transactionSignedAmount } from '@/subdomains/dashboard/utils/transaction-month-nets';
 import {
+  compareTransactionsByColumn,
   filterTransactionsByPreferences,
+  getDefaultSortOrderForColumn,
   summarizeIncomeExpense,
 } from '@/subdomains/dashboard/utils/transaction-filters';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './ui/sheet';
@@ -56,6 +59,10 @@ import {
   hasMultipleAllocations,
   resolveAllocations,
 } from '@/utils/transaction-allocations';
+import {
+  createOverlayDismissGuard,
+  deferDropdownMenuAction,
+} from '@/lib/dropdown-menu-action';
 
 /** Portais Radix + calendário (react-day-picker `.rdp`) ficam fora do nó do Dialog; precisamos ignorar esses cliques. */
 const QUICK_ADD_OUTSIDE_PORTAL_SELECTOR =
@@ -71,6 +78,52 @@ type TransactionDayGroup = {
   label: string;
   items: Transaction[];
 };
+
+const TABLE_HEAD_CLASS =
+  "sticky top-0 z-20 h-11 border-b border-border/50 bg-background py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]";
+
+type SortableTableHeadProps = {
+  column: TransactionTableSortColumn;
+  label: string;
+  activeColumn: TransactionTableSortColumn;
+  sortOrder: "asc" | "desc";
+  onSort: (column: TransactionTableSortColumn) => void;
+  className?: string;
+  align?: "left" | "right";
+};
+
+function SortableTableHead({
+  column,
+  label,
+  activeColumn,
+  sortOrder,
+  onSort,
+  className,
+  align = "left",
+}: SortableTableHeadProps) {
+  const isActive = activeColumn === column;
+  return (
+    <TableHead className={className}>
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-md transition-colors hover:text-foreground",
+          align === "right" && "ml-auto",
+          isActive && "text-foreground"
+        )}
+      >
+        {label}
+        {isActive &&
+          (sortOrder === "desc" ? (
+            <ArrowDown className="h-3.5 w-3.5" />
+          ) : (
+            <ArrowUp className="h-3.5 w-3.5" />
+          ))}
+      </button>
+    </TableHead>
+  );
+}
 
 const isValidDate = (value: Date) => !Number.isNaN(value.getTime());
 
@@ -171,10 +224,14 @@ const TransactionList = ({
   const maxValue = transactionListFilters.maxValue;
   const startDate = transactionListFilters.startDate;
   const endDate = transactionListFilters.endDate;
+  const tableSortColumn = transactionListFilters.tableSortColumn;
+  const tableSortOrder = transactionListFilters.tableSortOrder;
   const dateRangeLockedToMonth =
     transactionListFilters.dateRangeLockedToMonth;
 
   const [sheetOpen, setSheetOpen] = React.useState(false);
+  const sheetDismissGuardRef = React.useRef(createOverlayDismissGuard());
+  const deleteDismissGuardRef = React.useRef(createOverlayDismissGuard());
   const [sheetCreateType, setSheetCreateType] = React.useState<'receita' | 'despesa'>('receita');
   const [sheetEditId, setSheetEditId] = React.useState<string | null>(null);
   const [sheetEditType, setSheetEditType] = React.useState<'receita' | 'despesa'>('receita');
@@ -352,6 +409,14 @@ const TransactionList = ({
     };
   }, [walletsById, t]);
 
+  const sortFilterOptions = React.useMemo(
+    () => ({
+      categoryLookup,
+      resolveWalletName: (walletId?: string) => getWalletBadgeData(walletId).name,
+      resolveCategoryLabel: getCategoryLabel,
+    }),
+    [categoryLookup, getCategoryLabel, getWalletBadgeData]
+  );
 
   const effectiveFilters = React.useMemo(() => {
     if (!selectedMonth || !dateRangeLockedToMonth || !monthRange) {
@@ -366,10 +431,8 @@ const TransactionList = ({
 
   const filteredTransactions = React.useMemo(
     () =>
-      filterTransactionsByPreferences(displayTransactions || [], effectiveFilters, {
-        categoryLookup,
-      }),
-    [categoryLookup, displayTransactions, effectiveFilters]
+      filterTransactionsByPreferences(displayTransactions || [], effectiveFilters, sortFilterOptions),
+    [displayTransactions, effectiveFilters, sortFilterOptions]
   );
 
   /** Mesmos critérios da tabela (filtros), para os cards de receita/despesa não divergirem do rodapé/lista. */
@@ -404,13 +467,36 @@ const TransactionList = ({
     });
 
     return Array.from(map.entries())
-      .sort(([a], [b]) => b.localeCompare(a))
+      .sort(([a], [b]) =>
+        effectiveFilters.tableSortColumn === "date"
+          ? effectiveFilters.tableSortOrder === "asc"
+            ? a.localeCompare(b)
+            : b.localeCompare(a)
+          : b.localeCompare(a)
+      )
       .map(([dateKey, items]) => ({
         dateKey,
         label: resolveDayGroupLabel(items[0]?.date ?? dateKey),
-        items,
+        items:
+          effectiveFilters.tableSortColumn === "date"
+            ? items
+            : [...items].sort((a, b) =>
+                compareTransactionsByColumn(
+                  a,
+                  b,
+                  effectiveFilters.tableSortColumn,
+                  effectiveFilters.tableSortOrder,
+                  sortFilterOptions
+                )
+              ),
       }));
-  }, [filteredTransactions, resolveDayGroupLabel]);
+  }, [
+    effectiveFilters.tableSortColumn,
+    effectiveFilters.tableSortOrder,
+    filteredTransactions,
+    resolveDayGroupLabel,
+    sortFilterOptions,
+  ]);
 
   const selectedMonthLabel = React.useMemo(() => {
     if (!selectedMonth) return '';
@@ -431,12 +517,14 @@ const TransactionList = ({
 
   const handleSheetOpenChange = React.useCallback((open: boolean) => {
     if (!open) {
+      if (sheetDismissGuardRef.current.isActive()) return;
       setSheetOpen(false);
       setSheetEditId(null);
     }
   }, []);
 
   const openCreateSheet = React.useCallback((type: 'receita' | 'despesa') => {
+    sheetDismissGuardRef.current.mark();
     setSheetCreateType(type);
     setSheetEditId(null);
     setSheetOpen(true);
@@ -444,9 +532,20 @@ const TransactionList = ({
 
   const openEditSheet = React.useCallback((transaction: Transaction) => {
     if (!transaction.id) return;
+    sheetDismissGuardRef.current.mark();
     setSheetEditId(transaction.id);
     setSheetEditType(transaction.type === 'receita' ? 'receita' : 'despesa');
     setSheetOpen(true);
+  }, []);
+
+  const openDeleteDialog = React.useCallback((transaction: Transaction) => {
+    deleteDismissGuardRef.current.mark();
+    setSelectedTransaction(transaction);
+  }, []);
+
+  const handleDeleteDialogOpenChange = React.useCallback((open: boolean) => {
+    if (!open && deleteDismissGuardRef.current.isActive()) return;
+    setSelectedTransaction((current) => (open ? current : undefined));
   }, []);
 
   const defaultCreateDate = React.useMemo(() => {
@@ -562,35 +661,38 @@ const TransactionList = ({
 
   const onQuickAddSheetDismissIntercept = React.useCallback(
     (event: { preventDefault: () => void; target: EventTarget; detail?: { originalEvent?: Event } }) => {
+      if (sheetDismissGuardRef.current.isActive()) {
+        event.preventDefault();
+        return;
+      }
       preventQuickAddSheetDismissIfFromNestedPortal(event);
     },
     []
   );
 
+  const handleTableSortClick = React.useCallback(
+    (column: TransactionTableSortColumn) => {
+      setTransactionListFilters((prev) => {
+        if (prev.tableSortColumn === column) {
+          return {
+            ...prev,
+            tableSortOrder: prev.tableSortOrder === "desc" ? "asc" : "desc",
+          };
+        }
+        return {
+          ...prev,
+          tableSortColumn: column,
+          tableSortOrder: getDefaultSortOrderForColumn(column),
+        };
+      });
+    },
+    [setTransactionListFilters]
+  );
+
   const renderTableTransactionRows = () => {
     let rowIndex = 0;
 
-    return groupedByDay.flatMap((group) => {
-      const daySeparatorRow = (
-        <TableRow
-          key={`day-separator-${group.dateKey}`}
-          className="border-0 hover:bg-transparent bg-muted/25 dark:bg-muted/10"
-        >
-          <TableCell
-            colSpan={7}
-            className="border-b border-border/40 py-2 pl-4 pr-4 text-xs font-semibold tracking-wide text-muted-foreground"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <span className="capitalize text-base">{group.label}</span>
-              <span className="text-[11px] font-medium tabular-nums text-muted-foreground/80">
-                {group.items.length}
-              </span>
-            </div>
-          </TableCell>
-        </TableRow>
-      );
-
-      const transactionRows = group.items.map((transaction) => {
+    const renderTransactionRow = (transaction: Transaction) => {
         const currentRowIndex = rowIndex;
         rowIndex += 1;
 
@@ -784,10 +886,10 @@ const TransactionList = ({
               {useInlineTable ? (
                 <TransactionRowActionsDropdown
                   onEdit={() => openTableRowEdit(transaction)}
-                  onDelete={() => setSelectedTransaction(transaction)}
+                  onDelete={() => openDeleteDialog(transaction)}
                 />
               ) : (
-                <DropdownMenu>
+                <DropdownMenu modal={false}>
                   <DropdownMenuTrigger asChild>
                     <Button
                       size="icon"
@@ -802,14 +904,20 @@ const TransactionList = ({
                       {t('transactionList.actions')}
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setSelectedTransaction(transaction)}>
+                    <DropdownMenuItem
+                      onSelect={(event) =>
+                        deferDropdownMenuAction(event, () => openDeleteDialog(transaction))
+                      }
+                    >
                       <div className="flex flex-row items-center gap-2">
                         <Trash className="h-4 w-4" /> {t('transactionList.delete')}
                       </div>
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       className="flex flex-row items-center gap-2"
-                      onClick={() => openEditSheet(transaction)}
+                      onSelect={(event) =>
+                        deferDropdownMenuAction(event, () => openEditSheet(transaction))
+                      }
                     >
                       <Pen className="h-4 w-4" /> {t('transactionList.edit')}
                     </DropdownMenuItem>
@@ -891,7 +999,7 @@ const TransactionList = ({
             <TransactionRowActionsMenu
               key={transaction.id}
               onEdit={() => openTableRowEdit(transaction)}
-              onDelete={() => setSelectedTransaction(transaction)}
+              onDelete={() => openDeleteDialog(transaction)}
             >
               {rowContent}
             </TransactionRowActionsMenu>
@@ -899,7 +1007,35 @@ const TransactionList = ({
         }
 
         return <React.Fragment key={transaction.id}>{rowContent}</React.Fragment>;
-      });
+    };
+
+    if (effectiveFilters.tableSortColumn !== "date") {
+      return filteredTransactions.map((transaction) => renderTransactionRow(transaction));
+    }
+
+    return groupedByDay.flatMap((group) => {
+      const daySeparatorRow = (
+        <TableRow
+          key={`day-separator-${group.dateKey}`}
+          className="border-0 hover:bg-transparent bg-muted/25 dark:bg-muted/10"
+        >
+          <TableCell
+            colSpan={7}
+            className="border-b border-border/40 py-2 pl-4 pr-4 text-xs font-semibold tracking-wide text-muted-foreground"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="capitalize text-base">{group.label}</span>
+              <span className="text-[11px] font-medium tabular-nums text-muted-foreground/80">
+                {group.items.length}
+              </span>
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+
+      const transactionRows = group.items.map((transaction) =>
+        renderTransactionRow(transaction)
+      );
 
       return [daySeparatorRow, ...transactionRows];
     });
@@ -994,6 +1130,8 @@ const TransactionList = ({
                 maxValue,
                 startDate,
                 endDate,
+                tableSortColumn,
+                tableSortOrder,
               }}
               filteredCount={filteredTransactions.length}
               onClearAll={handleFiltersClearAll}
@@ -1021,6 +1159,16 @@ const TransactionList = ({
                         ...prev,
                         endDate: value as string,
                         dateRangeLockedToMonth: false,
+                      };
+                    case 'tableSortColumn':
+                      return {
+                        ...prev,
+                        tableSortColumn: value as TransactionTableSortColumn,
+                      };
+                    case 'tableSortOrder':
+                      return {
+                        ...prev,
+                        tableSortOrder: value as 'asc' | 'desc',
                       };
                     default:
                       return prev;
@@ -1122,25 +1270,56 @@ const TransactionList = ({
                 >
                   <TableHeader>
                     <TableRow className="border-0 hover:bg-transparent">
-                      <TableHead className="sticky top-0 z-20 h-11 min-w-[160px] w-[28%] border-b border-border/50 bg-background py-2.5 pl-4 pr-2 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
-                        {t('transactionList.table.description')}
-                      </TableHead>
-                      <TableHead className="sticky top-0 z-20 h-11 w-[22%] border-b border-border/50 bg-background py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
-                        {t('transactionList.table.wallet')}
-                      </TableHead>
-                      <TableHead className="sticky top-0 z-20 h-11 w-[22%] border-b border-border/50 bg-background py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
-                        {t('transactionList.table.date')}
-                      </TableHead>
-                      <TableHead className="sticky top-0 z-20 h-11 w-[18%] border-b border-border/50 bg-background py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
-                        {t('transactionList.table.category')}
-                      </TableHead>
-                      <TableHead className="sticky top-0 z-20 h-11 w-[14%] border-b border-border/50 bg-background py-2.5 px-3 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
-                        {t('transactionList.table.type')}
-                      </TableHead>
-                      <TableHead className="sticky top-0 z-20 h-11 w-[18%] min-w-[140px] border-b border-border/50 bg-background py-2.5 px-3 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
-                        {t('transactionList.table.value')}
-                      </TableHead>
-                      <TableHead className="sticky top-0 z-20 h-11 w-12 border-b border-border/50 bg-background py-2.5 pl-2 pr-4 text-right text-xs font-semibold uppercase tracking-wide text-muted-foreground shadow-[0_1px_0_0_hsl(var(--border)/0.4)]">
+                      <SortableTableHead
+                        column="description"
+                        label={t('transactionList.table.description')}
+                        activeColumn={tableSortColumn}
+                        sortOrder={tableSortOrder}
+                        onSort={handleTableSortClick}
+                        className={cn(TABLE_HEAD_CLASS, "min-w-[160px] w-[28%] pl-4 pr-2")}
+                      />
+                      <SortableTableHead
+                        column="wallet"
+                        label={t('transactionList.table.wallet')}
+                        activeColumn={tableSortColumn}
+                        sortOrder={tableSortOrder}
+                        onSort={handleTableSortClick}
+                        className={cn(TABLE_HEAD_CLASS, "w-[22%] px-3")}
+                      />
+                      <SortableTableHead
+                        column="date"
+                        label={t('transactionList.table.date')}
+                        activeColumn={tableSortColumn}
+                        sortOrder={tableSortOrder}
+                        onSort={handleTableSortClick}
+                        className={cn(TABLE_HEAD_CLASS, "w-[22%] px-3")}
+                      />
+                      <SortableTableHead
+                        column="category"
+                        label={t('transactionList.table.category')}
+                        activeColumn={tableSortColumn}
+                        sortOrder={tableSortOrder}
+                        onSort={handleTableSortClick}
+                        className={cn(TABLE_HEAD_CLASS, "w-[18%] px-3")}
+                      />
+                      <SortableTableHead
+                        column="type"
+                        label={t('transactionList.table.type')}
+                        activeColumn={tableSortColumn}
+                        sortOrder={tableSortOrder}
+                        onSort={handleTableSortClick}
+                        className={cn(TABLE_HEAD_CLASS, "w-[14%] px-3")}
+                      />
+                      <SortableTableHead
+                        column="value"
+                        label={t('transactionList.table.value')}
+                        activeColumn={tableSortColumn}
+                        sortOrder={tableSortOrder}
+                        onSort={handleTableSortClick}
+                        align="right"
+                        className={cn(TABLE_HEAD_CLASS, "w-[18%] min-w-[140px] px-3 text-right")}
+                      />
+                      <TableHead className={cn(TABLE_HEAD_CLASS, "w-12 pl-2 pr-4 text-right")}>
                         <span className="sr-only">{t('transactionList.actions')}</span>
                       </TableHead>
                     </TableRow>
@@ -1279,8 +1458,8 @@ const TransactionList = ({
                           >
                             {formatAmount(transaction.value, transaction.type)}
                           </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger>
+                          <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger asChild>
                               <Button size='icon' variant='ghost'>
                                 <EllipsisVertical className="w-4 h-4" />
                               </Button>
@@ -1288,14 +1467,20 @@ const TransactionList = ({
                             <DropdownMenuContent>
                               <DropdownMenuLabel className='select-none'>{t('transactionList.actions')}</DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => setSelectedTransaction(transaction)}>
+                              <DropdownMenuItem
+                                onSelect={(event) =>
+                                  deferDropdownMenuAction(event, () => openDeleteDialog(transaction))
+                                }
+                              >
                                 <div className='flex flex-row items-center gap-2'>
                                   <Trash className='h-4 w-4' /> {t('transactionList.delete')}
                                 </div>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 className='flex flex-row items-center gap-2'
-                                onClick={() => openEditSheet(transaction)}
+                                onSelect={(event) =>
+                                  deferDropdownMenuAction(event, () => openEditSheet(transaction))
+                                }
                               >
                                 <Pen className='h-4 w-4' /> {t('transactionList.edit')}
                               </DropdownMenuItem>
@@ -1315,7 +1500,7 @@ const TransactionList = ({
       {selectedTransaction && (
         <DeleteDialog
           open={!!selectedTransaction}
-          onOpenChange={(open) => setSelectedTransaction(open ? selectedTransaction : null)}
+          onOpenChange={handleDeleteDialogOpenChange}
           deleteFunction={() => handleDelete(selectedTransaction!.id!)}
           title={t('dialog.deleteTitle')}
           description={t('dialog.deleteDescription')}
@@ -1326,7 +1511,10 @@ const TransactionList = ({
         <div
           aria-hidden
           className="fixed inset-0 z-[45] bg-black/30 dark:bg-black/40"
-          onPointerDown={() => handleSheetOpenChange(false)}
+          onPointerDown={() => {
+            if (sheetDismissGuardRef.current.isActive()) return;
+            handleSheetOpenChange(false);
+          }}
         />
       )}
       {!useInlineTable && (

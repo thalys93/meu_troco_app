@@ -7,14 +7,13 @@ import { POCKET_WALLET_NAME } from "@/constants/wallets";
 const POCKET_COLOR = "#6b7280";
 
 type PocketCardProps = {
-    /** Quando definido (layout mês), mostra fluxo líquido do bolso no período em vez do saldo cadastrado. */
-    monthNet?: number;
+    monthOutflow: number;
+    monthLabel: string;
 };
 
-export function PocketCard({ monthNet }: PocketCardProps) {
+export function PocketCard({ monthOutflow, monthLabel }: PocketCardProps) {
     const { t, i18n } = useTranslation();
     const pocketBalance = usePocketBalance();
-    const balance = monthNet !== undefined ? monthNet : pocketBalance;
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat(i18n.language, {
@@ -33,11 +32,12 @@ export function PocketCard({ monthNet }: PocketCardProps) {
                 <Handbag className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
+                <div className="text-2xl font-bold">{formatCurrency(pocketBalance)}</div>
                 <p className="text-xs text-muted-foreground mt-1">
-                    {monthNet !== undefined
-                        ? t("wallets.monthFlowCaption")
-                        : t("wallets.noWallet", "Sem Carteira")}
+                    {t("wallets.noWallet", "Sem Carteira")}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                    {t("wallets.monthOutflow", { month: monthLabel, value: formatCurrency(monthOutflow) })}
                 </p>
             </CardContent>
         </UICard>

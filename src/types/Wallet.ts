@@ -8,6 +8,11 @@ export interface Wallet {
     name: string;
     accountName: string;
     balance: number;
+    initialBalance?: number;
+    creditLimit?: number;
+    billingClosingDay?: number;
+    reloadAmount?: number;
+    reloadDay?: number;
     type: WalletType;
     color: string;
     flag: string;

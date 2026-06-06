@@ -5,6 +5,8 @@ import { FirebaseTimestamp } from "@/types/Firebase";
 import { useEffect } from "react";
 import { useWalletsStore } from "@/store/useWalletsStore";
 import { usePocketBalance } from "./usePocketBalance";
+import { computeWalletDisplayBalance } from "@/utils/wallet-balance";
+import { getCurrentMonthKey } from "@/subdomains/dashboard/utils/month-range";
 export const useDashboardStats = () => {
     const { data: transactions = [] } = useUserTransactions();
     const { user } = useUser();
@@ -30,7 +32,7 @@ export const useDashboardStats = () => {
     const totalIncome = incomeTransactions.reduce((acc, curr) => acc + curr.value, 0);
     const totalExpense = expenseTransactions.reduce((acc, curr) => acc + curr.value, 0);
 
-    const { selectTotalBalance, fetchWallets, wallets } = useWalletsStore();
+    const { fetchWallets, wallets } = useWalletsStore();
     const pocketBalance = usePocketBalance();
 
     useEffect(() => {
@@ -39,7 +41,11 @@ export const useDashboardStats = () => {
         }
     }, [user, wallets.length, fetchWallets]);
 
-    const walletsTotal = selectTotalBalance();
+    const currentMonth = getCurrentMonthKey();
+    const walletsTotal = wallets.reduce(
+        (acc, wallet) => acc + computeWalletDisplayBalance(wallet, transactions, currentMonth),
+        0
+    );
     const totalBalance = pocketBalance + walletsTotal;
 
     const totalMovimentado = totalIncome + totalExpense + Math.abs(totalBalance);

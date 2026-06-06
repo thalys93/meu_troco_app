@@ -6,6 +6,19 @@ import {
 
 type DashboardLayoutMode = "default" | "notion";
 
+export type TransactionSortOrder = "desc" | "asc";
+
+export type TransactionTableSortColumn =
+  | "date"
+  | "description"
+  | "wallet"
+  | "category"
+  | "type"
+  | "value";
+
+/** @deprecated use TransactionSortOrder */
+export type TransactionDateSortOrder = TransactionSortOrder;
+
 /** Filtros da lista de transações (persistidos em localStorage). */
 export type TransactionListFiltersPreference = {
   card: string;
@@ -16,6 +29,8 @@ export type TransactionListFiltersPreference = {
   startDate: string;
   endDate: string;
   dateRangeLockedToMonth: boolean;
+  tableSortColumn: TransactionTableSortColumn;
+  tableSortOrder: TransactionSortOrder;
 };
 
 export const defaultTransactionListFiltersPreference: TransactionListFiltersPreference =
@@ -28,9 +43,20 @@ export const defaultTransactionListFiltersPreference: TransactionListFiltersPref
     startDate: "",
     endDate: "",
     dateRangeLockedToMonth: true,
+    tableSortColumn: "date",
+    tableSortOrder: "desc",
   };
 
 const FILTERS_STORAGE_KEY = "dashboard-transaction-list-filters";
+
+const TABLE_SORT_COLUMNS: TransactionTableSortColumn[] = [
+  "date",
+  "description",
+  "wallet",
+  "category",
+  "type",
+  "value",
+];
 
 function parseStoredTransactionListFilters(): TransactionListFiltersPreference {
   if (typeof window === "undefined") {
@@ -61,6 +87,15 @@ function parseStoredTransactionListFilters(): TransactionListFiltersPreference {
         typeof o.dateRangeLockedToMonth === "boolean"
           ? o.dateRangeLockedToMonth
           : d.dateRangeLockedToMonth,
+      tableSortColumn: TABLE_SORT_COLUMNS.includes(o.tableSortColumn as TransactionTableSortColumn)
+        ? (o.tableSortColumn as TransactionTableSortColumn)
+        : d.tableSortColumn,
+      tableSortOrder:
+        o.tableSortOrder === "asc" || o.tableSortOrder === "desc"
+          ? o.tableSortOrder
+          : o.dateSortOrder === "asc" || o.dateSortOrder === "desc"
+            ? o.dateSortOrder
+            : d.tableSortOrder,
     };
   } catch {
     return defaultTransactionListFiltersPreference;

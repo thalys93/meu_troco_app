@@ -2,12 +2,10 @@ import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, getDocs, updat
 import { FireStore } from "./firebase";
 import useUserStore from "@/store/UserStore";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { WalletsService } from "./wallets-service";
-import { NO_WALLET_ID, isPocketWalletId } from "@/constants/wallets";
+import { NO_WALLET_ID } from "@/constants/wallets";
 import { normalizeLocalDateString } from "@/subdomains/dashboard/utils/month-range";
 import {
     MIN_WALLET_ALLOCATIONS,
-    resolveAllocations,
     resolveWalletIdFromTransaction,
     stripAllocationsFromPayload,
     validateAllocationsForSave,
@@ -57,42 +55,6 @@ const normalizeTransactionDate = (rawDate: unknown): string => {
 
 const resolveWalletId = resolveWalletIdFromTransaction;
 
-const signedDelta = (transactionType: Transaction['type'], amount: number) =>
-    transactionType === 'receita' ? amount : -amount;
-
-const applyWalletBalanceDelta = async (
-    walletId: string,
-    transactionType: Transaction['type'],
-    amount: number,
-    direction: 'apply' | 'revert'
-) => {
-    if (isPocketWalletId(walletId) || amount <= 0) return;
-
-    const wallet = await WalletsService.getById(walletId);
-    if (!wallet) throw new Error("Wallet not found");
-
-    const delta = signedDelta(transactionType, amount);
-    const nextBalance =
-        direction === 'apply' ? wallet.balance + delta : wallet.balance - delta;
-
-    await WalletsService.update(walletId, { balance: nextBalance });
-};
-
-const applyAllocationsToWallets = async (
-    allocations: WalletAllocation[],
-    transactionType: Transaction['type'],
-    direction: 'apply' | 'revert'
-) => {
-    for (const allocation of allocations) {
-        await applyWalletBalanceDelta(
-            allocation.walletId,
-            transactionType,
-            allocation.amount,
-            direction
-        );
-    }
-};
-
 const toFirestoreUpdatePayload = (payload: Transaction) => {
     const stripped = stripAllocationsFromPayload(payload);
     const keepsAllocations =
@@ -128,9 +90,6 @@ const normalizeTransactionPayload = (data: Transaction): Transaction => {
 
 const createTransaction = async (data: Transaction, uid: string) => {
     const payload = normalizeTransactionPayload(data);
-    const allocations = resolveAllocations(payload);
-
-    await applyAllocationsToWallets(allocations, payload.type, 'apply');
 
     const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
     const docRef = await addDoc(ref, {
@@ -150,11 +109,6 @@ const editTransaction = async (uid: string, id: string, data: Transaction) => {
     if (!oldTransaction) throw new Error("Transaction not found");
 
     const payload = normalizeTransactionPayload(data);
-    const oldAllocations = resolveAllocations(oldTransaction);
-    const newAllocations = resolveAllocations(payload);
-
-    await applyAllocationsToWallets(oldAllocations, oldTransaction.type, 'revert');
-    await applyAllocationsToWallets(newAllocations, payload.type, 'apply');
 
     const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
     await updateDoc(ref, toFirestoreUpdatePayload(payload));

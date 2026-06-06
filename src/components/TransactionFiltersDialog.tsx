@@ -1,6 +1,6 @@
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Filter, TrendingUp, TrendingDown, CreditCard, Tag, RotateCcw, List, CircleDollarSign } from 'lucide-react';
+import { Filter, TrendingUp, TrendingDown, CreditCard, Tag, RotateCcw, List, CircleDollarSign, ArrowDown, ArrowUp } from 'lucide-react';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,7 @@ import { NO_WALLET_ID } from '@/constants/wallets';
 import { useWalletsStore } from '@/store/useWalletsStore';
 import { cn } from '@/lib/utils';
 import React from 'react';
+import type { TransactionTableSortColumn } from '@/subdomains/dashboard/context/dashboard-preferences';
 
 type Filters = {
   card: string;
@@ -19,7 +20,18 @@ type Filters = {
   maxValue: string;
   startDate: string;
   endDate: string;
+  tableSortColumn: TransactionTableSortColumn;
+  tableSortOrder: 'desc' | 'asc';
 };
+
+const TABLE_SORT_COLUMNS: TransactionTableSortColumn[] = [
+  'description',
+  'wallet',
+  'date',
+  'category',
+  'type',
+  'value',
+];
 
 interface TransactionFiltersDialogProps {
   open: boolean;
@@ -215,6 +227,54 @@ export default function TransactionFiltersDialog({
             </div>
           </div>
 
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">
+              {t('filters.tableSort', 'Ordenação da tabela')}
+            </Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {TABLE_SORT_COLUMNS.map((column) => (
+                <Button
+                  key={column}
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "justify-start h-10 px-3 text-sm",
+                    filters.tableSortColumn === column && "border-foreground ring-1 ring-foreground/20"
+                  )}
+                  onClick={() => onChange('tableSortColumn', column)}
+                >
+                  {t(`filters.tableSortColumn.${column}`)}
+                </Button>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  "justify-start gap-2 h-10",
+                  filters.tableSortOrder === "desc" && "border-foreground ring-1 ring-foreground/20"
+                )}
+                onClick={() => onChange('tableSortOrder', 'desc')}
+              >
+                <ArrowDown className="h-4 w-4" />
+                {t('filters.tableSortDescending', 'Decrescente')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  "justify-start gap-2 h-10",
+                  filters.tableSortOrder === "asc" && "border-foreground ring-1 ring-foreground/20"
+                )}
+                onClick={() => onChange('tableSortOrder', 'asc')}
+              >
+                <ArrowUp className="h-4 w-4" />
+                {t('filters.tableSortAscending', 'Crescente')}
+              </Button>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between pt-2 sticky bottom-0 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 -mx-4 sm:mx-0 border-t">
             <Button
               variant="outline"
@@ -231,6 +291,8 @@ export default function TransactionFiltersDialog({
                 onChange('maxValue', '');
                 onChange('startDate', '');
                 onChange('endDate', '');
+                onChange('tableSortColumn', 'date');
+                onChange('tableSortOrder', 'desc');
               }}
             >
               <RotateCcw className="w-4 h-4" />

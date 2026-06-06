@@ -89,6 +89,11 @@ export const useWalletsStore = create<WalletsState>((set, get) => ({
 
     selectTotalBalance: () => {
         const { wallets } = get();
-        return wallets.reduce((acc, wallet) => acc + Number(wallet.balance), 0);
+        return wallets.reduce((acc, wallet) => {
+            if (wallet.type === "credit") {
+                return acc + Number(wallet.creditLimit ?? wallet.balance ?? 0);
+            }
+            return acc + Number(wallet.initialBalance ?? wallet.balance ?? 0);
+        }, 0);
     },
 }));

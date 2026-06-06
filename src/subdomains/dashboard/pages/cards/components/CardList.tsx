@@ -1,14 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useUserTransactions } from "@/utils/services/api/transation";
 import { useDashboardPreferences } from "@/subdomains/dashboard/context/dashboard-preferences";
-import { useIsMobile } from "@/hooks/use-mobile";
-import {
-    getMonthRangeByKey,
-    parseLocalDateInput,
-    parseLocalDateInputAtEndOfDay,
-    parseLocalDateInputAtStartOfDay
-} from "@/subdomains/dashboard/utils/month-range";
-import { netByWalletId } from "@/subdomains/dashboard/utils/transaction-month-nets";
+import { parseLocalDateInput } from "@/subdomains/dashboard/utils/month-range";
 import { LEGACY_POCKET_CARD_NAME, NO_WALLET_ID, POCKET_WALLET_NAME } from "@/constants/wallets";
 import {
     DndContext,
@@ -30,48 +23,31 @@ import { useTranslation } from "react-i18next";
 import { WalletsService } from "@/utils/services/api/wallets-service";
 import { clearWalletMigrationCompleted, hasCompletedWalletMigration } from "@/subdomains/dashboard/utils/wallet-migration";
 import { LegacyCardsMigrationModal } from "@/subdomains/dashboard/pages/cards/components/LegacyCardsMigrationModal";
+import { computeWalletDisplayBalance, computeWalletOutflow } from "@/utils/wallet-balance";
+import { AdjustBalanceModal } from "@/subdomains/dashboard/pages/cards/components/AdjustBalanceModal";
+import { DeleteWalletModal } from "@/subdomains/dashboard/pages/cards/components/DeleteWalletModal";
 
 export function CardList() {
     const { wallets, fetchWallets, isLoading, reorderWallets } = useWalletsStore();
     const { user } = useUserStore();
     const { t, i18n } = useTranslation();
-    const { data: allTransactions = [] } = useUserTransactions();
-    const { selectedMonth, layoutMode } = useDashboardPreferences();
-    const isMobile = useIsMobile();
-    const monthCardsMode = layoutMode === "notion" && !isMobile;
-
-    const monthTransactions = useMemo(() => {
-        if (!monthCardsMode) return [];
-        const range = getMonthRangeByKey(selectedMonth);
-        const start = parseLocalDateInputAtStartOfDay(range.startDate);
-        const end = parseLocalDateInputAtEndOfDay(range.endDate);
-        const startMs = start.getTime();
-        const endMs = end.getTime();
-        if (Number.isNaN(startMs) || Number.isNaN(endMs)) return [];
-        return allTransactions.filter((tr) => {
-            const d = parseLocalDateInput(tr.date);
-            const time = d.getTime();
-            if (Number.isNaN(time)) return false;
-            return time >= startMs && time <= endMs;
-        });
-    }, [allTransactions, monthCardsMode, selectedMonth]);
-
-    const nets = useMemo(
-        () => (monthCardsMode ? netByWalletId(monthTransactions) : null),
-        [monthCardsMode, monthTransactions]
+    const { data: allTransactions = [], refetch: refetchTransactions } = useUserTransactions();
+    const { selectedMonth } = useDashboardPreferences();
+    const pocketMonthOutflow = useMemo(
+        () => computeWalletOutflow(NO_WALLET_ID, allTransactions, selectedMonth),
+        [allTransactions, selectedMonth]
     );
 
-    const pocketMonthNet = nets ? (nets.get(NO_WALLET_ID) ?? 0) : undefined;
-
     const monthLabel = useMemo(() => {
-        if (!monthCardsMode) return "";
         return new Intl.DateTimeFormat(i18n.language, {
             month: "long",
             year: "numeric",
         }).format(parseLocalDateInput(`${selectedMonth}-01`));
-    }, [i18n.language, monthCardsMode, selectedMonth]);
+    }, [i18n.language, selectedMonth]);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingWallet, setEditingWallet] = useState<Wallet | null>(null);
+    const [adjustingWallet, setAdjustingWallet] = useState<Wallet | null>(null);
+    const [deletingWallet, setDeletingWallet] = useState<Wallet | null>(null);
     const [showLegacyMigrationModal, setShowLegacyMigrationModal] = useState(false);
 
     const realWallets = useMemo(
@@ -146,6 +122,14 @@ export function CardList() {
         setIsModalOpen(true);
     };
 
+    const handleAdjust = (wallet: Wallet) => {
+        setAdjustingWallet(wallet);
+    };
+
+    const handleDelete = (wallet: Wallet) => {
+        setDeletingWallet(wallet);
+    };
+
     if (isLoading && wallets.length === 0) {
         return <div className="p-4 text-center">Loading...</div>;
     }
@@ -157,7 +141,7 @@ export function CardList() {
                     {t("wallets.pocket", POCKET_WALLET_NAME)}
                 </h2>
                 <div className="max-w-sm">
-                    <PocketCard monthNet={pocketMonthNet} />
+                    <PocketCard monthOutflow={pocketMonthOutflow} monthLabel={monthLabel} />
                 </div>
             </section>
 
@@ -165,11 +149,9 @@ export function CardList() {
                 <div className="flex items-center justify-between gap-4 flex-wrap">
                     <div>
                         <h2 className="text-xl font-bold tracking-tight">{t("wallets.title", "Minhas Carteiras")}</h2>
-                        {monthCardsMode && monthLabel && (
-                            <p className="text-sm text-muted-foreground mt-1 capitalize">
-                                {t("wallets.monthContextLabel", { month: monthLabel })}
-                            </p>
-                        )}
+                        <p className="text-sm text-muted-foreground mt-1 capitalize">
+                            {t("wallets.monthContextLabel", { month: monthLabel })}
+                        </p>
                     </div>
                     <Button onClick={handleAddNew} size="sm">
                         <Plus className="mr-2 h-4 w-4" /> {t("wallets.add", "Adicionar")}
@@ -187,7 +169,11 @@ export function CardList() {
                                     key={wallet.id}
                                     card={wallet}
                                     onEdit={handleEdit}
-                                    monthNet={nets?.get(wallet.id)}
+                                    onAdjust={handleAdjust}
+                                    onDelete={handleDelete}
+                                    displayBalance={computeWalletDisplayBalance(wallet, allTransactions, selectedMonth)}
+                                    monthOutflow={computeWalletOutflow(wallet.id, allTransactions, selectedMonth)}
+                                    monthLabel={monthLabel}
                                 />
                             ))}
 
@@ -208,6 +194,33 @@ export function CardList() {
                 open={isModalOpen}
                 onOpenChange={setIsModalOpen}
                 cardToEdit={editingWallet}
+            />
+            <AdjustBalanceModal
+                wallet={adjustingWallet}
+                open={Boolean(adjustingWallet)}
+                onOpenChange={(open) => {
+                    if (!open) setAdjustingWallet(null);
+                }}
+                currentBalance={
+                    adjustingWallet
+                        ? computeWalletDisplayBalance(adjustingWallet, allTransactions, selectedMonth)
+                        : 0
+                }
+            />
+            <DeleteWalletModal
+                uid={user?.uid}
+                wallet={deletingWallet}
+                destinationWallets={realWallets}
+                open={Boolean(deletingWallet)}
+                onOpenChange={(open) => {
+                    if (!open) setDeletingWallet(null);
+                }}
+                onCompleted={async () => {
+                    if (user?.uid) {
+                        await fetchWallets(user.uid);
+                    }
+                    await refetchTransactions();
+                }}
             />
             {user?.uid && (
                 <LegacyCardsMigrationModal

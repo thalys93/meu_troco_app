@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/context-menu';
 import { Button } from '@/components/ui/button';
 import { EllipsisVertical } from 'lucide-react';
+import { deferDropdownMenuAction } from '@/lib/dropdown-menu-action';
 type TransactionRowActionsMenuProps = {
   onEdit: () => void;
   onDelete: () => void;
@@ -36,11 +37,17 @@ function DropdownActionItems({
 
   return (
     <>
-      <DropdownMenuItem onClick={onEdit} className="flex flex-row items-center gap-2 cursor-pointer">
+      <DropdownMenuItem
+        onSelect={(event) => deferDropdownMenuAction(event, onEdit)}
+        className="flex flex-row items-center gap-2 cursor-pointer"
+      >
         <Pen className="h-4 w-4" />
         {t('transactionList.edit')}
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={onDelete} className="flex flex-row items-center gap-2 cursor-pointer">
+      <DropdownMenuItem
+        onSelect={(event) => deferDropdownMenuAction(event, onDelete)}
+        className="flex flex-row items-center gap-2 cursor-pointer"
+      >
         <Trash className="h-4 w-4" />
         {t('transactionList.delete')}
       </DropdownMenuItem>
@@ -60,14 +67,14 @@ function ContextActionItems({
   return (
     <>
       <ContextMenuItem
-        onSelect={onEdit}
+        onSelect={(event) => deferDropdownMenuAction(event, onEdit)}
         className="flex flex-row items-center gap-2 cursor-pointer"
       >
         <Pen className="h-4 w-4" />
         {t('transactionList.edit')}
       </ContextMenuItem>
       <ContextMenuItem
-        onSelect={onDelete}
+        onSelect={(event) => deferDropdownMenuAction(event, onDelete)}
         className="flex flex-row items-center gap-2 cursor-pointer"
       >
         <Trash className="h-4 w-4" />
@@ -87,7 +94,7 @@ export function TransactionRowActionsDropdown({
   const { t } = useTranslation();
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button
           size="icon"

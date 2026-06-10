@@ -11,7 +11,9 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return isSignedIn() && request.auth.uid == "eCqjINFsQsOMyNFCS87DggmlgN93";
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountType == "ADMIN";
     }
 
     function hasValidCardOrWalletReference() {
@@ -27,14 +29,19 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow write: if isOwner(userId);
     }
 
     match /transactions/{userId}/userTransactions/{transactionId} {
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && hasValidCardOrWalletReference();
       allow update: if isOwner(userId) && hasValidCardOrWalletReference();
       allow delete: if isOwner(userId);
+    }
+
+    match /{path=**}/userTransactions/{transactionId} {
+      allow read: if isAdmin();
     }
 
     match /cards/{cardId} {
@@ -44,7 +51,8 @@ service cloud.firestore {
 
     match /wallets/{walletId} {
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow read, update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
     match /notifications/{notificationId} {

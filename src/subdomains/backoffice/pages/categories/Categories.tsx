@@ -248,13 +248,12 @@ function CategorySection({
     return (
         <section
             className={cn(
-                'flex flex-col min-h-0 rounded-xl border border-border/80 bg-card shadow-sm overflow-hidden',
+                'flex flex-col min-h-0 bo-surface border-l-4',
                 config.accent,
-                'border-l-4',
                 categories.length === 0 && 'border-dashed'
             )}
         >
-            <div className={cn('shrink-0 px-4 py-3 flex items-center gap-3', config.headerBg)}>
+            <div className={cn('bo-section-header', config.headerBg)}>
                 <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-background/80 border border-border/50 shadow-sm">
                     <SectionIcon className="h-4 w-4 text-muted-foreground" />
                 </span>
@@ -457,6 +456,7 @@ function CategoriesPage() {
                 className="flex flex-col min-h-[calc(100vh-7rem)]"
                 title={t('categories.backoffice.title')}
                 description={t('categories.backoffice.description')}
+                eyebrow={t('sidebar.backoffice')}
                 actions={
                     <div className="flex flex-wrap gap-2">
                         {missingSeedCount > 0 && (

@@ -11,6 +11,7 @@ const pathToLabel: Record<string, string> = {
   notification: 'notifications.backoffice.title',
   categories: 'sidebar.categories',
   category: 'categories.backoffice.title',
+  users: 'sidebar.users',
   profile: 'sidebar.profile',
 };
 
@@ -38,7 +39,7 @@ function BackOfficeHeader() {
   ];
 
   return (
-    <header className="shrink-0 border-b border-border bg-card/50 px-6 py-3" aria-label="Navegação">
+    <header className="shrink-0 flex-1 border-b border-border/60 bg-card/40 backdrop-blur-sm px-4 py-3" aria-label={t('sidebar.navigation')}>
       <nav className="flex items-center gap-1 text-sm text-muted-foreground">
         {breadcrumbs.map((crumb, i) => (
           <React.Fragment key={crumb.href}>

@@ -87,7 +87,7 @@ const BackOfficeProfilePage = () => {
     if (userLocal?.provider !== AccountProviders.EMAIL) return;
     if (passForm.getValues('newPassword') !== passForm.getValues('confirmPassword')) {
       toast({
-        title: "Erro",
+        title: t('toast.error'),
         description: t('profile.toast.passwordDescription'),
         variant: "destructive",
       });
@@ -97,7 +97,7 @@ const BackOfficeProfilePage = () => {
     const user = AuthProvider.currentUser;
     if (!user || !user.email) {
       toast({
-        title: "Erro",
+        title: t('toast.error'),
         description: t('profile.toast.userAuth'),
         variant: "destructive",
       })

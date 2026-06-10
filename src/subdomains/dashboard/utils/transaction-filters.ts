@@ -20,6 +20,15 @@ export type IncomeExpenseSummary = {
   expenseCount: number;
 };
 
+export type TransactionTypesSummary = IncomeExpenseSummary & {
+  billsTotal: number;
+  billsCount: number;
+  billsPaidCount: number;
+  billsPendingCount: number;
+  billsPaidTotal: number;
+  billsPendingTotal: number;
+};
+
 export type TransactionFilterOptions = {
   categoryLookup?: Map<string, Category>;
   resolveWalletName?: (walletId?: string) => string;
@@ -149,16 +158,37 @@ export const filterTransactionsByPreferences = (
     );
 };
 
-export const summarizeIncomeExpense = (
+export const summarizeTransactionTypes = (
   transactions: Transaction[]
-): IncomeExpenseSummary => {
+): TransactionTypesSummary => {
   const income = transactions.filter((tr) => tr.type === "receita");
   const expense = transactions.filter((tr) => tr.type === "despesa");
+  const bills = transactions.filter((tr) => tr.type === "conta");
+  const paidBills = bills.filter((tr) => tr.paid === true);
+  const pendingBills = bills.filter((tr) => tr.paid !== true);
 
   return {
     incomeTotal: income.reduce((acc, tr) => acc + tr.value, 0),
     expenseTotal: expense.reduce((acc, tr) => acc + tr.value, 0),
     incomeCount: income.length,
     expenseCount: expense.length,
+    billsTotal: bills.reduce((acc, tr) => acc + tr.value, 0),
+    billsCount: bills.length,
+    billsPaidCount: paidBills.length,
+    billsPendingCount: pendingBills.length,
+    billsPaidTotal: paidBills.reduce((acc, tr) => acc + tr.value, 0),
+    billsPendingTotal: pendingBills.reduce((acc, tr) => acc + tr.value, 0),
+  };
+};
+
+export const summarizeIncomeExpense = (
+  transactions: Transaction[]
+): IncomeExpenseSummary => {
+  const summary = summarizeTransactionTypes(transactions);
+  return {
+    incomeTotal: summary.incomeTotal,
+    expenseTotal: summary.expenseTotal,
+    incomeCount: summary.incomeCount,
+    expenseCount: summary.expenseCount,
   };
 };

@@ -1,6 +1,6 @@
 import type { Timestamp } from 'firebase/firestore';
 
-export type CategoryTransactionType = 'receita' | 'despesa';
+export type CategoryTransactionType = 'receita' | 'despesa' | 'conta';
 
 export type CategoryLocalizedEntry = { label: string };
 

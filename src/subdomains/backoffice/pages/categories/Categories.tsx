@@ -4,12 +4,14 @@ import PageShell from '@/subdomains/backoffice/components/PageShell';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash, Download, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { Plus, Trash, Download, ArrowDownLeft, ArrowUpRight, Receipt } from 'lucide-react';
 import {
     useGetAllCategoriesAdmin,
     useDeleteCategory,
     useSeedDefaultCategories,
-    useReorderCategories
+    useReorderCategories,
+    countMissingDefaultCategories,
+    getMissingDefaultCategorySeeds,
 } from '@/utils/services/api/categories-service';
 import { EmptyIcon } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
@@ -71,6 +73,14 @@ const SECTIONS: CategorySectionConfig[] = [
         accent: 'border-emerald-500/40',
         headerBg: 'bg-gradient-to-r from-emerald-500/8 via-emerald-500/4 to-transparent',
         icon: ArrowUpRight
+    },
+    {
+        type: 'conta',
+        titleKey: 'categories.backoffice.sectionBills',
+        countKey: 'categories.backoffice.sectionCountBill',
+        accent: 'border-amber-500/40',
+        headerBg: 'bg-gradient-to-r from-amber-500/8 via-amber-500/4 to-transparent',
+        icon: Receipt
     }
 ];
 
@@ -181,6 +191,9 @@ type CategorySectionProps = {
     categories: Category[];
     inlineSession: InlineSession | null;
     sortDisabled: boolean;
+    missingSeedCount?: number;
+    onSeed?: () => void;
+    seedPending?: boolean;
     onOpenEdit: (category: Category, listIndex: number) => void;
     onDraftChange: (draft: CategoryInlineDraft) => void;
     onCancelEdit: () => void;
@@ -194,6 +207,9 @@ function CategorySection({
     categories,
     inlineSession,
     sortDisabled,
+    missingSeedCount = 0,
+    onSeed,
+    seedPending = false,
     onOpenEdit,
     onDraftChange,
     onCancelEdit,
@@ -251,9 +267,23 @@ function CategorySection({
             </div>
 
             {categories.length === 0 ? (
-                <p className="px-4 py-6 text-sm text-muted-foreground text-center">
-                    {t('categories.backoffice.sectionEmpty')}
-                </p>
+                <div className="px-4 py-6 text-sm text-muted-foreground text-center space-y-3">
+                    <p>{t('categories.backoffice.sectionEmpty')}</p>
+                    {missingSeedCount > 0 && onSeed && (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={onSeed}
+                            disabled={seedPending}
+                        >
+                            <Download className="w-4 h-4 mr-2" />
+                            {t('categories.backoffice.seedSectionMissing', {
+                                count: missingSeedCount,
+                            })}
+                        </Button>
+                    )}
+                </div>
             ) : (
                 <ScrollArea className="h-[min(530px,calc(100vh-14rem))]">
                     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
@@ -318,7 +348,8 @@ function CategoriesPage() {
         Record<CategoryTransactionType, Category[]>
     >({
         despesa: [],
-        receita: []
+        receita: [],
+        conta: [],
     });
 
     useEffect(() => {
@@ -390,12 +421,20 @@ function CategoriesPage() {
         });
     };
 
+    const missingSeedCount = useMemo(
+        () => countMissingDefaultCategories(categories ?? []),
+        [categories]
+    );
+
     const handleSeed = () => {
         seedCategories.mutate(undefined, {
             onSuccess: (count) => {
                 toast({
                     title: t('toast.success'),
-                    description: t('categories.backoffice.seedSuccess', { count })
+                    description:
+                        count > 0
+                            ? t('categories.backoffice.seedSuccess', { count })
+                            : t('categories.backoffice.seedNothingToImport'),
                 });
                 refetch();
             },
@@ -420,14 +459,18 @@ function CategoriesPage() {
                 description={t('categories.backoffice.description')}
                 actions={
                     <div className="flex flex-wrap gap-2">
-                        {isEmpty && (
+                        {missingSeedCount > 0 && (
                             <Button
                                 variant="outline"
                                 onClick={handleSeed}
                                 disabled={seedCategories.isPending}
                             >
                                 <Download className="w-4 h-4 mr-2" />
-                                {t('categories.backoffice.seed')}
+                                {isEmpty
+                                    ? t('categories.backoffice.seed')
+                                    : t('categories.backoffice.seedMissing', {
+                                          count: missingSeedCount,
+                                      })}
                             </Button>
                         )}
                         <Button onClick={() => navigate('/backoffice/category/')}>
@@ -439,7 +482,7 @@ function CategoriesPage() {
             >
                 <div
                     className={cn(
-                        'grid flex-1 min-h-0 grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5',
+                        'grid flex-1 min-h-0 grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 lg:gap-5',
                         isLoading && 'animate-pulse'
                     )}
                 >
@@ -451,6 +494,13 @@ function CategoriesPage() {
                                 categories={orderedSections[config.type]}
                                 inlineSession={inlineSession}
                                 sortDisabled={sortDisabled}
+                                missingSeedCount={
+                                    getMissingDefaultCategorySeeds(categories ?? []).filter(
+                                        (item) => item.type === config.type
+                                    ).length
+                                }
+                                onSeed={handleSeed}
+                                seedPending={seedCategories.isPending}
                                 onOpenEdit={openInlineEdit}
                                 onDraftChange={handleDraftChange}
                                 onCancelEdit={clearInlineSession}

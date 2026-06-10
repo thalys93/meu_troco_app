@@ -7,14 +7,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useDashboardStats } from '@/hooks/use-dashboard'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
-import { TrendingUp, TrendingDown, Activity } from 'lucide-react'
+import { TrendingUp, TrendingDown, Receipt, Activity } from 'lucide-react'
 import { useDashboardPreferences } from '../../context/dashboard-preferences'
 import { getMonthRangeByKey } from '../../utils/month-range'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useCategories } from '@/hooks/use-categories'
 import {
     filterTransactionsByPreferences,
-    summarizeIncomeExpense
+    summarizeTransactionTypes
 } from '../../utils/transaction-filters'
 
 /** Conteúdo que usa `useDashboardPreferences` — deve ser filho de `PrivateLayout` (provider). */
@@ -54,7 +54,7 @@ function TransactionsPageBody() {
         [categoryLookup, effectiveFilters, transactions]
     );
     const summary = useMemo(
-        () => summarizeIncomeExpense(filteredTransactions),
+        () => summarizeTransactionTypes(filteredTransactions),
         [filteredTransactions]
     );
 
@@ -101,7 +101,7 @@ function TransactionsPageBody() {
                             </div>
                         </CardHeader>
                         <CardContent className="pt-4">
-                            <div className={cn('grid grid-cols-1 md:grid-cols-2 gap-4 select-none', isLoading && "animate-pulse")}>
+                            <div className={cn('grid grid-cols-1 md:grid-cols-3 gap-4 select-none', isLoading && "animate-pulse")}>
                                 <motion.div
                                     variants={itemVariants}
                                     whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
@@ -145,6 +145,30 @@ function TransactionsPageBody() {
                                     <div className="mt-4 flex items-center text-xs text-muted-foreground">
                                         <span className="bg-red-500/10 text-red-600 px-2 py-0.5 rounded-full mr-2 font-medium">
                                             {summary.expenseCount}
+                                        </span>
+                                        {t('filters.items', { defaultValue: 'transações' })}
+                                    </div>
+                                </motion.div>
+
+                                <motion.div
+                                    variants={itemVariants}
+                                    whileHover={{ scale: 1.01, transition: { duration: 0.2 } }}
+                                    className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500/5 to-amber-500/10 border border-amber-500/10 p-6 transition-colors hover:bg-amber-500/15"
+                                >
+                                    <div className="flex items-center justify-between space-x-4">
+                                        <div className="space-y-1">
+                                            <p className="text-sm font-medium text-muted-foreground">{t('sidebar.bills')}</p>
+                                            <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                                                {formatCurrency(summary.billsTotal)}
+                                            </p>
+                                        </div>
+                                        <div className="h-12 w-12 rounded-full bg-amber-500/10 flex items-center justify-center group-hover:bg-amber-500/20 transition-colors">
+                                            <Receipt className="h-6 w-6 text-amber-500" />
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 flex items-center text-xs text-muted-foreground">
+                                        <span className="bg-amber-500/10 text-amber-600 px-2 py-0.5 rounded-full mr-2 font-medium">
+                                            {summary.billsCount}
                                         </span>
                                         {t('filters.items', { defaultValue: 'transações' })}
                                     </div>

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import {
   TrendingUp,
   TrendingDown,
+  Receipt,
   Calendar as CalendarIcon,
   Check,
   X,
@@ -53,6 +54,7 @@ type TransactionTableInlineRowProps = {
   allTransactions: Transaction[];
   rowIndex?: number;
   zebra?: boolean;
+  showPaidColumn?: boolean;
 };
 
 const TransactionTableInlineRow = ({
@@ -65,10 +67,11 @@ const TransactionTableInlineRow = ({
   allTransactions,
   rowIndex = 0,
   zebra = false,
+  showPaidColumn = false,
 }: TransactionTableInlineRowProps) => {
   const { t, i18n } = useTranslation();
   const { uid } = useUserStore();
-  const { expenseCategories, incomeCategories, getCategoryIcon, getCategoryLabel } = useCategories();
+  const { expenseCategories, incomeCategories, billCategories, getCategoryIcon, getCategoryLabel } = useCategories();
   const { wallets, fetchWallets } = useWalletsStore();
   const [fieldErrors, setFieldErrors] = React.useState<InlineFieldErrors>({
     value: false,
@@ -87,7 +90,12 @@ const TransactionTableInlineRow = ({
     if (uid && wallets.length === 0) fetchWallets(uid);
   }, [uid, wallets.length, fetchWallets]);
 
-  const categories = draft.type === 'receita' ? incomeCategories : expenseCategories;
+  const categories =
+    draft.type === 'receita'
+      ? incomeCategories
+      : draft.type === 'conta'
+        ? billCategories
+        : expenseCategories;
   const realWallets = React.useMemo(
     () => wallets.filter((w) => w.name !== LEGACY_POCKET_CARD_NAME),
     [wallets]
@@ -138,8 +146,14 @@ const TransactionTableInlineRow = ({
 
   const toggleTransactionType = (e: React.MouseEvent) => {
     e.stopPropagation();
-    const nextType = draft.type === 'receita' ? 'despesa' : 'receita';
-    const nextCategories = nextType === 'receita' ? incomeCategories : expenseCategories;
+    const nextType =
+      draft.type === 'receita' ? 'despesa' : draft.type === 'despesa' ? 'conta' : 'receita';
+    const nextCategories =
+      nextType === 'receita'
+        ? incomeCategories
+        : nextType === 'conta'
+          ? billCategories
+          : expenseCategories;
     const categoryStillValid = nextCategories.some((cat) => cat.id === draft.category);
     updateDraft({
       type: nextType,
@@ -169,17 +183,23 @@ const TransactionTableInlineRow = ({
               'flex h-8 w-8 shrink-0 items-center justify-center rounded-md transition-colors hover:ring-2 hover:ring-offset-1 hover:ring-offset-background',
               draft.type === 'receita'
                 ? 'bg-emerald-500/12 text-emerald-600 hover:ring-emerald-500/40 dark:text-emerald-400'
-                : 'bg-red-500/12 text-red-600 hover:ring-red-500/40 dark:text-red-400'
+                : draft.type === 'conta'
+                  ? 'bg-amber-500/12 text-amber-600 hover:ring-amber-500/40 dark:text-amber-400'
+                  : 'bg-red-500/12 text-red-600 hover:ring-red-500/40 dark:text-red-400'
             )}
             aria-label={
               draft.type === 'receita'
                 ? t('landing_v2.transactions.income')
-                : t('landing_v2.transactions.expense')
+                : draft.type === 'conta'
+                  ? t('sidebar.bills')
+                  : t('landing_v2.transactions.expense')
             }
             title={t('transactionList.inline.toggleType')}
           >
             {draft.type === 'receita' ? (
               <TrendingUp className="h-4 w-4" />
+            ) : draft.type === 'conta' ? (
+              <Receipt className="h-4 w-4" />
             ) : (
               <TrendingDown className="h-4 w-4" />
             )}
@@ -290,14 +310,21 @@ const TransactionTableInlineRow = ({
             'h-6 w-full justify-center border-0 px-2 py-0 text-xs font-medium pointer-events-none',
             draft.type === 'receita'
               ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
-              : 'bg-red-500/12 text-red-700 dark:text-red-400'
+              : draft.type === 'conta'
+                ? 'bg-amber-500/12 text-amber-700 dark:text-amber-400'
+                : 'bg-red-500/12 text-red-700 dark:text-red-400'
           )}
         >
           {draft.type === 'receita'
             ? t('landing_v2.transactions.income')
-            : t('landing_v2.transactions.expense')}
+            : draft.type === 'conta'
+              ? t('sidebar.bills')
+              : t('landing_v2.transactions.expense')}
         </Badge>
       </TableCell>
+      {showPaidColumn && (
+        <TableCell className="border-b border-border/30 py-1.5 px-2 align-middle" />
+      )}
       <TableCell className="border-b border-border/30 py-1.5 px-2 align-middle">
         <Input
           name="value"
@@ -314,7 +341,9 @@ const TransactionTableInlineRow = ({
             fieldErrors.value && 'border-red-500',
             draft.type === 'receita'
               ? 'text-emerald-600 dark:text-emerald-400'
-              : 'text-red-600 dark:text-red-400'
+              : draft.type === 'conta'
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-red-600 dark:text-red-400'
           )}
         />
       </TableCell>
@@ -338,7 +367,9 @@ const TransactionTableInlineRow = ({
               'h-8 w-8',
               draft.type === 'receita'
                 ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                : 'bg-red-600 hover:bg-red-700 text-white'
+                : draft.type === 'conta'
+                  ? 'bg-amber-600 hover:bg-amber-700 text-white'
+                  : 'bg-red-600 hover:bg-red-700 text-white'
             )}
             onClick={handleSave}
             disabled={isSaving}

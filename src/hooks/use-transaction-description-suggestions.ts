@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Transaction } from '@/utils/services/api/transation';
+import { Transaction, type TransactionType } from '@/utils/services/api/transation';
 import { parseLocalDateInput } from '@/subdomains/dashboard/utils/month-range';
 
 export type DescriptionSuggestion = {
@@ -7,7 +7,7 @@ export type DescriptionSuggestion = {
   count: number;
   category: string;
   walletId: string;
-  type: 'receita' | 'despesa';
+  type: TransactionType;
 };
 
 const MAX_SUGGESTIONS = 8;
@@ -41,7 +41,7 @@ function buildSuggestionIndex(transactions: Transaction[]): Map<string, Descript
           count: 1,
           category: tr.category ?? '',
           walletId,
-          type: tr.type === 'receita' ? 'receita' : 'despesa',
+          type: tr.type,
         },
         latestMs: ms,
       });
@@ -53,7 +53,7 @@ function buildSuggestionIndex(transactions: Transaction[]): Map<string, Descript
       existing.latestMs = ms;
       existing.suggestion.category = tr.category ?? existing.suggestion.category;
       existing.suggestion.walletId = walletId || existing.suggestion.walletId;
-      existing.suggestion.type = tr.type === 'receita' ? 'receita' : 'despesa';
+      existing.suggestion.type = tr.type;
       if (desc.length >= existing.suggestion.description.length) {
         existing.suggestion.description = desc;
       }

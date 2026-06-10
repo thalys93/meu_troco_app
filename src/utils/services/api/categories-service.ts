@@ -19,7 +19,7 @@ import type {
     CategoryLocalized,
     CategoryUpdateInput
 } from '@/types/Category';
-import { DEFAULT_CATEGORIES_SEED } from '@/constants/default-categories-seed';
+import { DEFAULT_CATEGORIES_SEED, type DefaultCategorySeed } from '@/constants/default-categories-seed';
 
 const COLLECTION = 'categories';
 
@@ -140,37 +140,53 @@ export const getNextCategoryOrder = (
     type: Category['type']
 ): number => categories.filter((c) => c.type === type).length;
 
+function buildExistingCategoryKeys(categories: Category[]): Set<string> {
+    const keys = new Set<string>();
+    for (const category of categories) {
+        keys.add(category.id);
+        if (category.legacyKey) keys.add(category.legacyKey);
+    }
+    return keys;
+}
+
+export function getMissingDefaultCategorySeeds(categories: Category[]): DefaultCategorySeed[] {
+    const existingKeys = buildExistingCategoryKeys(categories);
+    return DEFAULT_CATEGORIES_SEED.filter((item) => !existingKeys.has(item.legacyKey));
+}
+
+export function countMissingDefaultCategories(categories: Category[]): number {
+    return getMissingDefaultCategorySeeds(categories).length;
+}
+
+async function insertSeedCategory(item: DefaultCategorySeed): Promise<void> {
+    const localized: CategoryLocalized = {
+        pt: { label: item.labels.pt },
+        en: { label: item.labels.en },
+        es: { label: item.labels.es }
+    };
+
+    await addDoc(collection(FireStore, COLLECTION), {
+        legacyKey: item.legacyKey,
+        type: item.type,
+        icon: item.icon,
+        localized,
+        order: item.order,
+        active: true,
+        showInBothTypes: item.showInBothTypes === true,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+    });
+}
+
 export const seedDefaultCategories = async (): Promise<number> => {
     const existing = await getAllCategoriesAdmin();
-    const existingLegacyKeys = new Set(
-        existing.map((c) => c.legacyKey).filter((k): k is string => !!k)
-    );
-    const existingIds = new Set(existing.map((c) => c.id));
+    const missing = getMissingDefaultCategorySeeds(existing);
 
-    let count = 0;
-    for (const item of DEFAULT_CATEGORIES_SEED) {
-        if (existingLegacyKeys.has(item.legacyKey) || existingIds.has(item.legacyKey)) continue;
-
-        const localized: CategoryLocalized = {
-            pt: { label: item.labels.pt },
-            en: { label: item.labels.en },
-            es: { label: item.labels.es }
-        };
-
-        await addDoc(collection(FireStore, COLLECTION), {
-            legacyKey: item.legacyKey,
-            type: item.type,
-            icon: item.icon,
-            localized,
-            order: item.order,
-            active: true,
-            showInBothTypes: item.showInBothTypes === true,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp()
-        });
-        count += 1;
+    for (const item of missing) {
+        await insertSeedCategory(item);
     }
-    return count;
+
+    return missing.length;
 };
 
 export const useGetCategories = () =>

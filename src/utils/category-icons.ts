@@ -19,7 +19,14 @@ import {
     CreditCard,
     Tag,
     List,
-    Ham
+    Ham,
+    Zap,
+    Droplets,
+    Wifi,
+    Flame,
+    Building2,
+    Phone,
+    Shield,
 } from 'lucide-react';
 
 export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
@@ -43,6 +50,13 @@ export const CATEGORY_ICON_MAP: Record<string, LucideIcon> = {
     Tag,
     List,
     Ham,
+    Zap,
+    Droplets,
+    Wifi,
+    Flame,
+    Building2,
+    Phone,
+    Shield,
 };
 
 export const CATEGORY_ICON_OPTIONS = Object.keys(CATEGORY_ICON_MAP);

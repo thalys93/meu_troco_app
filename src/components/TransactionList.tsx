@@ -1,9 +1,9 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Loader2, EllipsisVertical, Trash, Pen, ChevronLeft, ChevronRight, Plus, ChevronDown, ChevronRight as ChevronRightIcon, ArrowDown, ArrowUp } from 'lucide-react';
+import { TrendingUp, TrendingDown, Receipt, Loader2, EllipsisVertical, Trash, Pen, ChevronLeft, ChevronRight, Plus, ChevronDown, ChevronRight as ChevronRightIcon, ArrowDown, ArrowUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Transaction, useDeleteTransaction, useUserTransactions } from '@/utils/services/api/transation';
+import { Transaction, type TransactionType, useDeleteTransaction, useToggleBillPaid, useUserTransactions } from '@/utils/services/api/transation';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import TransactionRowActionsMenu, { TransactionRowActionsDropdown } from './transaction-table/TransactionRowActionsMenu';
@@ -40,6 +40,7 @@ import {
   filterTransactionsByPreferences,
   getDefaultSortOrderForColumn,
   summarizeIncomeExpense,
+  summarizeTransactionTypes,
 } from '@/subdomains/dashboard/utils/transaction-filters';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './ui/sheet';
 import {
@@ -51,6 +52,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useWalletsStore } from '@/store/useWalletsStore';
 import { NO_WALLET_ID } from '@/constants/wallets';
 import {
@@ -210,6 +212,7 @@ const TransactionList = ({
   const { uid } = useUserStore();
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction>()
   const { mutate, isPending } = useDeleteTransaction()
+  const { mutate: toggleBillPaid, isPending: isTogglingPaid } = useToggleBillPaid()
   const { refetch } = useUserTransactions()
   const { t, i18n } = useTranslation();
   const { getCategoryIcon, getCategoryLabel, categoryLookup } = useCategories();
@@ -232,9 +235,10 @@ const TransactionList = ({
   const [sheetOpen, setSheetOpen] = React.useState(false);
   const sheetDismissGuardRef = React.useRef(createOverlayDismissGuard());
   const deleteDismissGuardRef = React.useRef(createOverlayDismissGuard());
-  const [sheetCreateType, setSheetCreateType] = React.useState<'receita' | 'despesa'>('receita');
+  const [sheetCreateType, setSheetCreateType] = React.useState<TransactionType>('receita');
   const [sheetEditId, setSheetEditId] = React.useState<string | null>(null);
-  const [sheetEditType, setSheetEditType] = React.useState<'receita' | 'despesa'>('receita');
+  const [sheetEditType, setSheetEditType] = React.useState<TransactionType>('receita');
+  const [togglingPaidId, setTogglingPaidId] = React.useState<string | null>(null);
   const [inlineSession, setInlineSession] = React.useState<{
     mode: 'create' | 'edit';
     transactionId?: string;
@@ -245,6 +249,8 @@ const TransactionList = ({
   );
   const [filtersOpen, setFiltersOpen] = React.useState<boolean>(false);
   const isTableVariant = variant === 'table';
+  const showPaidColumn = filterType === 'Todos' || filterType === 'conta';
+  const tableColumnCount = showPaidColumn ? 8 : 7;
   const monthRange = React.useMemo(
     () => (selectedMonth ? getMonthRangeByKey(selectedMonth) : undefined),
     [selectedMonth]
@@ -308,7 +314,7 @@ const TransactionList = ({
   }, [monthRange, setTransactionListFilters]);
 
 
-  const formatAmount = (amount: number, type: 'receita' | 'despesa') => {
+  const formatAmount = (amount: number, type: TransactionType) => {
     if (formatCurrency) {
       const base = formatCurrency(amount);
       return type === 'receita' ? `+${base}` : `-${base}`;
@@ -435,7 +441,10 @@ const TransactionList = ({
     [displayTransactions, effectiveFilters, sortFilterOptions]
   );
 
-  /** Mesmos critérios da tabela (filtros), para os cards de receita/despesa não divergirem do rodapé/lista. */
+  const tableFilteredSummary = React.useMemo(() => {
+    return summarizeTransactionTypes(filteredTransactions);
+  }, [filteredTransactions]);
+
   const tableFilteredIncomeExpenseSummary = React.useMemo(() => {
     return summarizeIncomeExpense(filteredTransactions);
   }, [filteredTransactions]);
@@ -523,7 +532,7 @@ const TransactionList = ({
     }
   }, []);
 
-  const openCreateSheet = React.useCallback((type: 'receita' | 'despesa') => {
+  const openCreateSheet = React.useCallback((type: TransactionType) => {
     sheetDismissGuardRef.current.mark();
     setSheetCreateType(type);
     setSheetEditId(null);
@@ -534,7 +543,7 @@ const TransactionList = ({
     if (!transaction.id) return;
     sheetDismissGuardRef.current.mark();
     setSheetEditId(transaction.id);
-    setSheetEditType(transaction.type === 'receita' ? 'receita' : 'despesa');
+    setSheetEditType(transaction.type);
     setSheetOpen(true);
   }, []);
 
@@ -555,8 +564,10 @@ const TransactionList = ({
     return monthRange.endDate;
   }, [monthRange, selectedMonth]);
 
-  const defaultCreateType = React.useMemo((): 'receita' | 'despesa' => {
-    if (filterType === 'receita' || filterType === 'despesa') return filterType;
+  const defaultCreateType = React.useMemo((): TransactionType => {
+    if (filterType === 'receita' || filterType === 'despesa' || filterType === 'conta') {
+      return filterType;
+    }
     return 'despesa';
   }, [filterType]);
 
@@ -565,7 +576,7 @@ const TransactionList = ({
   }, []);
 
   const openInlineCreate = React.useCallback(
-    (type: 'receita' | 'despesa') => {
+    (type: TransactionType) => {
       setInlineSession({
         mode: 'create',
         draft: createEmptyDraft(type, defaultCreateDate),
@@ -670,6 +681,31 @@ const TransactionList = ({
     []
   );
 
+  const handleToggleBillPaid = React.useCallback(
+    (transaction: Transaction) => {
+      if (!transaction.id || transaction.type !== 'conta') return;
+      const nextPaid = transaction.paid !== true;
+      setTogglingPaidId(transaction.id);
+      toggleBillPaid(
+        { id: transaction.id, paid: nextPaid },
+        {
+          onSuccess: () => {
+            refetch();
+            setTogglingPaidId(null);
+          },
+          onError: () => {
+            toast({
+              title: t('transactionList.paidToggleError'),
+              variant: 'destructive',
+            });
+            setTogglingPaidId(null);
+          },
+        }
+      );
+    },
+    [refetch, t, toggleBillPaid]
+  );
+
   const handleTableSortClick = React.useCallback(
     (column: TransactionTableSortColumn) => {
       setTransactionListFilters((prev) => {
@@ -718,6 +754,7 @@ const TransactionList = ({
               allTransactions={displayTransactions || []}
               rowIndex={currentRowIndex}
               zebra={currentRowIndex % 2 === 1}
+              showPaidColumn={showPaidColumn}
             />
           );
         }
@@ -738,6 +775,10 @@ const TransactionList = ({
             }
           : getWalletBadgeData(transaction.walletId || transaction.cardId);
         const zebra = currentRowIndex % 2 === 1;
+        const isBill = transaction.type === 'conta';
+        const isBillPaid = transaction.paid === true;
+        const isTogglingThisPaid =
+          isTogglingPaid && togglingPaidId === transaction.id;
 
         const handleTableRowClick = () => {
           if (!isTableVariant) {
@@ -762,10 +803,13 @@ const TransactionList = ({
             className={cn(
               'border-0 transition-colors',
               isTableVariant && 'cursor-pointer select-none',
+              isBill && !isBillPaid && 'border-l-2 border-l-amber-500/50',
+              isBill && isBillPaid && 'opacity-60',
               zebra
                 ? 'bg-muted/30 hover:bg-muted/45 dark:bg-muted/15 dark:hover:bg-muted/25'
                 : 'bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20',
               isPendingTransaction(transaction.id) && 'pointer-events-none opacity-60',
+              isTogglingThisPaid && 'pointer-events-none opacity-70',
               useInlineTable &&
                 inlineSession &&
                 inlineSession.mode === 'edit' &&
@@ -810,16 +854,25 @@ const TransactionList = ({
                     'flex h-8 w-8 shrink-0 items-center justify-center rounded-md',
                     transaction.type === 'receita'
                       ? 'bg-emerald-500/12 text-emerald-600 dark:text-emerald-400'
-                      : 'bg-red-500/12 text-red-600 dark:text-red-400'
+                      : transaction.type === 'conta'
+                        ? 'bg-amber-500/12 text-amber-600 dark:text-amber-400'
+                        : 'bg-red-500/12 text-red-600 dark:text-red-400'
                   )}
                 >
                   {transaction.type === 'receita' ? (
                     <TrendingUp className="h-4 w-4" />
+                  ) : transaction.type === 'conta' ? (
+                    <Receipt className="h-4 w-4" />
                   ) : (
                     <TrendingDown className="h-4 w-4" />
                   )}
                 </span>
-                <span className="text-sm font-medium leading-snug line-clamp-2 text-foreground">
+                <span
+                  className={cn(
+                    'text-sm font-medium leading-snug line-clamp-2 text-foreground',
+                    isBill && isBillPaid && 'line-through'
+                  )}
+                >
                   {transaction.description}
                 </span>
                 {isSplitTransaction && (
@@ -861,20 +914,41 @@ const TransactionList = ({
                   'h-6 border-0 px-2 py-0 text-xs font-medium',
                   transaction.type === 'receita'
                     ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-400'
-                    : 'bg-red-500/12 text-red-700 dark:text-red-400'
+                    : transaction.type === 'conta'
+                      ? 'bg-amber-500/12 text-amber-700 dark:text-amber-400'
+                      : 'bg-red-500/12 text-red-700 dark:text-red-400'
                 )}
               >
                 {transaction.type === 'receita'
                   ? t('landing_v2.transactions.income')
-                  : t('landing_v2.transactions.expense')}
+                  : transaction.type === 'conta'
+                    ? t('sidebar.bills')
+                    : t('landing_v2.transactions.expense')}
               </Badge>
             </TableCell>
+            {showPaidColumn && (
+              <TableCell
+                className="border-b border-border/30 py-2 px-3 align-middle text-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {isBill && (
+                  <Checkbox
+                    checked={isBillPaid}
+                    disabled={isTogglingThisPaid}
+                    onCheckedChange={() => handleToggleBillPaid(transaction)}
+                    aria-label={t('transactionList.paid')}
+                  />
+                )}
+              </TableCell>
+            )}
             <TableCell
               className={cn(
                 'border-b border-border/30 py-2 px-3 text-right align-middle font-mono text-sm font-semibold tabular-nums whitespace-nowrap',
                 transaction.type === 'receita'
                   ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-red-600 dark:text-red-400'
+                  : transaction.type === 'conta'
+                    ? 'text-amber-600 dark:text-amber-400'
+                    : 'text-red-600 dark:text-red-400'
               )}
             >
               {formatAmount(transaction.value, transaction.type)}
@@ -977,12 +1051,15 @@ const TransactionList = ({
                   <TableCell className="border-b border-border/20 py-1.5 px-3" />
                   <TableCell className="border-b border-border/20 py-1.5 px-3" />
                   <TableCell className="border-b border-border/20 py-1.5 px-3" />
+                  {showPaidColumn && <TableCell className="border-b border-border/20 py-1.5 px-3" />}
                   <TableCell
                     className={cn(
                       'border-b border-border/20 py-1.5 px-3 text-right align-middle font-mono text-xs font-semibold tabular-nums whitespace-nowrap',
                       transaction.type === 'receita'
                         ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
+                        : transaction.type === 'conta'
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : 'text-red-600 dark:text-red-400'
                     )}
                   >
                     {formatAmount(allocation.amount, transaction.type)}
@@ -1020,7 +1097,7 @@ const TransactionList = ({
           className="border-0 hover:bg-transparent bg-muted/25 dark:bg-muted/10"
         >
           <TableCell
-            colSpan={7}
+            colSpan={tableColumnCount}
             className="border-b border-border/40 py-2 pl-4 pr-4 text-xs font-semibold tracking-wide text-muted-foreground"
           >
             <div className="flex items-center justify-between gap-3">
@@ -1048,50 +1125,89 @@ const TransactionList = ({
           {variant === 'table' && showQuickAdd && (
             <div
               aria-label={t('dashboard.monthFilter.label')}
-              className="grid grid-cols-1 gap-2 md:grid-cols-2 mb-3"
+              className={cn(
+                'grid grid-cols-1 gap-2 mb-3',
+                filterType === 'conta'
+                  ? 'md:grid-cols-1'
+                  : filterType === 'Todos'
+                    ? 'md:grid-cols-3'
+                    : 'md:grid-cols-2'
+              )}
             >
-              <div className="group relative overflow-hidden rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0 space-y-0.5">
-                    <p className="text-xs font-medium text-muted-foreground">{t('sidebar.income')}</p>
-                    <p className="truncate text-base font-semibold text-emerald-600 dark:text-emerald-400">
-                      {formatSummaryValue(tableFilteredIncomeExpenseSummary.incomeTotal)}
-                    </p>
+              {(filterType === 'Todos' || filterType === 'receita') && (
+                <div className="group relative overflow-hidden rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 space-y-0.5">
+                      <p className="text-xs font-medium text-muted-foreground">{t('sidebar.income')}</p>
+                      <p className="truncate text-base font-semibold text-emerald-600 dark:text-emerald-400">
+                        {formatSummaryValue(tableFilteredSummary.incomeTotal)}
+                      </p>
+                    </div>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
+                      <TrendingUp className="h-4 w-4" />
+                    </span>
                   </div>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
-                    <TrendingUp className="h-4 w-4" />
-                  </span>
-                </div>
-                <div className="mt-2 flex items-center gap-1.5">
-                  <Badge className="h-5 border-0 bg-emerald-500/15 px-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                    {tableFilteredIncomeExpenseSummary.incomeCount}
-                  </Badge>
-                  <span className="text-[11px] text-muted-foreground">
-                    {t('filters.items', { defaultValue: 'transações' })}
-                  </span>
-                </div>
-              </div>
-              <div className="group relative overflow-hidden rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2.5">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0 space-y-0.5">
-                    <p className="text-xs font-medium text-muted-foreground">{t('sidebar.expenses')}</p>
-                    <p className="truncate text-base font-semibold text-red-600 dark:text-red-400">
-                      {formatSummaryValue(tableFilteredIncomeExpenseSummary.expenseTotal)}
-                    </p>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <Badge className="h-5 border-0 bg-emerald-500/15 px-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
+                      {tableFilteredSummary.incomeCount}
+                    </Badge>
+                    <span className="text-[11px] text-muted-foreground">
+                      {t('filters.items', { defaultValue: 'transações' })}
+                    </span>
                   </div>
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/10 text-red-500">
-                    <TrendingDown className="h-4 w-4" />
-                  </span>
                 </div>
-                <div className="mt-2 flex items-center gap-1.5">
-                  <Badge className="h-5 border-0 bg-red-500/15 px-1.5 text-[11px] font-semibold text-red-700 dark:text-red-300">
-                    {tableFilteredIncomeExpenseSummary.expenseCount}
-                  </Badge>
-                  <span className="text-[11px] text-muted-foreground">
-                    {t('filters.items', { defaultValue: 'transações' })}
-                  </span>
+              )}
+              {(filterType === 'Todos' || filterType === 'despesa') && (
+                <div className="group relative overflow-hidden rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 space-y-0.5">
+                      <p className="text-xs font-medium text-muted-foreground">{t('sidebar.expenses')}</p>
+                      <p className="truncate text-base font-semibold text-red-600 dark:text-red-400">
+                        {formatSummaryValue(tableFilteredSummary.expenseTotal)}
+                      </p>
+                    </div>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/10 text-red-500">
+                      <TrendingDown className="h-4 w-4" />
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1.5">
+                    <Badge className="h-5 border-0 bg-red-500/15 px-1.5 text-[11px] font-semibold text-red-700 dark:text-red-300">
+                      {tableFilteredSummary.expenseCount}
+                    </Badge>
+                    <span className="text-[11px] text-muted-foreground">
+                      {t('filters.items', { defaultValue: 'transações' })}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
+              {(filterType === 'Todos' || filterType === 'conta') && (
+                <div className="group relative overflow-hidden rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 space-y-0.5">
+                      <p className="text-xs font-medium text-muted-foreground">{t('sidebar.bills')}</p>
+                      <p className="truncate text-base font-semibold text-amber-600 dark:text-amber-400">
+                        {formatSummaryValue(tableFilteredSummary.billsTotal)}
+                      </p>
+                    </div>
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
+                      <Receipt className="h-4 w-4" />
+                    </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <Badge className="h-5 border-0 bg-amber-500/15 px-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                      {tableFilteredSummary.billsCount}
+                    </Badge>
+                    <span className="text-[11px] text-muted-foreground">
+                      {t('filters.items', { defaultValue: 'transações' })}
+                    </span>
+                    {filterType === 'conta' && (
+                      <span className="text-[11px] text-muted-foreground">
+                        · {tableFilteredSummary.billsPaidCount}/{tableFilteredSummary.billsCount} {t('transactionList.paid').toLowerCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1116,6 +1232,14 @@ const TransactionList = ({
                   >
                     <Plus className="h-4 w-4 shrink-0" />
                     {t('dashboard.actions.expense')}
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="gap-1.5 bg-amber-600 text-white hover:bg-amber-700 shadow-sm"
+                    onClick={() => openInlineCreate('conta')}
+                  >
+                    <Plus className="h-4 w-4 shrink-0" />
+                    {t('dashboard.actions.bill')}
                   </Button>
                 </>
               )}
@@ -1245,6 +1369,9 @@ const TransactionList = ({
               <ToggleGroupItem value="despesa" aria-label="Despesas" className="data-[state=on]:bg-red-500/10">
                 <TrendingDown className="w-4 h-4 mr-1 text-red-400" /> {t('landing_v2.transactions.expense')}
               </ToggleGroupItem>
+              <ToggleGroupItem value="conta" aria-label="Contas" className="data-[state=on]:bg-amber-500/10">
+                <Receipt className="w-4 h-4 mr-1 text-amber-400" /> {t('sidebar.bills')}
+              </ToggleGroupItem>
             </ToggleGroup>
           </div>          
           {isLoading ? (
@@ -1310,6 +1437,11 @@ const TransactionList = ({
                         onSort={handleTableSortClick}
                         className={cn(TABLE_HEAD_CLASS, "w-[14%] px-3")}
                       />
+                      {showPaidColumn && (
+                        <TableHead className={cn(TABLE_HEAD_CLASS, "w-[8%] px-3 text-center")}>
+                          {t('transactionList.paid')}
+                        </TableHead>
+                      )}
                       <SortableTableHead
                         column="value"
                         label={t('transactionList.table.value')}
@@ -1341,6 +1473,7 @@ const TransactionList = ({
                           onSaved={clearInlineSession}
                           allTransactions={displayTransactions || []}
                           zebra={filteredTransactions.length % 2 === 1}
+                          showPaidColumn={showPaidColumn}
                         />
                       ) : (
                         <TableRow
@@ -1360,7 +1493,7 @@ const TransactionList = ({
                           }}
                         >
                           <TableCell
-                            colSpan={7}
+                            colSpan={tableColumnCount}
                             className="border-b border-border/30 py-3 pl-4 text-sm text-muted-foreground"
                           >
                             <span className="flex items-center gap-2">
@@ -1374,7 +1507,7 @@ const TransactionList = ({
                   <TableFooter className="border-0 bg-transparent">
                     <TableRow className="border-0 hover:bg-transparent">
                       <TableCell
-                        colSpan={5}
+                        colSpan={showPaidColumn ? 6 : 5}
                         className="sticky bottom-0 z-10 border-t border-border/50 bg-muted py-2.5 pl-4 pr-2 text-sm font-semibold text-muted-foreground shadow-[0_-1px_0_0_hsl(var(--border)/0.35)]"
                       >
                         {t('transactionList.table.sum')}
@@ -1420,11 +1553,17 @@ const TransactionList = ({
                           <div
                             className={cn(
                               "w-10 h-10 rounded-full flex items-center justify-center",
-                              transaction.type === 'receita' ? "bg-emerald-500/10" : "bg-red-500/10"
+                              transaction.type === 'receita'
+                                ? "bg-emerald-500/10"
+                                : transaction.type === 'conta'
+                                  ? "bg-amber-500/10"
+                                  : "bg-red-500/10"
                             )}
                           >
                             {transaction.type === 'receita' ? (
                               <TrendingUp className="w-5 h-5 text-emerald-500" />
+                            ) : transaction.type === 'conta' ? (
+                              <Receipt className="w-5 h-5 text-amber-500" />
                             ) : (
                               <TrendingDown className="w-5 h-5 text-red-500" />
                             )}
@@ -1453,7 +1592,11 @@ const TransactionList = ({
                           <div
                             className={cn(
                               "font-semibold text-right min-w-[88px]",
-                              transaction.type === 'receita' ? "text-emerald-500" : "text-red-500"
+                              transaction.type === 'receita'
+                                ? "text-emerald-500"
+                                : transaction.type === 'conta'
+                                  ? "text-amber-500"
+                                  : "text-red-500"
                             )}
                           >
                             {formatAmount(transaction.value, transaction.type)}
@@ -1528,8 +1671,8 @@ const TransactionList = ({
           <SheetHeader className="shrink-0 space-y-1 border-b border-border/50 px-6 pb-4 pt-6 text-left">
             <SheetTitle>
               {sheetEditId
-                ? `${t('default.edit')} ${sheetEditType === 'receita' ? t('default.receipt') : t('default.expense')}`
-                : `${t('default.add')} ${sheetCreateType === 'receita' ? t('default.receipt') : t('default.expense')}`}
+                ? `${t('default.edit')} ${sheetEditType === 'receita' ? t('default.receipt') : sheetEditType === 'conta' ? t('default.bill') : t('default.expense')}`
+                : `${t('default.add')} ${sheetCreateType === 'receita' ? t('default.receipt') : sheetCreateType === 'conta' ? t('default.bill') : t('default.expense')}`}
             </SheetTitle>
             <SheetDescription>
               {t('transactionList.allHistory')}

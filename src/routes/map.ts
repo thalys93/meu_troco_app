@@ -14,6 +14,7 @@ import CategoryFormPage from "@/subdomains/backoffice/pages/categories/CategoryF
 import DashboardPage from "@/subdomains/dashboard/pages/home/Dashboard";
 import ExpensesPage from "@/subdomains/dashboard/pages/expenses/Expenses";
 import IncomePage from "@/subdomains/dashboard/pages/income/Income";
+import ContasPage from "@/subdomains/dashboard/pages/contas/Contas";
 import PaymentsPage from "@/subdomains/dashboard/pages/payments/Payments";
 import ProfilePage from "@/subdomains/dashboard/pages/profile/Profile";
 import TransactionsPage from "@/subdomains/dashboard/pages/transactions/Transactions";
@@ -57,6 +58,8 @@ export const DashboardRoutes: RoutesGroup = {
         { path: 'income/:id', element: IncomePage },
         { path: 'expenses', element: ExpensesPage },
         { path: 'expenses/:id', element: ExpensesPage },
+        { path: 'contas', element: ContasPage },
+        { path: 'contas/:id', element: ContasPage },
         { path: 'payments', element: PaymentsPage },
         { path: 'profile', element: ProfilePage },
         { path: 'transactions', element: TransactionsPage },

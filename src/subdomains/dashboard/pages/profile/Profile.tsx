@@ -55,6 +55,7 @@ const ProfilePage = () => {
   const {
     expenseLength,
     incomeLength,
+    billsLength,
     userJoinedTime,
     getDaysSinceUserCreated,
   } = useDashboardStats();
@@ -260,6 +261,11 @@ const ProfilePage = () => {
       value: expenseLength,
       label: t('sidebar.expenses'),
       className: 'text-red-400',
+    },
+    {
+      value: billsLength,
+      label: t('sidebar.bills'),
+      className: 'text-amber-400',
     },
   ];
 

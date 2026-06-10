@@ -14,13 +14,16 @@ import {
 
 export type { WalletAllocation };
 
+export type TransactionType = 'receita' | 'despesa' | 'conta';
+
 export interface Transaction {
     id?: string;
     value: number;
     date: string;
     description: string;
     category: string;
-    type: 'receita' | 'despesa';
+    type: TransactionType;
+    paid?: boolean;
     walletId: string;
     cardId?: string;
     allocations?: WalletAllocation[];
@@ -90,13 +93,23 @@ const normalizeTransactionPayload = (data: Transaction): Transaction => {
 
 const createTransaction = async (data: Transaction, uid: string) => {
     const payload = normalizeTransactionPayload(data);
-
-    const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
-    const docRef = await addDoc(ref, {
+    const firestorePayload = {
         ...stripAllocationsFromPayload(payload),
         createdAt: new Date(),
-    });
+    };
+
+    if (payload.type === 'conta') {
+        Object.assign(firestorePayload, { paid: payload.paid ?? false });
+    }
+
+    const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
+    const docRef = await addDoc(ref, firestorePayload);
     return docRef.id;
+}
+
+const toggleBillPaid = async (uid: string, id: string, paid: boolean) => {
+    const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
+    await updateDoc(ref, { paid });
 }
 
 const deleteTransaction = async (uid: string, id: string) => {
@@ -183,5 +196,15 @@ export const useCreateTransaction = () => {
     return useMutation({
         mutationFn: (data: Transaction) => createTransaction(data, uid),
         retry: false
+    });
+};
+
+export const useToggleBillPaid = () => {
+    const { uid } = useUserStore();
+
+    return useMutation({
+        mutationFn: ({ id, paid }: { id: string; paid: boolean }) =>
+            toggleBillPaid(uid, id, paid),
+        retry: false,
     });
 };

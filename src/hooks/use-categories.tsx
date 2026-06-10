@@ -20,6 +20,13 @@ import {
   CreditCard,
   Tag,
   List,
+  Zap,
+  Droplets,
+  Wifi,
+  Flame,
+  Building2,
+  Phone,
+  Shield,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useGetCategories } from '@/utils/services/api/categories-service';
@@ -50,6 +57,17 @@ const STATIC_EXPENSE: CategoryWithIcon[] = [
   { id: 'Empréstimo', icon: HandCoins },
   { id: 'Fatura Cartão', icon: CreditCard },
   { id: 'Outro', icon: Tag },
+];
+
+const STATIC_BILLS: CategoryWithIcon[] = [
+  { id: 'Aluguel', icon: Home },
+  { id: 'Luz', icon: Zap },
+  { id: 'Água', icon: Droplets },
+  { id: 'Internet', icon: Wifi },
+  { id: 'Gás', icon: Flame },
+  { id: 'Condomínio', icon: Building2 },
+  { id: 'Telefone', icon: Phone },
+  { id: 'Seguro', icon: Shield },
 ];
 
 function categoryMatchesType(category: Category, type: CategoryTransactionType): boolean {
@@ -133,14 +151,26 @@ export const useCategories = () => {
       .map(toCategoryWithIcon);
   }, [useRemote, remoteCategories]);
 
+  const billCategories = useMemo(() => {
+    if (!useRemote) return STATIC_BILLS;
+    return remoteCategories
+      .filter((c) => categoryMatchesType(c, 'conta'))
+      .map(toCategoryWithIcon);
+  }, [useRemote, remoteCategories]);
+
   const allCategories: CategoryWithIcon[] = useMemo(() => {
     const merged = [
       ...incomeCategories,
       ...expenseCategories.filter((e) => !incomeCategories.some((i) => i.id === e.id)),
+      ...billCategories.filter(
+        (b) =>
+          !incomeCategories.some((i) => i.id === b.id) &&
+          !expenseCategories.some((e) => e.id === b.id)
+      ),
       { id: 'Todos', icon: List },
     ];
     return merged;
-  }, [incomeCategories, expenseCategories]);
+  }, [incomeCategories, expenseCategories, billCategories]);
 
   const allCategoryIds = allCategories.map((c) => c.id);
 
@@ -152,7 +182,7 @@ export const useCategories = () => {
         if (remote) return resolveCategoryIcon(remote.icon) ?? Tag;
       }
       return (
-        [...STATIC_INCOME, ...STATIC_EXPENSE].find((c) => c.id === categoryRef)?.icon ??
+        [...STATIC_INCOME, ...STATIC_EXPENSE, ...STATIC_BILLS].find((c) => c.id === categoryRef)?.icon ??
         undefined
       );
     },
@@ -174,6 +204,7 @@ export const useCategories = () => {
   return {
     incomeCategories,
     expenseCategories,
+    billCategories,
     allCategories,
     allCategoryIds,
     categoryLookup,

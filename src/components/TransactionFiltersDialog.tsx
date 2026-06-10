@@ -1,6 +1,6 @@
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Filter, TrendingUp, TrendingDown, CreditCard, Tag, RotateCcw, List, CircleDollarSign, ArrowDown, ArrowUp } from 'lucide-react';
+import { Filter, TrendingUp, TrendingDown, Receipt, CreditCard, Tag, RotateCcw, List, CircleDollarSign, ArrowDown, ArrowUp } from 'lucide-react';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
 import { useTranslation } from 'react-i18next';
@@ -53,7 +53,7 @@ export default function TransactionFiltersDialog({
 }: TransactionFiltersDialogProps) {
   const { t } = useTranslation();
   const { uid } = useUserStore();
-  const { incomeCategories, expenseCategories, allCategories } = useCategories();
+  const { incomeCategories, expenseCategories, billCategories, allCategories } = useCategories();
 
   const categoriesForFilter = React.useMemo(() => {
     const todosEntry = { id: 'Todos', icon: List } as CategoryWithIcon;
@@ -63,8 +63,11 @@ export default function TransactionFiltersDialog({
     if (filters.type === 'despesa') {
       return [...expenseCategories, todosEntry];
     }
+    if (filters.type === 'conta') {
+      return [...billCategories, todosEntry];
+    }
     return allCategories;
-  }, [allCategories, expenseCategories, filters.type, incomeCategories]);
+  }, [allCategories, billCategories, expenseCategories, filters.type, incomeCategories]);
   const { wallets, fetchWallets } = useWalletsStore();
 
   React.useEffect(() => {
@@ -98,11 +101,12 @@ export default function TransactionFiltersDialog({
               <TrendingUp className="w-4 h-4" />
               {t('filters.type', 'Tipo')}
             </Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { id: 'Todos', label: t('filters.all', 'Todos'), icon: <List className="w-4 h-4" /> },
                 { id: 'receita', label: t('sidebar.income', 'Receita'), icon: <TrendingUp className="w-4 h-4 text-primary" /> },
                 { id: 'despesa', label: t('sidebar.expenses', 'Despesa'), icon: <TrendingDown className="w-4 h-4 text-red-500" /> },
+                { id: 'conta', label: t('sidebar.bills', 'Contas'), icon: <Receipt className="w-4 h-4 text-amber-500" /> },
               ].map((opt) => (
                 <Button
                   key={opt.id}
@@ -114,7 +118,9 @@ export default function TransactionFiltersDialog({
                       ? "border-primary ring-1 ring-primary/30"
                       : opt.id === "despesa"
                         ? "border-red-500 ring-1 ring-red-500/30"
-                        : "border-foreground ring-1 ring-foreground/20")
+                        : opt.id === "conta"
+                          ? "border-amber-500 ring-1 ring-amber-500/30"
+                          : "border-foreground ring-1 ring-foreground/20")
                   )}
                   onClick={() => onChange('type', opt.id)}
                 >

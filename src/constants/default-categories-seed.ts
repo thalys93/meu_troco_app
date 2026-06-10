@@ -27,4 +27,12 @@ export const DEFAULT_CATEGORIES_SEED: DefaultCategorySeed[] = [
     { legacyKey: 'Viagem', type: 'despesa', icon: 'Plane', order: 18, labels: { pt: 'Viagem', en: 'Travel', es: 'Viaje' } },
     { legacyKey: 'Empréstimo', type: 'despesa', icon: 'HandCoins', order: 19, labels: { pt: 'Empréstimo', en: 'Loan', es: 'Préstamo' } },
     { legacyKey: 'Fatura Cartão', type: 'despesa', icon: 'CreditCard', order: 20, labels: { pt: 'Fatura Cartão', en: 'Credit card bill', es: 'Factura de tarjeta' } },
+    { legacyKey: 'Aluguel', type: 'conta', icon: 'Home', order: 30, labels: { pt: 'Aluguel', en: 'Rent', es: 'Alquiler' } },
+    { legacyKey: 'Luz', type: 'conta', icon: 'Zap', order: 31, labels: { pt: 'Luz', en: 'Electricity', es: 'Luz' } },
+    { legacyKey: 'Água', type: 'conta', icon: 'Droplets', order: 32, labels: { pt: 'Água', en: 'Water', es: 'Agua' } },
+    { legacyKey: 'Internet', type: 'conta', icon: 'Wifi', order: 33, labels: { pt: 'Internet', en: 'Internet', es: 'Internet' } },
+    { legacyKey: 'Gás', type: 'conta', icon: 'Flame', order: 34, labels: { pt: 'Gás', en: 'Gas', es: 'Gas' } },
+    { legacyKey: 'Condomínio', type: 'conta', icon: 'Building2', order: 35, labels: { pt: 'Condomínio', en: 'Condo fee', es: 'Condominio' } },
+    { legacyKey: 'Telefone', type: 'conta', icon: 'Phone', order: 36, labels: { pt: 'Telefone', en: 'Phone', es: 'Teléfono' } },
+    { legacyKey: 'Seguro', type: 'conta', icon: 'Shield', order: 37, labels: { pt: 'Seguro', en: 'Insurance', es: 'Seguro' } },
 ];

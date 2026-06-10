@@ -9,7 +9,8 @@ export function groupCategoriesByType(
 ): Record<CategoryTransactionType, Category[]> {
     return {
         despesa: sortCategoriesByOrder(categories.filter((c) => c.type === 'despesa')),
-        receita: sortCategoriesByOrder(categories.filter((c) => c.type === 'receita'))
+        receita: sortCategoriesByOrder(categories.filter((c) => c.type === 'receita')),
+        conta: sortCategoriesByOrder(categories.filter((c) => c.type === 'conta')),
     };
 }
 

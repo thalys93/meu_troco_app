@@ -13,6 +13,7 @@ export const useDashboardStats = () => {
     const { i18n } = useTranslation()
     const incomeTransactions = transactions.filter((t) => t.type === "receita");
     const expenseTransactions = transactions.filter((t) => t.type === "despesa");
+    const billTransactions = transactions.filter((t) => t.type === "conta");
     const userJoinedTime = user?.details?.createdAt;
     const getDaysSinceUserCreated = (timestamp?: FirebaseTimestamp) => {
         if (!timestamp) return null;
@@ -28,9 +29,11 @@ export const useDashboardStats = () => {
 
     const incomeLength = incomeTransactions.length;
     const expenseLength = expenseTransactions.length;
+    const billsLength = billTransactions.length;
 
     const totalIncome = incomeTransactions.reduce((acc, curr) => acc + curr.value, 0);
     const totalExpense = expenseTransactions.reduce((acc, curr) => acc + curr.value, 0);
+    const totalBills = billTransactions.reduce((acc, curr) => acc + curr.value, 0);
 
     const { fetchWallets, wallets } = useWalletsStore();
     const pocketBalance = usePocketBalance();
@@ -48,7 +51,7 @@ export const useDashboardStats = () => {
     );
     const totalBalance = pocketBalance + walletsTotal;
 
-    const totalMovimentado = totalIncome + totalExpense + Math.abs(totalBalance);
+    const totalMovimentado = totalIncome + totalExpense + totalBills + Math.abs(totalBalance);
 
     const incomePercentage = totalMovimentado > 0 ? (totalIncome / totalMovimentado) * 100 : 0;
     const expensePercentage = totalMovimentado > 0 ? (totalExpense / totalMovimentado) * 100 : 0;
@@ -82,6 +85,7 @@ export const useDashboardStats = () => {
         isExpensePositive: totalExpense >= 0,
         incomeLength,
         expenseLength,
+        billsLength,
         userJoinedTime,
         getDaysSinceUserCreated
     };

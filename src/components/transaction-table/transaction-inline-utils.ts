@@ -1,4 +1,4 @@
-import { Transaction } from '@/utils/services/api/transation';
+import { Transaction, type TransactionType } from '@/utils/services/api/transation';
 import { NO_WALLET_ID } from '@/constants/wallets';
 import { parseLocalDateInput } from '@/subdomains/dashboard/utils/month-range';
 import {
@@ -20,7 +20,7 @@ export type InlineTransactionDraft = {
   category: string;
   walletId: string;
   date: string;
-  type: 'receita' | 'despesa';
+  type: TransactionType;
   valueDisplay: string;
   splitAcrossWallets: boolean;
   allocationRows: AllocationDraftRow[];
@@ -37,7 +37,7 @@ export type InlineFieldErrors = {
 const todayYmd = () => new Date().toISOString().split('T')[0];
 
 export function createEmptyDraft(
-  type: 'receita' | 'despesa',
+  type: TransactionType,
   defaultDate?: string
 ): InlineTransactionDraft {
   return {
@@ -71,7 +71,7 @@ export function draftFromTransaction(
     category: transaction.category ?? '',
     walletId,
     date: transaction.date ?? todayYmd(),
-    type: transaction.type === 'receita' ? 'receita' : 'despesa',
+    type: transaction.type,
     valueDisplay,
     splitAcrossWallets: split,
     allocationRows: split
@@ -151,6 +151,7 @@ export function buildTransactionPayload(draft: InlineTransactionDraft): Transact
     date: draft.date,
     type: draft.type,
     value,
+    ...(draft.type === 'conta' ? { paid: false } : {}),
   };
 
   if (!draft.splitAcrossWallets) {

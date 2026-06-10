@@ -43,6 +43,15 @@ export function useTransactionInlineSubmit({
 
   const isSaving = isCreating || isEditing;
 
+  const resolveTypeLabel = useCallback(
+    (type: InlineTransactionDraft['type']) => {
+      if (type === 'receita') return t('sidebar.income');
+      if (type === 'conta') return t('sidebar.bills');
+      return t('sidebar.expenses');
+    },
+    [t]
+  );
+
   const getMissingFieldsMessage = useCallback(
     (errors: InlineFieldErrors) => {
       const missing = [
@@ -97,7 +106,7 @@ export function useTransactionInlineSubmit({
           onSuccess: () => {
             toast({
               title: t('transactionForm.toast.success'),
-              description: `${draft.type === 'receita' ? t('sidebar.income') : t('sidebar.expenses')} ${t('transactionForm.toast.editDescription')}`,
+              description: `${resolveTypeLabel(draft.type)} ${t('transactionForm.toast.editDescription')}`,
               variant: 'success',
             });
             refetch();
@@ -117,7 +126,7 @@ export function useTransactionInlineSubmit({
           onSuccess: () => {
             toast({
               title: t('transactionForm.toast.success'),
-              description: `${draft.type === 'receita' ? t('sidebar.income') : t('sidebar.expenses')} ${t('transactionForm.toast.successDescription')}`,
+              description: `${resolveTypeLabel(draft.type)} ${t('transactionForm.toast.successDescription')}`,
               variant: 'success',
             });
             refetch();
@@ -144,6 +153,7 @@ export function useTransactionInlineSubmit({
       getMissingFieldsMessage,
       onSuccess,
       refetch,
+      resolveTypeLabel,
       t,
       uid,
     ]

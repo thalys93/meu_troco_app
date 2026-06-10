@@ -20,6 +20,7 @@ import {
 } from '../../utils/month-range';
 import ExpenseByCategoryChart from './components/ExpenseByCategoryChart';
 import MonthlyExpenseTrendChart from './components/MonthlyExpenseTrendChart';
+import BillsStatusChart from './components/BillsStatusChart';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCategories } from '@/hooks/use-categories';
 import {
@@ -182,13 +183,14 @@ function DashboardHomeBody() {
 
           <motion.div
             variants={itemVariants}
-            className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-6"
+            className="grid grid-cols-1 xl:grid-cols-3 gap-6"
           >
             <ExpenseByCategoryChart transactions={filteredTransactions} />
             <MonthlyExpenseTrendChart
               transactions={trendTransactions}
               selectedMonth={selectedMonth}
             />
+            <BillsStatusChart transactions={monthTransactions} />
           </motion.div>
 
           <motion.div
@@ -286,6 +288,10 @@ function DashboardHomeBody() {
               transactions={trendTransactions}
               selectedMonth={selectedMonth}
             />
+          </motion.div>
+
+          <motion.div variants={itemVariants}>
+            <BillsStatusChart transactions={monthTransactions} />
           </motion.div>
 
           <motion.div variants={itemVariants} className="pt-4 pb-16">

@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { Form } from './ui/form';
-import { Transaction, useCreateTransaction, useEditTransaction, useUserTransaction, useUserTransactions } from '@/utils/services/api/transation';
+import { Transaction, type TransactionType, useCreateTransaction, useEditTransaction, useUserTransaction, useUserTransactions } from '@/utils/services/api/transation';
 import { Loader2, Calendar as CalendarIcon, List, CreditCard, Tag } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useUserStore from '@/store/UserStore';
@@ -38,7 +38,7 @@ import { computeWalletDisplayBalance } from '@/utils/wallet-balance';
 import { getCurrentMonthKey } from '@/subdomains/dashboard/utils/month-range';
 
 interface TransactionFormProps {
-  type: 'receita' | 'despesa';
+  type: TransactionType;
   /** Quando definido (ex.: edição no sheet), usa este id em vez do parâmetro de rota. */
   transactionId?: string;
   onSuccess?: () => void;
@@ -87,7 +87,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   const navigate = useNavigate();
   const { uid } = useUserStore();
   const { data: transaction, refetch: refetchTransaction } = useUserTransaction(uid, id ?? '')
-  const { expenseCategories, incomeCategories, getCategoryIcon, getCategoryLabel } = useCategories();
+  const { expenseCategories, incomeCategories, billCategories, getCategoryIcon, getCategoryLabel } = useCategories();
 
   const { mutate: create, isPending } = useCreateTransaction();
   const { mutate: edit, isPending: isPendingEdit } = useEditTransaction(uid, id ?? '');
@@ -101,7 +101,22 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
     [wallets]
   );
 
-  const categories = type === 'receita' ? incomeCategories : expenseCategories;
+  const categories =
+    type === 'receita' ? incomeCategories : type === 'conta' ? billCategories : expenseCategories;
+
+  const typeLabel =
+    type === 'receita'
+      ? t('sidebar.income')
+      : type === 'conta'
+        ? t('sidebar.bills')
+        : t('sidebar.expenses');
+
+  const typeItemLabel =
+    type === 'receita'
+      ? t('default.receipt')
+      : type === 'conta'
+        ? t('default.bill')
+        : t('default.expense');
   const CategoryTriggerIcon = category ? (getCategoryIcon(category) ?? Tag) : Tag;
   const currentMonthKey = getCurrentMonthKey();
 
@@ -251,6 +266,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
       type,
       category,
       walletId: selectedWalletId?.trim() || NO_WALLET_ID,
+      ...(type === 'conta' && !id ? { paid: false } : {}),
     };
 
     if (!splitAcrossWallets) {
@@ -312,7 +328,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
       onSuccess: () => {
         toast({
           title: t('transactionForm.toast.success'),
-          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses')} ${t('transactionForm.toast.successDescription')}`,
+          description: `${typeLabel} ${t('transactionForm.toast.successDescription')}`,
           variant: "success",
         });
         transactionForm.reset(initialValues);
@@ -385,7 +401,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
       onSuccess: () => {
         toast({
           title: 'Sucesso!',
-          description: `${type === 'receita' ? t('sidebar.income') : t('sidebar.expenses')} ${t('transactionForm.toast.editDescription')}`,
+          description: `${typeLabel} ${t('transactionForm.toast.editDescription')}`,
           variant: "success",
         });
         refetchUserTransactions();
@@ -433,7 +449,11 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
           <span
             className={cn(
               "shrink-0 text-4xl font-bold",
-              type === 'receita' ? "text-emerald-400" : "text-red-400"
+              type === 'receita'
+                ? "text-emerald-400"
+                : type === 'conta'
+                  ? "text-amber-400"
+                  : "text-red-400"
             )}
           >
             {type === 'receita' ? '+' : '-'}
@@ -451,7 +471,11 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
               style={{ width: `${Math.max(displayValue.length || 1, 2) + 0.75}ch` }}
               className={cn(
                 "max-w-[250px] bg-transparent border-none p-0 text-6xl font-black tracking-tighter text-center outline-none focus-visible:ring-0 placeholder:text-muted-foreground/60",
-                type === 'receita' ? "text-emerald-200" : "text-red-200",
+                type === 'receita'
+                  ? "text-emerald-200"
+                  : type === 'conta'
+                    ? "text-amber-200"
+                    : "text-red-200",
                 fieldErrors.value && "ring-2 ring-red-500 ring-offset-2 rounded-lg"
               )}
               autoFocus
@@ -580,7 +604,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
           <div className="flex items-center py-3 border-b border-accent/10 md:border-b-0">
             <Input
               name="description"
-              placeholder={`${t('transactionForm.form.descriptionPlaceholder')} ${type === 'receita' ? t('default.receipt') : t('default.expense')}`}
+              placeholder={`${t('transactionForm.form.descriptionPlaceholder')} ${typeItemLabel}`}
               control={transactionForm.control}
               className={cn("bg-background/40 border-accent text-foreground placeholder:text-muted-foreground h-11 rounded-lg", fieldErrors.description && "border-red-500 ring-2 ring-red-500/20")}
               leftIcon={<List className="w-4 h-4 text-muted-foreground" />}
@@ -632,7 +656,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
             <Loader2 className="animate-spin h-6 w-6" />
           ) : (
             <>
-              {isEditing ? t('default.edit') : t('default.add')} {type === 'receita' ? t('default.receipt') : t('default.expense')}
+              {isEditing ? t('default.edit') : t('default.add')} {typeItemLabel}
             </>
           )}
         </Button>

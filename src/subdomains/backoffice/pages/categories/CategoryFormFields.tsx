@@ -42,6 +42,7 @@ function CategoryFormFields({ form, categoryId }: CategoryFormFieldsProps) {
                         <SelectContent>
                             <SelectItem value="receita">{t('categories.backoffice.typeIncome')}</SelectItem>
                             <SelectItem value="despesa">{t('categories.backoffice.typeExpense')}</SelectItem>
+                            <SelectItem value="conta">{t('categories.backoffice.typeBill')}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>

@@ -65,9 +65,9 @@ function Footer() {
                                 <a href="https://www.threads.com/@thalys_xavierr" className="text-muted-foreground/50 hover:text-primary transition-colors">
                                     <ThreadsLogoIcon className="w-5 h-5" />
                                 </a>
-                                <a href="https://github.com/thalys93/meu_troco_app" className="text-muted-foreground/50 hover:text-primary transition-colors">
+                                {/* <a href="https://github.com/thalys93/meu_troco_app" className="text-muted-foreground/50 hover:text-primary transition-colors">
                                     <GithubLogo className="w-5 h-5" />
-                                </a>
+                                </a> */}
                             </div>
                         </div>
                     </div>

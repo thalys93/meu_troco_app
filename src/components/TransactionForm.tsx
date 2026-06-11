@@ -36,6 +36,7 @@ import {
 } from '@/utils/transaction-allocations';
 import { computeWalletDisplayBalance } from '@/utils/wallet-balance';
 import { getCurrentMonthKey } from '@/subdomains/dashboard/utils/month-range';
+import { useAccountStatus } from '@/hooks/use-account-status';
 
 interface TransactionFormProps {
   type: TransactionType;
@@ -95,6 +96,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   const { wallets, fetchWallets, isLoading: walletsLoading } = useWalletsStore();
   const pocketBalance = usePocketBalance();
   const { t, i18n } = useTranslation();
+  const { isReadOnly } = useAccountStatus();
 
   const realWallets = useMemo(
     () => wallets.filter((wallet) => wallet.name !== LEGACY_POCKET_CARD_NAME),
@@ -285,6 +287,15 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   };
 
   const handleCreate = async (data: Transaction) => {
+    if (isReadOnly) {
+      toast({
+        title: t('toast.error'),
+        description: t('account.blocked.banner', 'Sua conta está bloqueada para alterações. Você pode consultar seus dados, mas não pode criar ou editar informações.'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const finalData = buildFinalTransactionData(data);
     const errors = getValidationErrors();
 
@@ -358,6 +369,15 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   };
 
   const handleEdit = async (data: Transaction) => {
+    if (isReadOnly) {
+      toast({
+        title: t('toast.error'),
+        description: t('account.blocked.banner', 'Sua conta está bloqueada para alterações. Você pode consultar seus dados, mas não pode criar ou editar informações.'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const finalData = buildFinalTransactionData(data);
     const errors = getValidationErrors();
 
@@ -649,14 +669,14 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
       >
         <Button
           type="submit"
-          disabled={isPending || isPendingEdit}
+          disabled={isPending || isPendingEdit || isReadOnly}
           className="w-full h-14 sm:h-16 text-base sm:text-lg font-bold rounded-2xl shadow-lg transition-all active:scale-[0.98]"
         >
           {(isPending || isPendingEdit) ? (
             <Loader2 className="animate-spin h-6 w-6" />
           ) : (
             <>
-              {isEditing ? t('default.edit') : t('default.add')} {typeItemLabel}
+              {isReadOnly ? t('account.blocked.readOnlyAction', 'Somente leitura') : `${isEditing ? t('default.edit') : t('default.add')} ${typeItemLabel}`}
             </>
           )}
         </Button>

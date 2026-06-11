@@ -116,6 +116,10 @@ function NotificationsPage() {
                 }
             >
                 <div className={cn('space-y-3', isLoading && 'animate-pulse')}>
+                    {isLoading && [1, 2, 3].map((item) => (
+                        <div key={item} className="bo-surface h-24" />
+                    ))}
+
                     {notifications?.map((notification) => {
                         const displayTitle = getNotificationLocalized(notification, i18n.language).title || notification.title;
                         return (
@@ -207,9 +211,13 @@ function NotificationsPage() {
                     );})}
 
                     {!notifications?.length && !isLoading && (
-                        <div className="bo-surface flex items-center justify-center gap-2 text-muted-foreground py-8">
+                        <div className="bo-surface flex flex-col items-center justify-center gap-3 text-muted-foreground py-8">
                             <EmptyIcon className="w-6 h-6" />
-                            {t('notifications.backoffice.empty')}
+                            <span>{t('notifications.backoffice.empty')}</span>
+                            <Button type="button" onClick={() => navigate('/backoffice/notification/')}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                {t('notifications.backoffice.new')}
+                            </Button>
                         </div>
                     )}
                 </div>

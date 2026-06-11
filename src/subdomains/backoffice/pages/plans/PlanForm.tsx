@@ -22,6 +22,7 @@ const initialValues = {
   period: '',
   features: [''],
   isPopular: false,
+  status: 'active',
 };
 
 function PlansFormComponent() {
@@ -107,6 +108,7 @@ function PlansFormComponent() {
         period: plan.period,
         features: mappedFeatures as any,
         isPopular: plan.isPopular,
+        status: plan.status ?? 'active',
       });
     }
   }, [id, plan, planForm, replace]);
@@ -173,6 +175,22 @@ function PlansFormComponent() {
                     checked={planForm.watch('isPopular')}
                     onCheckedChange={(value) => planForm.setValue('isPopular', value)}
                   />
+                </div>
+
+                <div>
+                  <Label>{t('plans.backoffice.fieldStatus', 'Status')}</Label>
+                  <Select
+                    value={planForm.watch('status') ?? 'active'}
+                    onValueChange={(value) => planForm.setValue('status', value as 'active' | 'archived')}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">{t('plans.backoffice.status.active', 'Ativo')}</SelectItem>
+                      <SelectItem value="archived">{t('plans.backoffice.status.archived', 'Arquivado')}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

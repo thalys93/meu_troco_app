@@ -14,7 +14,7 @@ import {
 import { useTheme } from 'next-themes';
 import { useUser } from '@/hooks/use-user';
 import { useTranslation } from 'react-i18next';
-import { BACKOFFICE_NAV_ITEMS } from '../config/backoffice-nav';
+import { BACKOFFICE_NAV_ITEMS, flattenBackofficeNav } from '../config/backoffice-nav';
 
 const BackOfficeMobileNav = () => {
   const location = useLocation();
@@ -23,7 +23,8 @@ const BackOfficeMobileNav = () => {
   const { user, handleLogout } = useUser();
   const { t } = useTranslation();
 
-  const mobileNav = BACKOFFICE_NAV_ITEMS.slice(0, 4);
+  const mobileNav = flattenBackofficeNav(BACKOFFICE_NAV_ITEMS).slice(0, 4);
+  const moreNav = flattenBackofficeNav(BACKOFFICE_NAV_ITEMS).slice(4);
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-t border-border shadow-[0_-4px_12px_rgba(0,0,0,0.06)] px-1 py-2 md:hidden">
@@ -56,8 +57,8 @@ const BackOfficeMobileNav = () => {
           <DropdownMenuContent align="end" side="top">
             <DropdownMenuLabel>{user?.displayName}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {BACKOFFICE_NAV_ITEMS.slice(4).map((item) => (
-              <NavLink key={item.href} to={item.href} onClick={() => setOpen(false)}>
+            {moreNav.map((item) => (
+              <NavLink key={item.href} to={item.href ?? '#'} onClick={() => setOpen(false)}>
                 <DropdownMenuItem>
                   <item.icon className="w-4 h-4 mr-2" />
                   <span>{t(item.labelKey)}</span>

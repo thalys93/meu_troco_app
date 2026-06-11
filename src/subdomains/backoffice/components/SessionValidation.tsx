@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import { onAuthStateChanged } from 'firebase/auth';
 import { AuthProvider } from '@/utils/services/api/firebase';
 import { motion } from 'framer-motion';
+import { getUserStatus } from '@/hooks/use-account-status';
 
 function SessionValidation() {
   const { uid, setUid, removeUid, removeUser } = useUserStore();
@@ -61,6 +62,12 @@ function SessionValidation() {
           variant: 'destructive',
         });
         setTimeout(() => navigate('/backoffice/login', { replace: true }), 1700);
+        return;
+      }
+
+      if (getUserStatus((data as User).status) === 'inactive') {
+        setValue(20);
+        setTimeout(() => navigate('/account-suspended', { replace: true }), 700);
         return;
       }
 

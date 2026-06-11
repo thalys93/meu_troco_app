@@ -13,12 +13,20 @@ const pathToLabel: Record<string, string> = {
   category: 'categories.backoffice.title',
   users: 'sidebar.users',
   profile: 'sidebar.profile',
+  'internal-tasks': 'sidebar.internalTasks',
+  'internal-task': 'sidebar.internalTasks',
+  roadmap: 'sidebar.roadmapItems',
+  'roadmap-catalog': 'sidebar.roadmapCatalog',
+  new: 'internalTasks.newTitle',
+  edit: 'default.edit',
 };
 
 const segmentToListHref: Record<string, string> = {
   plan: '/backoffice/plans',
   notification: '/backoffice/notifications',
   category: '/backoffice/categories',
+  'internal-task': '/backoffice/internal-tasks',
+  roadmap: '/backoffice/roadmap',
 };
 
 function BackOfficeHeader() {

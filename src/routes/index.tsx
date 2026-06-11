@@ -2,6 +2,14 @@ import { Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import NotFoundPage from "@/subdomains/components/NotFoundPage";
 import { AllRoutes } from "./map";
+import { Suspense } from "react";
+import { Loader2 } from "lucide-react";
+
+const RouteFallback = () => (
+    <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+);
 
 const applyPrefix = (prefix: string | undefined, path: string) =>
     `${prefix ? `/${prefix}` : ""}/${path}`.replace(/\/+$/, "");
@@ -15,7 +23,17 @@ const renderAllRoutes = () => {
         for (const route of pub) {
             const fullPath = applyPrefix(prefix, route.path);
             const Element = route.element;
-            elements.push(<Route key={fullPath} path={fullPath} element={<Element />} />);
+            elements.push(
+                <Route
+                    key={fullPath}
+                    path={fullPath}
+                    element={
+                        <Suspense fallback={<RouteFallback />}>
+                            <Element />
+                        </Suspense>
+                    }
+                />
+            );
         }
 
         for (const route of priv) {
@@ -31,7 +49,9 @@ const renderAllRoutes = () => {
                             redirectTo={guardRedirectToPath}
                             requireAdmin={guardRequireAdmin ?? false}
                         >
-                            <Element />
+                            <Suspense fallback={<RouteFallback />}>
+                                <Element />
+                            </Suspense>
                         </ProtectedRoute>
                     }
                 />

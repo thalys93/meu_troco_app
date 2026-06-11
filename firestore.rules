@@ -16,6 +16,11 @@ service cloud.firestore {
         && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.accountType == "ADMIN";
     }
 
+    function adminUserUpdateKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+        .hasOnly(['accountType', 'status', 'billing', 'updatedAt']);
+    }
+
     function hasValidCardOrWalletReference() {
       return (
         (request.resource.data.cardId is string && request.resource.data.cardId.size() > 0)
@@ -24,13 +29,15 @@ service cloud.firestore {
     }
 
     match /plans/{planId} {
-      allow read: if true; 
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
 
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
-      allow write: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || (isAdmin() && adminUserUpdateKeys());
+      allow delete: if isAdmin();
     }
 
     match /transactions/{userId}/userTransactions/{transactionId} {
@@ -67,6 +74,35 @@ service cloud.firestore {
 
     match /categories/{categoryId} {
       allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /goalTemplates/{templateId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /internalTasks/{taskId} {
+      allow read, create, update, delete: if isAdmin();
+    }
+
+    match /roadmapYears/{yearId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /roadmapQuarters/{quarterId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /roadmapPhases/{phaseId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /roadmapItems/{itemId} {
+      allow read: if true;
       allow create, update, delete: if isAdmin();
     }
   }

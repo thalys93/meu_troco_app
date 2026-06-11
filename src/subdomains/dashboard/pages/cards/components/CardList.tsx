@@ -26,6 +26,7 @@ import { LegacyCardsMigrationModal } from "@/subdomains/dashboard/pages/cards/co
 import { computeWalletDisplayBalance, computeWalletOutflow } from "@/utils/wallet-balance";
 import { AdjustBalanceModal } from "@/subdomains/dashboard/pages/cards/components/AdjustBalanceModal";
 import { DeleteWalletModal } from "@/subdomains/dashboard/pages/cards/components/DeleteWalletModal";
+import { useAccountStatus } from "@/hooks/use-account-status";
 
 export function CardList() {
     const { wallets, fetchWallets, isLoading, reorderWallets } = useWalletsStore();
@@ -33,6 +34,7 @@ export function CardList() {
     const { t, i18n } = useTranslation();
     const { data: allTransactions = [], refetch: refetchTransactions } = useUserTransactions();
     const { selectedMonth } = useDashboardPreferences();
+    const { isReadOnly } = useAccountStatus();
     const pocketMonthOutflow = useMemo(
         () => computeWalletOutflow(NO_WALLET_ID, allTransactions, selectedMonth),
         [allTransactions, selectedMonth]
@@ -63,6 +65,7 @@ export function CardList() {
 
     const handleDragEnd = useCallback(
         (event: DragEndEvent) => {
+            if (isReadOnly) return;
             const { active, over } = event;
             if (!over || active.id === over.id) return;
             const ids = realWallets.map((wallet) => wallet.id);
@@ -74,7 +77,7 @@ export function CardList() {
             reordered.splice(newIndex, 0, removed);
             reorderWallets(reordered);
         },
-        [realWallets, reorderWallets]
+        [isReadOnly, realWallets, reorderWallets]
     );
 
     useEffect(() => {
@@ -113,20 +116,24 @@ export function CardList() {
     }, [user?.uid]);
 
     const handleEdit = (wallet: Wallet) => {
+        if (isReadOnly) return;
         setEditingWallet(wallet);
         setIsModalOpen(true);
     };
 
     const handleAddNew = () => {
+        if (isReadOnly) return;
         setEditingWallet(null);
         setIsModalOpen(true);
     };
 
     const handleAdjust = (wallet: Wallet) => {
+        if (isReadOnly) return;
         setAdjustingWallet(wallet);
     };
 
     const handleDelete = (wallet: Wallet) => {
+        if (isReadOnly) return;
         setDeletingWallet(wallet);
     };
 
@@ -153,7 +160,7 @@ export function CardList() {
                             {t("wallets.monthContextLabel", { month: monthLabel })}
                         </p>
                     </div>
-                    <Button onClick={handleAddNew} size="sm">
+                    <Button onClick={handleAddNew} size="sm" disabled={isReadOnly}>
                         <Plus className="mr-2 h-4 w-4" /> {t("wallets.add", "Adicionar")}
                     </Button>
                 </div>
@@ -180,7 +187,7 @@ export function CardList() {
                             {realWallets.length === 0 && (
                                 <div className="col-span-full flex flex-col items-center justify-center p-8 border rounded-lg border-dashed text-muted-foreground">
                                     <p>{t("wallets.empty", "Nenhuma carteira cadastrada.")}</p>
-                                    <Button variant="link" onClick={handleAddNew}>
+                                    <Button variant="link" onClick={handleAddNew} disabled={isReadOnly}>
                                         {t("wallets.createFirst", "Cadastrar a primeira")}
                                     </Button>
                                 </div>

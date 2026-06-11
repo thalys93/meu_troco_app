@@ -11,6 +11,7 @@ import { useGetAllUsers } from '@/utils/services/api/api';
 import { EmptyIcon } from '@phosphor-icons/react';
 import { AccountTypes } from '@/types/enums/AccountsTypes';
 import UserRow from './UserRow';
+import UserEditDrawer from './UserEditDrawer';
 import {
   filterUsers,
   groupUsersByAccountType,
@@ -20,8 +21,11 @@ import {
   FREE_PLAN_KEY,
 } from './users-list-utils';
 import { getUsersQueryErrorMessage } from '../../utils/users-query-error';
+import type { User, UserStatus } from '@/types/entities/User';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 type GroupingMode = 'type' | 'plan';
+type StatusFilter = 'all' | UserStatus;
 
 const TYPE_SECTIONS = [
   {
@@ -45,9 +49,15 @@ function UsersPage() {
   const { data, isLoading, isError, error, refetch } = useGetAllUsers();
   const [searchQuery, setSearchQuery] = useState('');
   const [grouping, setGrouping] = useState<GroupingMode>('type');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const users = useMemo(() => sortUsersByName(data?.users ?? []), [data?.users]);
-  const filteredUsers = useMemo(() => filterUsers(users, searchQuery), [users, searchQuery]);
+  const filteredUsers = useMemo(() => {
+    const bySearch = filterUsers(users, searchQuery);
+    if (statusFilter === 'all') return bySearch;
+    return bySearch.filter((user) => (user.status ?? 'active') === statusFilter);
+  }, [searchQuery, statusFilter, users]);
 
   const groupedByType = useMemo(() => groupUsersByAccountType(filteredUsers), [filteredUsers]);
   const groupedByPlan = useMemo(() => groupUsersByPlan(filteredUsers), [filteredUsers]);
@@ -83,15 +93,29 @@ function UsersPage() {
                 {t('users.backoffice.tabByPlan')}
               </Button>
             </div>
-            <div className="relative w-full sm:max-w-sm">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('users.backoffice.searchPlaceholder')}
-                className="pl-8 bg-card"
-              />
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as StatusFilter)}>
+                <SelectTrigger className="w-full sm:w-[170px] bg-card">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('users.backoffice.status.all', 'Todos')}</SelectItem>
+                  <SelectItem value="active">{t('users.backoffice.status.active', 'Ativo')}</SelectItem>
+                  <SelectItem value="inactive">{t('users.backoffice.status.inactive', 'Inativo')}</SelectItem>
+                  <SelectItem value="blocked">{t('users.backoffice.status.blocked', 'Bloqueado')}</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="relative w-full sm:max-w-sm">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  name="userSearch"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t('users.backoffice.searchPlaceholder')}
+                  className="pl-8 bg-card"
+                />
+              </div>
             </div>
           </div>
 
@@ -141,7 +165,7 @@ function UsersPage() {
                     emptyContent={t('users.backoffice.emptySection')}
                   >
                     {sectionUsers.map((user) => (
-                      <UserRow key={user.uid} user={user} />
+                      <UserRow key={user.uid} user={user} onEdit={setSelectedUser} />
                     ))}
                   </BackofficeSectionCard>
                 );
@@ -167,7 +191,7 @@ function UsersPage() {
                     emptyContent={t('users.backoffice.emptySection')}
                   >
                     {sectionUsers.map((user) => (
-                      <UserRow key={user.uid} user={user} />
+                      <UserRow key={user.uid} user={user} onEdit={setSelectedUser} />
                     ))}
                   </BackofficeSectionCard>
                 );
@@ -175,6 +199,13 @@ function UsersPage() {
             </div>
           )}
         </div>
+        <UserEditDrawer
+          user={selectedUser}
+          open={!!selectedUser}
+          onOpenChange={(open) => {
+            if (!open) setSelectedUser(null);
+          }}
+        />
       </PageShell>
     </PrivateLayout>
   );

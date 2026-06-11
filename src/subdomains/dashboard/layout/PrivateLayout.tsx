@@ -11,6 +11,9 @@ import {
     DashboardPreferencesProvider,
     useDashboardPreferences
 } from '../context/dashboard-preferences';
+import { useAccountStatus } from '@/hooks/use-account-status';
+import { ShieldAlert } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 function PrivateLayout({ children }: { children: React.ReactNode }) {
     const { handleAddUser } = useUser();
@@ -33,6 +36,8 @@ function PrivateLayout({ children }: { children: React.ReactNode }) {
 function PrivateLayoutContent({ children }: { children: React.ReactNode }) {
     const { layoutMode } = useDashboardPreferences();
     const isNotionLayout = layoutMode === 'notion';
+    const { isReadOnly } = useAccountStatus();
+    const { t } = useTranslation();
 
     return (
         <main className={cn(
@@ -52,6 +57,14 @@ function PrivateLayoutContent({ children }: { children: React.ReactNode }) {
                 "flex-1 w-full mx-auto transition-all duration-300",
                 isNotionLayout ? "max-w-screen-2xl" : "max-w-6xl"
             )}>
+                {isReadOnly && (
+                    <div className="mx-auto mt-4 px-4 md:px-6">
+                        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200 flex items-center gap-3">
+                            <ShieldAlert className="h-4 w-4 shrink-0" />
+                            <span>{t('account.blocked.banner', 'Sua conta está bloqueada para alterações. Você pode consultar seus dados, mas não pode criar ou editar informações.')}</span>
+                        </div>
+                    </div>
+                )}
                 <section className="w-full">
                     {children}
                 </section>

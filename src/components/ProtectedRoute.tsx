@@ -4,6 +4,8 @@ import { AccountTypes } from "@/types/enums/AccountsTypes";
 import { useGetUserData } from "@/utils/services/api/auth";
 import { ReactNode } from "react";
 import { Loader2 } from "lucide-react";
+import type { User } from "@/types/entities/User";
+import { getUserStatus } from "@/hooks/use-account-status";
 
 type ProtectedRouteProps = {
   redirectTo: string;
@@ -17,31 +19,29 @@ export function ProtectedRoute({
   children,
 }: ProtectedRouteProps) {
   const { uid, user } = useUserStore();
-  const { data: userData, isFetching } = useGetUserData(
-    requireAdmin && uid && !user ? uid : undefined
-  );
+  const { data: userData, isFetching } = useGetUserData(uid && !user ? uid : undefined);
+  const resolvedUser = user ?? (userData as User | null | undefined);
+  const status = getUserStatus(resolvedUser?.status);
 
   if (!uid) {
     return <Navigate to={redirectTo} replace />;
   }
 
-  if (requireAdmin) {
-    if (user?.accountType === AccountTypes.ADMIN) return <>{children}</>;
-    if (user) return <Navigate to={redirectTo} replace />;
+  if (!resolvedUser && isFetching) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
-    if (!user && uid) {
-      if (isFetching) {
-        return (
-          <div className="flex min-h-[50vh] items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        );
-      }
-      if (userData?.accountType === AccountTypes.ADMIN) {
-        return <>{children}</>;
-      }
-      return <Navigate to={redirectTo} replace />;
-    }
+  if (status === "inactive") {
+    return <Navigate to="/account-suspended" replace />;
+  }
+
+  if (requireAdmin) {
+    if (resolvedUser?.accountType === AccountTypes.ADMIN) return <>{children}</>;
+    return <Navigate to={redirectTo} replace />;
   }
 
   return <>{children}</>;

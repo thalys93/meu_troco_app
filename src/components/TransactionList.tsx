@@ -65,6 +65,7 @@ import {
   createOverlayDismissGuard,
   deferDropdownMenuAction,
 } from '@/lib/dropdown-menu-action';
+import { useAccountStatus } from '@/hooks/use-account-status';
 
 /** Portais Radix + calendário (react-day-picker `.rdp`) ficam fora do nó do Dialog; precisamos ignorar esses cliques. */
 const QUICK_ADD_OUTSIDE_PORTAL_SELECTOR =
@@ -219,6 +220,7 @@ const TransactionList = ({
   const { wallets, fetchWallets } = useWalletsStore();
   const { transactionListFilters, setTransactionListFilters } =
     useDashboardPreferences();
+  const { isReadOnly } = useAccountStatus();
 
   const filterCard = transactionListFilters.card;
   const filterCategories = transactionListFilters.categories;
@@ -366,6 +368,15 @@ const TransactionList = ({
   }
 
   const handleDelete = (id: string) => {
+    if (isReadOnly) {
+      toast({
+        title: t('toast.error'),
+        description: t('account.blocked.banner', 'Sua conta está bloqueada para alterações. Você pode consultar seus dados, mas não pode criar ou editar informações.'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     mutate({ uid, id }, {
       onSuccess: () => {
         toast({
@@ -533,24 +544,27 @@ const TransactionList = ({
   }, []);
 
   const openCreateSheet = React.useCallback((type: TransactionType) => {
+    if (isReadOnly) return;
     sheetDismissGuardRef.current.mark();
     setSheetCreateType(type);
     setSheetEditId(null);
     setSheetOpen(true);
-  }, []);
+  }, [isReadOnly]);
 
   const openEditSheet = React.useCallback((transaction: Transaction) => {
+    if (isReadOnly) return;
     if (!transaction.id) return;
     sheetDismissGuardRef.current.mark();
     setSheetEditId(transaction.id);
     setSheetEditType(transaction.type);
     setSheetOpen(true);
-  }, []);
+  }, [isReadOnly]);
 
   const openDeleteDialog = React.useCallback((transaction: Transaction) => {
+    if (isReadOnly) return;
     deleteDismissGuardRef.current.mark();
     setSelectedTransaction(transaction);
-  }, []);
+  }, [isReadOnly]);
 
   const handleDeleteDialogOpenChange = React.useCallback((open: boolean) => {
     if (!open && deleteDismissGuardRef.current.isActive()) return;
@@ -577,22 +591,24 @@ const TransactionList = ({
 
   const openInlineCreate = React.useCallback(
     (type: TransactionType) => {
+      if (isReadOnly) return;
       setInlineSession({
         mode: 'create',
         draft: createEmptyDraft(type, defaultCreateDate),
       });
     },
-    [defaultCreateDate]
+    [defaultCreateDate, isReadOnly]
   );
 
   const openInlineEdit = React.useCallback((transaction: Transaction) => {
+    if (isReadOnly) return;
     if (!transaction.id) return;
     setInlineSession({
       mode: 'edit',
       transactionId: transaction.id,
       draft: draftFromTransaction(transaction, i18n.language),
     });
-  }, [i18n.language]);
+  }, [i18n.language, isReadOnly]);
 
   const toggleExpandedTransaction = React.useCallback((transactionId: string) => {
     setExpandedTransactionIds((prev) => {
@@ -683,6 +699,7 @@ const TransactionList = ({
 
   const handleToggleBillPaid = React.useCallback(
     (transaction: Transaction) => {
+      if (isReadOnly) return;
       if (!transaction.id || transaction.type !== 'conta') return;
       const nextPaid = transaction.paid !== true;
       setTogglingPaidId(transaction.id);
@@ -703,7 +720,7 @@ const TransactionList = ({
         }
       );
     },
-    [refetch, t, toggleBillPaid]
+    [isReadOnly, refetch, t, toggleBillPaid]
   );
 
   const handleTableSortClick = React.useCallback(
@@ -934,7 +951,7 @@ const TransactionList = ({
                 {isBill && (
                   <Checkbox
                     checked={isBillPaid}
-                    disabled={isTogglingThisPaid}
+                    disabled={isTogglingThisPaid || isReadOnly}
                     onCheckedChange={() => handleToggleBillPaid(transaction)}
                     aria-label={t('transactionList.paid')}
                   />
@@ -1220,6 +1237,7 @@ const TransactionList = ({
                   <Button
                     size="sm"
                     className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+                    disabled={isReadOnly}
                     onClick={() => openInlineCreate('receita')}
                   >
                     <Plus className="h-4 w-4 shrink-0" />
@@ -1228,6 +1246,7 @@ const TransactionList = ({
                   <Button
                     size="sm"
                     className="gap-1.5 bg-red-600 text-white hover:bg-red-700 shadow-sm"
+                    disabled={isReadOnly}
                     onClick={() => openInlineCreate('despesa')}
                   >
                     <Plus className="h-4 w-4 shrink-0" />
@@ -1236,6 +1255,7 @@ const TransactionList = ({
                   <Button
                     size="sm"
                     className="gap-1.5 bg-amber-600 text-white hover:bg-amber-700 shadow-sm"
+                    disabled={isReadOnly}
                     onClick={() => openInlineCreate('conta')}
                   >
                     <Plus className="h-4 w-4 shrink-0" />

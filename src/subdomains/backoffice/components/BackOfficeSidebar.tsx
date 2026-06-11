@@ -1,6 +1,6 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { LogOut, Search, User } from 'lucide-react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { ChevronDown, LogOut, Search, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ThemeToggle from '@/components/ThemeToggle';
 import {
@@ -12,6 +12,9 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 import {
   DropdownMenu,
@@ -19,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/hooks/use-user';
 import AvatarTrigger from '@/components/AvatarTrigger';
@@ -30,7 +34,81 @@ import {
   BACKOFFICE_NAV_ITEMS,
   BACKOFFICE_QUICK_LINKS,
   filterBackofficeNav,
+  type BackofficeNavItem,
 } from '../config/backoffice-nav';
+
+function NavItemLink({ item }: { item: BackofficeNavItem }) {
+  const { t } = useTranslation();
+  if (!item.href) return null;
+
+  return (
+    <NavLink
+      to={item.href}
+      className={({ isActive }) =>
+        cn(
+          'relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+          isActive
+            ? 'bg-primary/10 text-primary before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-0.5 before:rounded-full before:bg-primary'
+            : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+        )
+      }
+    >
+      <item.icon className="h-4 w-4 shrink-0" aria-hidden />
+      <span>{t(item.labelKey)}</span>
+    </NavLink>
+  );
+}
+
+function NavGroupItem({ item }: { item: BackofficeNavItem }) {
+  const { t } = useTranslation();
+  const location = useLocation();
+  const isChildActive = item.children?.some(
+    (child) => child.href && (location.pathname === child.href || location.pathname.startsWith(`${child.href}/`)),
+  ) ?? false;
+  const [open, setOpen] = React.useState(isChildActive);
+
+  React.useEffect(() => {
+    if (isChildActive) setOpen(true);
+  }, [isChildActive]);
+
+  if (!item.children?.length) {
+    return (
+      <SidebarMenuItem>
+        <NavItemLink item={item} />
+      </SidebarMenuItem>
+    );
+  }
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <SidebarMenuItem>
+        <CollapsibleTrigger
+          className={cn(
+            'flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+            isChildActive ? 'text-primary' : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          )}
+        >
+          <span className="flex items-center gap-3">
+            <item.icon className="h-4 w-4 shrink-0" aria-hidden />
+            <span>{t(item.labelKey)}</span>
+          </span>
+          <ChevronDown className={cn('h-4 w-4 transition-transform', open && 'rotate-180')} />
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {item.children.map((child) => (
+              <SidebarMenuSubItem key={child.key}>
+                <SidebarMenuSubButton asChild isActive={child.href ? location.pathname === child.href : false}>
+                  <NavLink to={child.href ?? '#'}>{t(child.labelKey)}</NavLink>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
+      </SidebarMenuItem>
+    </Collapsible>
+  );
+}
 
 const AppSidebar = () => {
   const [open, setOpen] = React.useState(false);
@@ -86,22 +164,7 @@ const AppSidebar = () => {
           </SidebarGroupLabel>
           <SidebarMenu>
             {filteredNav.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <NavLink
-                  to={item.href}
-                  className={({ isActive }) =>
-                    cn(
-                      'relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                      isActive
-                        ? 'bg-primary/10 text-primary before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-0.5 before:rounded-full before:bg-primary'
-                        : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                    )
-                  }
-                >
-                  <item.icon className="h-4 w-4 shrink-0" aria-hidden />
-                  <span>{t(item.labelKey)}</span>
-                </NavLink>
-              </SidebarMenuItem>
+              <NavGroupItem key={item.key} item={item} />
             ))}
             {filteredNav.length === 0 && (
               <p className="px-3 py-2 text-xs text-muted-foreground">{t('sidebar.noResults')}</p>
@@ -118,7 +181,7 @@ const AppSidebar = () => {
               {filteredQuickLinks.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <NavLink
-                    to={item.href}
+                    to={item.href ?? '#'}
                     className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
                   >
                     <item.icon className="h-4 w-4 shrink-0" aria-hidden />

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import useUserStore from '@/store/UserStore';
 import { AccountTypes } from '@/types/enums/AccountsTypes';
 import { AuthProvider, FireStore } from '@/utils/services/api/firebase';
+import { getUserStatus } from './use-account-status';
 
 type PublicAuthGuardOptions = {
   authenticatedRedirectTo: string;
@@ -69,6 +70,12 @@ export const usePublicAuthGuard = ({
       const userDoc = await getDoc(doc(FireStore, 'users', firebaseUser.uid));
       const userData = userDoc.data();
       const isAdmin = userData?.accountType === AccountTypes.ADMIN;
+      const isInactive = getUserStatus(userData?.status) === 'inactive';
+
+      if (isInactive) {
+        await finishFlow('/account-suspended');
+        return;
+      }
 
       if (isAdmin) {
         await finishFlow(authenticatedRedirectTo);

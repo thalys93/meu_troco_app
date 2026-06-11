@@ -83,6 +83,7 @@ export const useBackofficeStats = (): {
         queryFn: () => fetchPlatformStats(resolvedUid!, accountType),
         enabled: canListAllUsers(resolvedUid, accountType),
         retry: false,
+        staleTime: 60_000,
     });
 
     return {

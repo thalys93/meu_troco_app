@@ -1,17 +1,4 @@
-import { FirebaseTimestamp } from "@/types/Firebase";
+import { Wallet, WalletType } from "@/types/Wallet";
 
-export type CardType = 'credit' | 'debit' | 'voucher';
-
-export interface Card {
-    id: string;
-    userId: string;
-    name: string;
-    balance: number;
-    type: CardType;
-    color: string;
-    flag: string;
-    /** Ordem de exibição na lista (menor = primeiro). */
-    order?: number;
-    createdAt?: FirebaseTimestamp | Date;
-    updatedAt?: FirebaseTimestamp | Date;
-}
+export type CardType = WalletType;
+export type Card = Wallet;

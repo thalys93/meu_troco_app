@@ -1,9 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, DollarSign, Lock, Mail, ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import SocialAuthGroup from '../../components/SocialAuthGroup';
@@ -16,10 +14,8 @@ import { useLoginWithEmail } from '@/utils/services/api/auth';
 import { Form } from '@/components/ui/form';
 import useUserStore from '@/store/UserStore';
 import { useTranslation } from 'react-i18next';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { TooltipArrow } from '@radix-ui/react-tooltip';
-import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { usePublicAuthGuard } from '@/hooks/use-public-auth-guard';
 
 const initialValues: LoginForm = {
   email: "",
@@ -30,6 +26,10 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const title = "Meu Troco";
+  const { isAuthChecking } = usePublicAuthGuard({
+    authenticatedRedirectTo: '/dashboard',
+    minLoadingMs: 1800,
+  });
 
   const randomQuote = React.useMemo(() => {
     const quotes = ['q1', 'q2', 'q3'];
@@ -64,7 +64,17 @@ const LoginPage = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-background">
+    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-background relative">
+      {isAuthChecking && (
+        <div className="absolute top-0 left-0 h-1 w-full bg-primary/15 z-50 overflow-hidden">
+          <motion.div
+            className="h-full bg-primary"
+            initial={{ x: "-100%" }}
+            animate={{ x: "100%" }}
+            transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}
+          />
+        </div>
+      )}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -133,7 +143,6 @@ const LoginPage = () => {
       </motion.div>
 
       <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 bg-background relative overflow-y-auto">
-        {/* Navigation mobile fast/back action */}
         <div className="w-full flex items-center justify-end gap-4 mb-4 md:absolute md:top-6 md:right-6 md:mb-0">
           <LanguageSwitcher />
           <ThemeToggle />
@@ -207,7 +216,7 @@ const LoginPage = () => {
               <Button
                 type="submit"
                 className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01]"
-                disabled={login.isPending}
+                disabled={login.isPending || isAuthChecking}
               >
                 {login.isPending ? (
                   <div className="flex items-center gap-2">

@@ -1,15 +1,16 @@
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog';
-import { Filter, TrendingUp, TrendingDown, CreditCard, Tag, RotateCcw, List, CircleDollarSign, Calendar } from 'lucide-react';
+import { Filter, TrendingUp, TrendingDown, Receipt, CreditCard, Tag, RotateCcw, List, CircleDollarSign, ArrowDown, ArrowUp } from 'lucide-react';
 import { Label } from './ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Input } from './ui/input';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '@/store/UserStore';
 import { useCategories, type CategoryWithIcon } from '@/hooks/use-categories';
-import { useCardsStore } from '@/store/useCardsStore';
+import { NO_WALLET_ID } from '@/constants/wallets';
+import { useWalletsStore } from '@/store/useWalletsStore';
 import { cn } from '@/lib/utils';
 import React from 'react';
+import type { TransactionTableSortColumn } from '@/subdomains/dashboard/context/dashboard-preferences';
 
 type Filters = {
   card: string;
@@ -19,7 +20,18 @@ type Filters = {
   maxValue: string;
   startDate: string;
   endDate: string;
+  tableSortColumn: TransactionTableSortColumn;
+  tableSortOrder: 'desc' | 'asc';
 };
+
+const TABLE_SORT_COLUMNS: TransactionTableSortColumn[] = [
+  'description',
+  'wallet',
+  'date',
+  'category',
+  'type',
+  'value',
+];
 
 interface TransactionFiltersDialogProps {
   open: boolean;
@@ -27,6 +39,8 @@ interface TransactionFiltersDialogProps {
   filters: Filters;
   onChange: (key: keyof Filters, value: string | string[]) => void;
   filteredCount: number;
+  /** Se definido, substitui o reset padrão (ex.: realinhar datas ao mês selecionado). */
+  onClearAll?: () => void;
 }
 
 export default function TransactionFiltersDialog({
@@ -35,24 +49,39 @@ export default function TransactionFiltersDialog({
   filters,
   onChange,
   filteredCount,
+  onClearAll,
 }: TransactionFiltersDialogProps) {
   const { t } = useTranslation();
   const { uid } = useUserStore();
-  const { allCategories } = useCategories();
-  const { cards, fetchCards } = useCardsStore();
+  const { incomeCategories, expenseCategories, billCategories, allCategories } = useCategories();
+
+  const categoriesForFilter = React.useMemo(() => {
+    const todosEntry = { id: 'Todos', icon: List } as CategoryWithIcon;
+    if (filters.type === 'receita') {
+      return [...incomeCategories, todosEntry];
+    }
+    if (filters.type === 'despesa') {
+      return [...expenseCategories, todosEntry];
+    }
+    if (filters.type === 'conta') {
+      return [...billCategories, todosEntry];
+    }
+    return allCategories;
+  }, [allCategories, billCategories, expenseCategories, filters.type, incomeCategories]);
+  const { wallets, fetchWallets } = useWalletsStore();
 
   React.useEffect(() => {
-    if (open && uid) fetchCards(uid);
-  }, [open, uid, fetchCards]);
+    if (open && uid) fetchWallets(uid);
+  }, [open, uid, fetchWallets]);
 
-  const cardOptions = React.useMemo(() => {
-    const mapped = cards.map((c) => ({ id: c.id, name: c.name, color: c.color }));
+  const walletOptions = React.useMemo(() => {
+    const mapped = wallets.map((wallet) => ({ id: wallet.id, name: wallet.name, color: wallet.color }));
     return [
       { id: 'Todos', name: t('filters.all', 'Todos'), color: undefined },
-      { id: 'no_card', name: t('cards.noCard', 'Sem Cartão'), color: '#6b7280' },
+      { id: NO_WALLET_ID, name: t('wallets.noWallet', 'Sem Carteira'), color: '#6b7280' },
       ...mapped,
     ];
-  }, [cards, t]);
+  }, [wallets, t]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -72,11 +101,12 @@ export default function TransactionFiltersDialog({
               <TrendingUp className="w-4 h-4" />
               {t('filters.type', 'Tipo')}
             </Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
                 { id: 'Todos', label: t('filters.all', 'Todos'), icon: <List className="w-4 h-4" /> },
                 { id: 'receita', label: t('sidebar.income', 'Receita'), icon: <TrendingUp className="w-4 h-4 text-primary" /> },
                 { id: 'despesa', label: t('sidebar.expenses', 'Despesa'), icon: <TrendingDown className="w-4 h-4 text-red-500" /> },
+                { id: 'conta', label: t('sidebar.bills', 'Contas'), icon: <Receipt className="w-4 h-4 text-amber-500" /> },
               ].map((opt) => (
                 <Button
                   key={opt.id}
@@ -88,7 +118,9 @@ export default function TransactionFiltersDialog({
                       ? "border-primary ring-1 ring-primary/30"
                       : opt.id === "despesa"
                         ? "border-red-500 ring-1 ring-red-500/30"
-                        : "border-foreground ring-1 ring-foreground/20")
+                        : opt.id === "conta"
+                          ? "border-amber-500 ring-1 ring-amber-500/30"
+                          : "border-foreground ring-1 ring-foreground/20")
                   )}
                   onClick={() => onChange('type', opt.id)}
                 >
@@ -102,10 +134,10 @@ export default function TransactionFiltersDialog({
           <div className="space-y-3">
             <Label className="text-sm font-medium flex items-center gap-2">
               <CreditCard className="w-4 h-4" />
-              {t('filters.card', 'Cartão')}
+              {t('filters.wallet', 'Carteira')}
             </Label>
             <div className="flex flex-wrap gap-2">
-              {cardOptions.map((opt) => (
+              {walletOptions.map((opt) => (
                 <Button
                   key={opt.id}
                   variant="outline"
@@ -144,7 +176,7 @@ export default function TransactionFiltersDialog({
             </Label>
             <CategoryChips
               values={filters.categories}
-              categories={allCategories}
+              categories={categoriesForFilter}
               onChange={(v) => onChange('categories', v)}
               allLabel={t('filters.all', 'Todos')}
               showMoreLabel={t('filters.showMore', 'Mostrar mais...')}
@@ -201,11 +233,63 @@ export default function TransactionFiltersDialog({
             </div>
           </div>
 
+          <div className="space-y-3">
+            <Label className="text-sm font-medium">
+              {t('filters.tableSort', 'Ordenação da tabela')}
+            </Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {TABLE_SORT_COLUMNS.map((column) => (
+                <Button
+                  key={column}
+                  type="button"
+                  variant="outline"
+                  className={cn(
+                    "justify-start h-10 px-3 text-sm",
+                    filters.tableSortColumn === column && "border-foreground ring-1 ring-foreground/20"
+                  )}
+                  onClick={() => onChange('tableSortColumn', column)}
+                >
+                  {t(`filters.tableSortColumn.${column}`)}
+                </Button>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  "justify-start gap-2 h-10",
+                  filters.tableSortOrder === "desc" && "border-foreground ring-1 ring-foreground/20"
+                )}
+                onClick={() => onChange('tableSortOrder', 'desc')}
+              >
+                <ArrowDown className="h-4 w-4" />
+                {t('filters.tableSortDescending', 'Decrescente')}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className={cn(
+                  "justify-start gap-2 h-10",
+                  filters.tableSortOrder === "asc" && "border-foreground ring-1 ring-foreground/20"
+                )}
+                onClick={() => onChange('tableSortOrder', 'asc')}
+              >
+                <ArrowUp className="h-4 w-4" />
+                {t('filters.tableSortAscending', 'Crescente')}
+              </Button>
+            </div>
+          </div>
+
           <div className="flex items-center justify-between pt-2 sticky bottom-0 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 p-3 -mx-4 sm:mx-0 border-t">
             <Button
               variant="outline"
               className="gap-2"
               onClick={() => {
+                if (onClearAll) {
+                  onClearAll();
+                  return;
+                }
                 onChange('card', 'Todos');
                 onChange('categories', ['Todos']);
                 onChange('type', 'Todos');
@@ -213,6 +297,8 @@ export default function TransactionFiltersDialog({
                 onChange('maxValue', '');
                 onChange('startDate', '');
                 onChange('endDate', '');
+                onChange('tableSortColumn', 'date');
+                onChange('tableSortOrder', 'desc');
               }}
             >
               <RotateCcw className="w-4 h-4" />
@@ -241,7 +327,7 @@ function CategoryChips({
   allLabel: string;
   showMoreLabel: string;
 }) {
-  const { t } = useTranslation();
+  const { getCategoryLabel } = useCategories();
   const [showMore, setShowMore] = React.useState(false);
   const normalized = React.useMemo(
     () => categories.filter((c) => c.id !== allLabel && c.id !== 'Todos'),
@@ -279,7 +365,7 @@ function CategoryChips({
               }}
             >
               <Icon className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
-              <span>{isAll ? allLabel : t(`categories.${cat.id}`, cat.id)}</span>
+              <span>{isAll ? allLabel : getCategoryLabel(cat.id)}</span>
             </Button>
           );
         })}

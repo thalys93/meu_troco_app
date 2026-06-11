@@ -90,6 +90,26 @@
   }
 }
 
+@keyframes toast-progress-shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+.toast-progress-inner {
+  animation: toast-progress-shrink var(--toast-duration, 5000ms) linear forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-progress-inner {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -127,14 +147,34 @@
     background: hsl(var(--muted-foreground) / 0.5);
   }
 
-  /* Backoffice: fundo cinza claro, sem gradiente global */
   .backoffice-page {
     --bo-bg-page: 220 15% 97%;
     --bo-card-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+    --bo-card-shadow-elevated: 0 4px 6px -1px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+    --bo-grid-color: 220 13% 88%;
     background-color: hsl(var(--bo-bg-page));
+    background-image:
+      linear-gradient(hsl(var(--bo-grid-color) / 0.35) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--bo-grid-color) / 0.35) 1px, transparent 1px);
+    background-size: 32px 32px;
   }
   .dark .backoffice-page {
     --bo-bg-page: 240 10% 6%;
+    --bo-grid-color: 240 6% 14%;
     background-color: hsl(var(--bo-bg-page));
+  }
+
+  .bo-surface {
+    @apply rounded-xl border border-border/80 bg-card overflow-hidden;
+    box-shadow: var(--bo-card-shadow);
+  }
+
+  .bo-surface-elevated {
+    @apply bo-surface;
+    box-shadow: var(--bo-card-shadow-elevated);
+  }
+
+  .bo-section-header {
+    @apply shrink-0 px-4 py-3 flex items-center gap-3;
   }
 }

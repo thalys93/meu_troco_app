@@ -3,14 +3,17 @@ import { useUser } from "./use-user";
 import { useTranslation } from "react-i18next";
 import { FirebaseTimestamp } from "@/types/Firebase";
 import { useEffect } from "react";
-import { useCardsStore } from "@/store/useCardsStore";
+import { useWalletsStore } from "@/store/useWalletsStore";
 import { usePocketBalance } from "./usePocketBalance";
+import { computeWalletDisplayBalance } from "@/utils/wallet-balance";
+import { getCurrentMonthKey } from "@/subdomains/dashboard/utils/month-range";
 export const useDashboardStats = () => {
     const { data: transactions = [] } = useUserTransactions();
     const { user } = useUser();
     const { i18n } = useTranslation()
     const incomeTransactions = transactions.filter((t) => t.type === "receita");
     const expenseTransactions = transactions.filter((t) => t.type === "despesa");
+    const billTransactions = transactions.filter((t) => t.type === "conta");
     const userJoinedTime = user?.details?.createdAt;
     const getDaysSinceUserCreated = (timestamp?: FirebaseTimestamp) => {
         if (!timestamp) return null;
@@ -26,23 +29,29 @@ export const useDashboardStats = () => {
 
     const incomeLength = incomeTransactions.length;
     const expenseLength = expenseTransactions.length;
+    const billsLength = billTransactions.length;
 
     const totalIncome = incomeTransactions.reduce((acc, curr) => acc + curr.value, 0);
     const totalExpense = expenseTransactions.reduce((acc, curr) => acc + curr.value, 0);
+    const totalBills = billTransactions.reduce((acc, curr) => acc + curr.value, 0);
 
-    const { selectTotalBalance, fetchCards, cards } = useCardsStore();
+    const { fetchWallets, wallets } = useWalletsStore();
     const pocketBalance = usePocketBalance();
 
     useEffect(() => {
-        if (user?.uid && cards.length === 0) {
-            fetchCards(user.uid);
+        if (user?.uid && wallets.length === 0) {
+            fetchWallets(user.uid);
         }
-    }, [user, cards.length, fetchCards]);
+    }, [user, wallets.length, fetchWallets]);
 
-    const cardsTotal = selectTotalBalance();
-    const totalBalance = pocketBalance + cardsTotal;
+    const currentMonth = getCurrentMonthKey();
+    const walletsTotal = wallets.reduce(
+        (acc, wallet) => acc + computeWalletDisplayBalance(wallet, transactions, currentMonth),
+        0
+    );
+    const totalBalance = pocketBalance + walletsTotal;
 
-    const totalMovimentado = totalIncome + totalExpense + Math.abs(totalBalance);
+    const totalMovimentado = totalIncome + totalExpense + totalBills + Math.abs(totalBalance);
 
     const incomePercentage = totalMovimentado > 0 ? (totalIncome / totalMovimentado) * 100 : 0;
     const expensePercentage = totalMovimentado > 0 ? (totalExpense / totalMovimentado) * 100 : 0;
@@ -76,6 +85,7 @@ export const useDashboardStats = () => {
         isExpensePositive: totalExpense >= 0,
         incomeLength,
         expenseLength,
+        billsLength,
         userJoinedTime,
         getDaysSinceUserCreated
     };

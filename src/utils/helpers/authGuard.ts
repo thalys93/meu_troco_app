@@ -1,2 +1,20 @@
-/** UIDs que podem acessar recursos de backoffice (listar todos os usuários, etc.). Deve bater com allow read em firestore.rules para /users. */
-export const whitelist = ["4jeUVj98RXQgO9PtUkkCOziTt6q2", "eCqjINFsQsOMyNFCS87DggmlgN93"];
+import { AccountTypes } from '@/types/enums/AccountsTypes';
+
+const raw = import.meta.env.VITE_ADMIN_UIDS;
+export const whitelist: string[] = typeof raw === 'string'
+  ? raw.split(',').map((s) => s.trim()).filter(Boolean)
+  : [];
+
+export function canListAllUsers(
+  uid: string | null | undefined,
+  accountType?: AccountTypes
+): boolean {
+  if (!uid) return false;
+  if (accountType === AccountTypes.ADMIN) return true;
+  return whitelist.includes(uid);
+}
+
+export const BackofficeUsersError = {
+  FORBIDDEN: 'BACKOFFICE_USERS_FORBIDDEN',
+  FIRESTORE_DENIED: 'BACKOFFICE_USERS_FIRESTORE_DENIED',
+} as const;

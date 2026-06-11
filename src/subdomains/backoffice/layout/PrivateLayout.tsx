@@ -14,8 +14,10 @@ function PrivateLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   React.useEffect(() => {
-    if (user.accountType !== AccountTypes.ADMIN) navigate("/backoffice/login");
-  }, [user])
+    if (!user || user.accountType !== AccountTypes.ADMIN) {
+      navigate("/backoffice/login", { replace: true });
+    }
+  }, [navigate, user])
 
   return (
     <div className="min-h-screen backoffice-page">
@@ -29,8 +31,10 @@ function PrivateLayout({ children }: { children: React.ReactNode }) {
                 <BackOfficeHeader />
               </div>
             )}
-            <div className="flex-1 p-6">
-              {children}
+            <div className="flex-1 p-4 sm:p-6 pb-24 md:pb-6">
+              <div className="mx-auto w-full max-w-7xl">
+                {children}
+              </div>
             </div>
           </main>
         </div>

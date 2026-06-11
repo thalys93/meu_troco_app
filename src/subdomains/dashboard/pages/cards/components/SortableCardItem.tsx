@@ -1,15 +1,20 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Card } from "../../../../../types/Card";
+import { Wallet } from "../../../../../types/Wallet";
 import { CardItem } from "./CardItem";
 import { cn } from "@/lib/utils";
 
 interface SortableCardItemProps {
-    card: Card;
-    onEdit: (card: Card) => void;
+    card: Wallet;
+    onEdit: (card: Wallet) => void;
+    onAdjust: (card: Wallet) => void;
+    onDelete: (card: Wallet) => void;
+    displayBalance: number;
+    monthOutflow: number;
+    monthLabel: string;
 }
 
-export function SortableCardItem({ card, onEdit }: SortableCardItemProps) {
+export function SortableCardItem({ card, onEdit, onAdjust, onDelete, displayBalance, monthOutflow, monthLabel }: SortableCardItemProps) {
     const {
         attributes,
         listeners,
@@ -35,7 +40,15 @@ export function SortableCardItem({ card, onEdit }: SortableCardItemProps) {
                 isDragging && "opacity-60 z-10 shadow-lg rounded-lg"
             )}
         >
-            <CardItem card={card} onEdit={onEdit} />
+            <CardItem
+                card={card}
+                onEdit={onEdit}
+                onAdjust={onAdjust}
+                onDelete={onDelete}
+                displayBalance={displayBalance}
+                monthOutflow={monthOutflow}
+                monthLabel={monthLabel}
+            />
         </div>
     );
 }

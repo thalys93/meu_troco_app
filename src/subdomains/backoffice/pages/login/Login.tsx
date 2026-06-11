@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import ThemeToggle from '@/components/ThemeToggle'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { usePublicAuthGuard } from '@/hooks/use-public-auth-guard'
 
 const initialValues: LoginForm = {
   email: '',
@@ -23,7 +24,13 @@ function BackofficeLoginPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { setUid } = useUserStore()
-  const title = 'Meu Troco Backoffice'
+  const title = t('backoffice.brand')
+  const { isAuthChecking } = usePublicAuthGuard({
+    authenticatedRedirectTo: '/backoffice/session-validation',
+    unauthorizedRedirectTo: '/dashboard',
+    minLoadingMs: 2200,
+    requireAdmin: true,
+  })
 
   const loginForm = useForm<LoginForm>({
     defaultValues: initialValues,
@@ -51,14 +58,24 @@ function BackofficeLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-background">
+    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden backoffice-page relative">
+      {isAuthChecking && (
+        <div className="absolute top-0 left-0 h-1 w-full bg-primary/15 z-50 overflow-hidden">
+          <motion.div
+            className="h-full bg-primary"
+            initial={{ x: '-100%' }}
+            animate={{ x: '100%' }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
+          />
+        </div>
+      )}
       <motion.div
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.8 }}
         className="hidden md:flex md:w-1/2 lg:w-[50%] relative p-12 flex-col justify-between overflow-hidden"
       >
-        <div className="absolute inset-0 bg-white dark:bg-emerald-950/20 transition-colors duration-500" />
+        <div className="absolute inset-0 bg-white/80 dark:bg-emerald-950/30 transition-colors duration-500" />
 
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
@@ -109,7 +126,7 @@ function BackofficeLoginPage() {
         </div>
 
         <div className="relative z-10">
-          <div className="p-6 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl max-w-sm shadow-xl shadow-slate-200/50 dark:shadow-emerald-500/5">
+          <div className="p-6 bo-surface-elevated backdrop-blur-xl max-w-sm">
             <p className="text-slate-700 dark:text-white/80 text-sm mb-4">
               {t('backoffice.login.description')}
             </p>
@@ -130,7 +147,7 @@ function BackofficeLoginPage() {
         </div>
       </motion.div>
 
-      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 bg-background relative overflow-y-auto">
+      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 relative overflow-y-auto">
         <div className="w-full flex items-center justify-end gap-4 mb-4 md:absolute md:top-6 md:right-6 md:mb-0">
           <LanguageSwitcher />
           <ThemeToggle />
@@ -144,9 +161,9 @@ function BackofficeLoginPage() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md space-y-8"
+          className="w-full max-w-md space-y-8 bo-surface-elevated p-8 rounded-2xl"
         >
-          <div className="md:hidden flex justify-center mb-8">
+          <div className="md:hidden flex justify-center mb-4">
             <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20">
               <Shield className="w-8 h-8 text-primary" />
             </div>
@@ -201,7 +218,7 @@ function BackofficeLoginPage() {
               <Button
                 type="submit"
                 className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01]"
-                disabled={login.isPending}
+                disabled={login.isPending || isAuthChecking}
               >
                 {login.isPending ? (
                   <div className="flex items-center gap-2">

@@ -14,7 +14,7 @@ const ToastViewport = React.forwardRef<
   <ToastPrimitives.Viewport
     ref={ref}
     className={cn(
-      "fixed top-0 z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-0 sm:right-0 sm:top-auto sm:flex-col md:max-w-[420px]",
+      "fixed left-0 top-0 z-[100] flex max-h-screen w-[min(100%,28rem)] flex-col gap-2 overflow-x-hidden overflow-y-auto pointer-events-none p-3 pt-[max(0.75rem,env(safe-area-inset-top))] pl-[max(0.75rem,env(safe-area-inset-left))] pr-3 sm:p-4 sm:pt-[max(1rem,env(safe-area-inset-top))] sm:pl-[max(1rem,env(safe-area-inset-left))]",
       className
     )}
     {...props}
@@ -23,12 +23,14 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-md border p-6 pr-8 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full data-[state=open]:sm:slide-in-from-bottom-full",
+  "group pointer-events-auto relative flex w-full max-w-[min(100%,28rem)] items-center justify-between space-x-4 overflow-hidden rounded-lg border p-5 pr-10 shadow-lg ring-1 ring-black/5 transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-left-full data-[state=open]:slide-in-from-left-full dark:ring-white/10",
   {
     variants: {
       variant: {
-        default: "border bg-background text-foreground",
-        success: "border-emerald-700 bg-emerald-700 text-foreground",
+        default:
+          "border-border bg-card text-card-foreground shadow-md border-l-[4px] border-l-primary",
+        success:
+          "border-primary/30 bg-primary text-primary-foreground shadow-md",
         destructive:
           "destructive group border-destructive bg-destructive text-destructive-foreground",
         info: "info group border-secondary bg-secondary text-secondary-foreground",
@@ -77,7 +79,7 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      "absolute right-2 top-2 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
+      "absolute right-2 top-2 rounded-md p-1 text-current/70 opacity-0 transition-opacity hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background group-hover:opacity-100 group-[.destructive]:text-red-300 group-[.destructive]:hover:text-red-50 group-[.destructive]:focus:ring-red-400 group-[.destructive]:focus:ring-offset-red-600",
       className
     )}
     toast-close=""
@@ -116,6 +118,50 @@ type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>
 
 type ToastActionElement = React.ReactElement<typeof ToastAction>
 
+type ToastProgressProps = {
+  durationMs: number
+  variant?: ToastProps["variant"]
+}
+
+function ToastProgress({ durationMs, variant }: ToastProgressProps) {
+  const trackClass =
+    variant === "destructive"
+      ? "bg-destructive-foreground/20"
+      : variant === "success"
+        ? "bg-primary-foreground/25"
+        : variant === "info"
+          ? "bg-secondary-foreground/20"
+          : "bg-muted"
+
+  const barClass =
+    variant === "destructive"
+      ? "bg-destructive-foreground"
+      : variant === "success"
+        ? "bg-primary-foreground"
+        : variant === "info"
+          ? "bg-foreground"
+          : "bg-primary"
+
+  return (
+    <div
+      className={cn(
+        "pointer-events-none absolute inset-x-0 top-0 z-10 h-[3px] overflow-hidden rounded-t-lg",
+        trackClass
+      )}
+      aria-hidden
+    >
+      <div
+        className={cn("toast-progress-inner h-full w-full origin-left", barClass)}
+        style={
+          {
+            "--toast-duration": `${durationMs}ms`,
+          } as React.CSSProperties
+        }
+      />
+    </div>
+  )
+}
+
 export {
   type ToastProps,
   type ToastActionElement,
@@ -126,4 +172,5 @@ export {
   ToastDescription,
   ToastClose,
   ToastAction,
+  ToastProgress,
 }

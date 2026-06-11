@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useForm } from "react-hook-form";
 import useUserStore from "@/store/UserStore";
@@ -12,18 +12,19 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, Palette, UserRound, WalletCards } from "lucide-react";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CardForm } from "../../../../../utils/validators/card";
-import { Card } from "../../../../../types/Card";
-import { useCardsStore } from "../../../../../store/useCardsStore";
+import { WalletForm } from "../../../../../utils/validators/wallet";
+import { Wallet } from "../../../../../types/Wallet";
+import { useWalletsStore } from "../../../../../store/useWalletsStore";
 import { CARD_FLAGS } from "../../../../../utils/cardUtils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface AddCardModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    cardToEdit?: Card | null;
+    cardToEdit?: Wallet | null;
 }
 
 const CARD_COLORS = [
@@ -38,28 +39,53 @@ const CARD_COLORS = [
 
 export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalProps) {
     const { t } = useTranslation();
-    const { addCard, updateCard } = useCardsStore();
+    const { addWallet, updateWallet } = useWalletsStore();
     const { user } = useUserStore();
     const [loading, setLoading] = useState(false);
+    const initialAccountName =
+        cardToEdit?.accountName ||
+        user?.displayName ||
+        user?.fullName ||
+        user?.email ||
+        t("wallets.defaultLinkedAccount", "Conta principal");
 
-    const form = useForm<CardForm>({
+    const form = useForm<WalletForm>({
         defaultValues: {
             name: "",
+            accountName: initialAccountName,
             balance: 0,
+            initialBalance: 0,
+            creditLimit: 0,
+            billingClosingDay: 1,
+            reloadAmount: 0,
+            reloadDay: 1,
             type: "debit",
             color: "#000000",
             flag: "Visa",
         }
     });
+    const selectedFlagName = form.watch("flag");
+    const selectedFlag = useMemo(
+        () => CARD_FLAGS.find((flag) => flag.name === selectedFlagName),
+        [selectedFlagName]
+    );
 
     const cardType = form.watch('type');    
+    const linkedAccountName = form.watch("accountName") || initialAccountName;
+    const linkedAccountInitial = linkedAccountName.trim().charAt(0).toUpperCase() || "U";
 
     useEffect(() => {
         if (open) {
             if (cardToEdit) {
                 form.reset({
                     name: cardToEdit.name,
+                    accountName: cardToEdit.accountName,
                     balance: cardToEdit.balance,
+                    initialBalance: cardToEdit.initialBalance ?? cardToEdit.balance ?? 0,
+                    creditLimit: cardToEdit.creditLimit ?? cardToEdit.balance ?? 0,
+                    billingClosingDay: cardToEdit.billingClosingDay ?? 1,
+                    reloadAmount: cardToEdit.reloadAmount ?? 0,
+                    reloadDay: cardToEdit.reloadDay ?? 1,
                     type: cardToEdit.type,
                     color: cardToEdit.color,
                     flag: cardToEdit.flag,
@@ -67,29 +93,56 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
             } else {
                 form.reset({
                     name: "",
+                    accountName: initialAccountName,
                     balance: 0,
+                    initialBalance: 0,
+                    creditLimit: 0,
+                    billingClosingDay: 1,
+                    reloadAmount: 0,
+                    reloadDay: 1,
                     type: "debit",
                     color: "#000000",
                     flag: "Visa",
                 });
             }
         }
-    }, [cardToEdit, open, form]);
+    }, [cardToEdit, open, form, initialAccountName]);
 
-    const onSubmit = async (data: CardForm) => {
+    const onSubmit = async (data: WalletForm) => {
         if (!user?.uid) return;
         setLoading(true);
 
         try {
-            const cardData = {
-                ...data,
+            const balance = data.type === "credit"
+                ? data.creditLimit ?? data.balance ?? 0
+                : data.initialBalance ?? data.balance ?? 0;
+
+            const walletData: Omit<Wallet, "id"> = {
+                name: data.name.trim(),
+                accountName: data.accountName.trim() || initialAccountName,
+                balance,
+                type: data.type ?? "debit",
+                color: data.color ?? "#000000",
+                flag: data.flag ?? "Visa",
                 userId: user.uid,
             };
 
-            if (cardToEdit) {
-                await updateCard(cardToEdit.id, cardData);
+            if (walletData.type === "credit") {
+                walletData.creditLimit = data.creditLimit ?? 0;
+                walletData.billingClosingDay = data.billingClosingDay ?? 1;
             } else {
-                await addCard(cardData as any);
+                walletData.initialBalance = data.initialBalance ?? 0;
+            }
+
+            if (walletData.type === "voucher") {
+                walletData.reloadAmount = data.reloadAmount ?? 0;
+                walletData.reloadDay = data.reloadDay ?? 1;
+            }
+
+            if (cardToEdit) {
+                await updateWallet(cardToEdit.id, walletData);
+            } else {
+                await addWallet(walletData);
             }
             onOpenChange(false);
         } catch (error) {
@@ -104,24 +157,59 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>
-                        {cardToEdit ? t('cards.editTitle', 'Editar Cartão') : t('cards.addTitle', 'Adicionar Cartão')}
+                        {cardToEdit ? t('wallets.editTitle', 'Editar Carteira') : t('wallets.addTitle', 'Adicionar Carteira')}
                     </DialogTitle>
                     <DialogDescription>
-                        {t('cards.description', 'Preencha os dados do cartão abaixo.')}
+                        {t('wallets.description', 'Preencha os dados da carteira abaixo.')}
                     </DialogDescription>
                 </DialogHeader>
 
                 <Form form={form} onSubmit={onSubmit} className="space-y-4 py-4">
+                    <div
+                        className="rounded-xl p-4 text-white shadow-sm"
+                        style={{ backgroundColor: form.watch("color") }}
+                    >
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <p className="text-xs uppercase tracking-wide text-white/80">
+                                    {t("wallets.preview", "Prévia")}
+                                </p>
+                                <p className="text-base font-semibold leading-tight">
+                                    {form.watch("name") || t("wallets.namePlaceholder", "Ex: Carteira principal")}
+                                </p>
+                            </div>
+                            <div className="flex items-center gap-2 rounded-md bg-black/20 px-2 py-1 text-xs">
+                                <WalletCards className="h-3.5 w-3.5" />
+                                <span>{t(`wallets.types.${cardType}`, cardType)}</span>
+                            </div>
+                        </div>
+                        <div className="mt-4 flex items-center justify-between gap-2">
+                            <span className="inline-flex items-center gap-2 text-sm text-white/85">
+                                {selectedFlag?.icon && (
+                                    <img
+                                        src={selectedFlag.icon}
+                                        alt={selectedFlagName}
+                                        className="h-4 w-auto object-contain"
+                                    />
+                                )}
+                                <span>{selectedFlagName}</span>
+                            </span>
+                            <span className="text-xs text-white/80">
+                                {linkedAccountName}
+                            </span>
+                        </div>
+                    </div>
+
                     <FormField
                         control={form.control}
                         name="name"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>{t('cards.name', 'Nome do Cartão')}</FormLabel>
+                                <FormLabel>{t('wallets.name', 'Nome da Carteira')}</FormLabel>
                                 <FormControl>
                                     <Input
                                         {...field}
-                                        placeholder={t('cards.namePlaceholder', 'Ex: Nubank, Inter...')}
+                                        placeholder={t('wallets.namePlaceholder', 'Ex: Carteira principal')}
                                     />
                                 </FormControl>
                                 <FormMessage />
@@ -129,12 +217,48 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                         )}
                     />
 
+                    <div className="rounded-lg border bg-muted/30 p-3">
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                            <FormLabel className="m-0">
+                                {t("wallets.accountName", "Conta vinculada")}
+                            </FormLabel>
+                        </div>
+                        <div className="flex items-center gap-3 rounded-md border bg-background px-3 py-2">
+                            <Avatar className="h-9 w-9">
+                                <AvatarImage src="" alt={linkedAccountName} />
+                                <AvatarFallback>{linkedAccountInitial}</AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium">{linkedAccountName}</p>
+                                <p className="text-xs text-muted-foreground">
+                                    {t("wallets.linkedAccountHint", "Conta vinculada editável")}
+                                </p>
+                            </div>
+                            <UserRound className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <FormField
+                            control={form.control}
+                            name="accountName"
+                            render={({ field }) => (
+                                <FormItem className="mt-3">
+                                    <FormControl>
+                                        <Input
+                                            {...field}
+                                            placeholder={t("wallets.accountNamePlaceholder", "Ex: Conta pessoal")}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+
                     <FormField
                         control={form.control}
                         name="type"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>{t('cards.type', 'Tipo')}</FormLabel>
+                                <FormLabel>{t('wallets.type', 'Tipo')}</FormLabel>
                                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                         <SelectTrigger>
@@ -142,9 +266,9 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="debit">{t('cards.types.debit', 'Débito / Conta')}</SelectItem>
-                                        <SelectItem value="credit">{t('cards.types.credit', 'Crédito')}</SelectItem>
-                                        <SelectItem value="voucher">{t('cards.types.voucher', 'Vale / Voucher')}</SelectItem>
+                                        <SelectItem value="debit">{t('wallets.types.debit', 'Débito / Conta')}</SelectItem>
+                                        <SelectItem value="credit">{t('wallets.types.credit', 'Crédito')}</SelectItem>
+                                        <SelectItem value="voucher">{t('wallets.types.voucher', 'Vale / Voucher')}</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -152,13 +276,13 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                         )}
                     />
 
-                    {(cardType === 'credit' || cardType === 'voucher') && (
+                    {cardType !== "credit" && (
                         <FormField
                             control={form.control}
-                            name="balance"
+                            name="initialBalance"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('cards.balance', 'Limite')}</FormLabel>
+                                    <FormLabel>{t('wallets.initialBalance', 'Saldo atual')}</FormLabel>
                                     <FormControl>
                                         <Input
                                             {...field}
@@ -174,13 +298,108 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                         />
                     )}
 
-                    <div className="grid grid-cols-2 gap-4">
+                    {cardType === "credit" && (
+                        <>
+                            <FormField
+                                control={form.control}
+                                name="creditLimit"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t("wallets.creditLimit", "Limite total")}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="billingClosingDay"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t("wallets.billingClosingDay", "Dia de fechamento")}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="number"
+                                                min={1}
+                                                max={28}
+                                                step={1}
+                                                onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </>
+                    )}
+
+                    {cardType === "voucher" && (
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <FormField
+                                control={form.control}
+                                name="reloadAmount"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t("wallets.reloadAmount", "Recarga mensal")}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="number"
+                                                step="0.01"
+                                                placeholder="0.00"
+                                                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="reloadDay"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>{t("wallets.reloadDay", "Dia da recarga")}</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                {...field}
+                                                type="number"
+                                                min={1}
+                                                max={28}
+                                                step={1}
+                                                onChange={(e) => field.onChange(parseInt(e.target.value, 10) || 1)}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    )}
+
+                    <div className="rounded-lg border p-3">
+                        <div className="mb-3 flex items-center gap-2 text-sm font-medium">
+                            <Palette className="h-4 w-4 text-muted-foreground" />
+                            <span>{t("wallets.visualIdentity", "Identidade visual")}</span>
+                        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <FormField
                             control={form.control}
                             name="flag"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('cards.flag', 'Bandeira')}</FormLabel>
+                                    <FormLabel>{t('wallets.flag', 'Bandeira')}</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
@@ -208,7 +427,7 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                             name="color"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{t('cards.color', 'Cor')}</FormLabel>
+                                    <FormLabel>{t('wallets.color', 'Cor')}</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger className="w-full">
@@ -235,6 +454,7 @@ export function AddCardModal({ open, onOpenChange, cardToEdit }: AddCardModalPro
                                 </FormItem>
                             )}
                         />
+                        </div>
                     </div>
 
                     <DialogFooter>

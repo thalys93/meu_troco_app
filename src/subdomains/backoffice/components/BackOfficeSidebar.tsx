@@ -1,35 +1,64 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, User, LogOut, ShoppingBag, Bell, Search } from 'lucide-react';
+import { LogOut, Search, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ThemeToggle from '@/components/ThemeToggle';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuItem } from '@/components/ui/sidebar';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Separator } from '@radix-ui/react-select';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+} from '@/components/ui/sidebar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/hooks/use-user';
 import AvatarTrigger from '@/components/AvatarTrigger';
 import { BuildingOfficeIcon } from '@phosphor-icons/react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
+import {
+  BACKOFFICE_NAV_ITEMS,
+  BACKOFFICE_QUICK_LINKS,
+  filterBackofficeNav,
+} from '../config/backoffice-nav';
 
 const AppSidebar = () => {
   const [open, setOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
   const { user, handleLogout } = useUser();
   const { t } = useTranslation();
 
-  const navigation = [
-    { name: t('sidebar.home'), href: '/backoffice/home', icon: Home },
-    { name: t('sidebar.plans'), href: '/backoffice/plans', icon: ShoppingBag },
-    { name: t('sidebar.notifications'), href: '/backoffice/notifications', icon: Bell },
-  ];
+  const filteredNav = React.useMemo(
+    () => filterBackofficeNav(BACKOFFICE_NAV_ITEMS, searchQuery, (key) => t(key)),
+    [searchQuery, t]
+  );
+
+  const filteredQuickLinks = React.useMemo(
+    () => filterBackofficeNav(BACKOFFICE_QUICK_LINKS, searchQuery, (key) => t(key)),
+    [searchQuery, t]
+  );
+
+  const showQuickLinks = searchQuery.trim().length > 0 && filteredQuickLinks.length > 0;
 
   return (
-    <Sidebar variant="floating" className="bg-sidebar border-r border-sidebar-border">
+    <Sidebar variant="floating" className="bg-sidebar/95 backdrop-blur-sm border-r border-sidebar-border shadow-lg">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2 px-2">
           <BuildingOfficeIcon className="w-6 h-6 text-primary" aria-hidden />
-          <span className="font-bold text-sidebar-foreground">Meu Troco Backoffice</span>
+          <div className="min-w-0">
+            <span className="font-bold text-sidebar-foreground block truncate">{t('backoffice.brand')}</span>
+            <span className="text-[10px] text-muted-foreground truncate block">{t('backoffice.brandTagline')}</span>
+          </div>
         </div>
         <div className="flex items-center gap-1 mt-2">
           <LanguageSwitcher />
@@ -40,9 +69,10 @@ const AppSidebar = () => {
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" aria-hidden />
             <Input
               type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('sidebar.searchPlaceholder')}
               className="pl-8 h-9 bg-sidebar-accent/50 border-sidebar-border text-sm"
-              readOnly
               aria-label={t('sidebar.searchPlaceholder')}
             />
           </div>
@@ -55,26 +85,50 @@ const AppSidebar = () => {
             {t('sidebar.mainMenu')}
           </SidebarGroupLabel>
           <SidebarMenu>
-            {navigation.map((item) => (
+            {filteredNav.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <NavLink
                   to={item.href}
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                      'relative flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
                       isActive
-                        ? 'bg-primary/10 text-primary'
+                        ? 'bg-primary/10 text-primary before:absolute before:left-0 before:top-1/2 before:-translate-y-1/2 before:h-5 before:w-0.5 before:rounded-full before:bg-primary'
                         : 'text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                     )
                   }
                 >
                   <item.icon className="h-4 w-4 shrink-0" aria-hidden />
-                  <span>{item.name}</span>
+                  <span>{t(item.labelKey)}</span>
                 </NavLink>
               </SidebarMenuItem>
             ))}
+            {filteredNav.length === 0 && (
+              <p className="px-3 py-2 text-xs text-muted-foreground">{t('sidebar.noResults')}</p>
+            )}
           </SidebarMenu>
         </SidebarGroup>
+
+        {showQuickLinks && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs font-medium uppercase tracking-wider text-muted-foreground px-3">
+              {t('sidebar.quickLinks')}
+            </SidebarGroupLabel>
+            <SidebarMenu>
+              {filteredQuickLinks.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <NavLink
+                    to={item.href}
+                    className="flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" aria-hidden />
+                    <span>{t(item.labelKey)}</span>
+                  </NavLink>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">

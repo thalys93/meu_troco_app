@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
-import { useCardsStore } from '../store/useCardsStore';
+import { useWalletsStore } from '@/store/useWalletsStore';
 import useUserStore from '@/store/UserStore';
-import { POCKET_CARD_NAME } from '@/constants/cards';
+import { POCKET_WALLET_NAME } from '@/constants/wallets';
 
 /**
  * Garante o carregamento inicial dos cartões do usuário.
@@ -9,17 +9,17 @@ import { POCKET_CARD_NAME } from '@/constants/cards';
  */
 export const useDefaultCard = () => {
     const { user } = useUserStore();
-    const { cards, fetchCards } = useCardsStore();
+    const { wallets, fetchWallets } = useWalletsStore();
     const hasCheckedRef = useRef(false);
 
     useEffect(() => {
         if (!user?.uid || hasCheckedRef.current) return;
         hasCheckedRef.current = true;
-        fetchCards(user.uid);
-    }, [user?.uid, fetchCards]);
+        fetchWallets(user.uid);
+    }, [user?.uid, fetchWallets]);
 
     return {
-        defaultCardName: POCKET_CARD_NAME,
+        defaultCardName: POCKET_WALLET_NAME,
         hasDefaultCard: true,
     };
 };

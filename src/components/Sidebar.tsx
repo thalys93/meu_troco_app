@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, User, LogOut, DollarSign, Crown, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
+import { Home, TrendingUp, TrendingDown, Receipt, User, LogOut, DollarSign, Crown, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from './ui/sidebar';
@@ -27,6 +27,7 @@ const AppSidebar = () => {
     { name: t('sidebar.transactions'), href: "/dashboard/transactions", icon: BankIcon },
     { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
     { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
+    { name: t('sidebar.bills'), href: '/dashboard/contas', icon: Receipt },
     // { name: 'Premium', href: '/pricing', icon: Crown },
     // { name: 'Pagamentos', href: '/payments', icon: CreditCard },    
   ];

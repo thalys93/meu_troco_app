@@ -107,6 +107,7 @@ function NotificationsPage() {
             <PageShell
                 title={t('notifications.backoffice.title')}
                 description={t('notifications.backoffice.description')}
+                eyebrow={t('sidebar.backoffice')}
                 actions={
                     <Button onClick={() => navigate('/backoffice/notification/')}>
                         <Plus className="w-4 h-4 mr-2" />
@@ -115,12 +116,16 @@ function NotificationsPage() {
                 }
             >
                 <div className={cn('space-y-3', isLoading && 'animate-pulse')}>
+                    {isLoading && [1, 2, 3].map((item) => (
+                        <div key={item} className="bo-surface h-24" />
+                    ))}
+
                     {notifications?.map((notification) => {
                         const displayTitle = getNotificationLocalized(notification, i18n.language).title || notification.title;
                         return (
                         <div
                             key={notification.id}
-                            className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 rounded-lg border border-border/80 bg-card shadow-sm hover:shadow transition-shadow"
+                            className="bo-surface flex flex-col md:flex-row md:items-center justify-between gap-3 p-4 hover:shadow-md transition-shadow"
                         >
                             <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -206,9 +211,13 @@ function NotificationsPage() {
                     );})}
 
                     {!notifications?.length && !isLoading && (
-                        <div className="flex items-center gap-2 text-muted-foreground py-8">
+                        <div className="bo-surface flex flex-col items-center justify-center gap-3 text-muted-foreground py-8">
                             <EmptyIcon className="w-6 h-6" />
-                            {t('notifications.backoffice.empty')}
+                            <span>{t('notifications.backoffice.empty')}</span>
+                            <Button type="button" onClick={() => navigate('/backoffice/notification/')}>
+                                <Plus className="w-4 h-4 mr-2" />
+                                {t('notifications.backoffice.new')}
+                            </Button>
                         </div>
                     )}
                 </div>

@@ -6,57 +6,54 @@ import { useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plan, useCreatePlan, useGetPlan, useUpdatePlan } from '@/utils/services/api/plans';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { PlanForm, PlanSchema } from '@/types/validation/plan';
+import { PlanForm } from '@/types/validation/plan';
 import { Form } from '@/components/ui/form';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { AlignLeft, DollarSign, Plus, Save, Trash2, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 
 const initialValues = {
-  title: "",
-  price: "",
-  period: "",
-  features: [""],
-  isPopular: false
-}
+  title: '',
+  price: '',
+  period: '',
+  features: [''],
+  isPopular: false,
+  status: 'active',
+};
 
 function PlansFormComponent() {
   const { id } = useParams();
   const { t } = useTranslation();
-
   const { data: plan, refetch } = useGetPlan(id as string);
 
   const planForm = useForm<PlanForm>({
     defaultValues: initialValues,
-    // resolver: zodResolver(PlanSchema),
-  })
+  });
 
   const { fields, append, remove, replace } = useFieldArray<any>({
     control: planForm.control,
-    name: "features",
-  })
+    name: 'features',
+  });
 
   const edit = useUpdatePlan();
   const create = useCreatePlan();
 
   const handleSubmit = (data: any) => {
     if (id) {
-      handleUpdate(data)
+      handleUpdate(data);
     } else {
-      handleCreate(data)
+      handleCreate(data);
     }
-  }
+  };
 
   const handleCreate = (data: Plan) => {
     const cleanedData = {
       ...data,
-      features: data.features.map(f => typeof f === "string" ? f : f.value).filter(Boolean),
+      features: data.features.map((f) => (typeof f === 'string' ? f : f.value)).filter(Boolean),
     };
 
     create.mutate(cleanedData, {
@@ -64,132 +61,154 @@ function PlansFormComponent() {
         toast({
           title: t('toast.success'),
           description: t('toast.successCreatePlan'),
-        })
+        });
       },
       onError: () => {
         toast({
           title: t('toast.error'),
           description: t('toast.errorCreatePlan'),
-          variant: "destructive"
-        })
-      }
-    })
-  }
+          variant: 'destructive',
+        });
+      },
+    });
+  };
 
-  const handleUpdate = (data: Plan) => {    
+  const handleUpdate = (data: Plan) => {
     const cleanedData = {
       ...data,
       id: id,
-      features: data.features.map(f => typeof f === "string" ? f : f.value).filter(Boolean),
+      features: data.features.map((f) => (typeof f === 'string' ? f : f.value)).filter(Boolean),
     };
     edit.mutate(cleanedData, {
       onSuccess: () => {
         toast({
           title: t('toast.success'),
           description: t('toast.successUpdatePlan'),
-        })
-        refetch()
+        });
+        refetch();
       },
-      onError: (error) => {
-        console.log(error);
+      onError: () => {
         toast({
           title: t('toast.error'),
           description: t('toast.errorUpdatePlan'),
-          variant: "destructive"
-        })
-      }
-    })
-  }
+          variant: 'destructive',
+        });
+      },
+    });
+  };
 
   React.useEffect(() => {
     if (id) {
       const mappedFeatures = plan?.features.map((f) => ({
-        value: typeof f === "string" ? f : f.value,
+        value: typeof f === 'string' ? f : f.value,
       }));
       planForm.reset({
         title: plan.title,
         price: plan.price,
         period: plan.period,
         features: mappedFeatures as any,
-        isPopular: plan.isPopular
+        isPopular: plan.isPopular,
+        status: plan.status ?? 'active',
       });
     }
-  }, [id, plan, planForm, replace])
-
+  }, [id, plan, planForm, replace]);
 
   return (
     <PrivateLayout>
       <PageShell
-        title={id ? 'Editar plano' : 'Novo plano'}
-        description="Crie um novo plano para sua empresa"
+        title={id ? t('plans.backoffice.editTitle') : t('plans.backoffice.newTitle')}
+        description={t('plans.backoffice.formDescription')}
+        eyebrow={t('sidebar.backoffice')}
       >
-        <div>
+        <div className="bo-surface p-6">
           <Form form={planForm} onSubmit={() => handleSubmit(planForm.getValues())} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className='space-y-2'>
-                <Label>Título *</Label>
+              <div className="space-y-2">
+                <Label>{t('plans.backoffice.fieldTitle')} *</Label>
                 <Input
-                  leftIcon={<AlignLeft className='w-4 h-4' />}
-                  name='title'
-                  placeholder='Plano Premium'
+                  leftIcon={<AlignLeft className="w-4 h-4" />}
+                  name="title"
+                  placeholder={t('plans.backoffice.fieldTitlePlaceholder')}
                   control={planForm.control}
-                  className='bg-background/50'
+                  className="bg-background/50"
                   required
                 />
               </div>
 
-              <div className='space-y-2'>
-                <Label>Preço *</Label>
+              <div className="space-y-2">
+                <Label>{t('plans.backoffice.fieldPrice')} *</Label>
                 <Input
-                  leftIcon={<DollarSign className='w-4 h-4' />}
-                  name='price'
-                  placeholder='R$ 50.00'
+                  leftIcon={<DollarSign className="w-4 h-4" />}
+                  name="price"
+                  placeholder={t('plans.backoffice.fieldPricePlaceholder')}
                   control={planForm.control}
-                  className='bg-background/50'
+                  className="bg-background/50"
                   required
                 />
               </div>
 
-              <div className='space-y-2 flex flex-col gap-3'>
+              <div className="space-y-2 flex flex-col gap-3">
                 <div>
-                  <Label>Periodo</Label>
-                  <Select onValueChange={value => planForm.setValue('period', value)}>
+                  <Label>{t('plans.backoffice.fieldPeriod')}</Label>
+                  <Select onValueChange={(value) => planForm.setValue('period', value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione a Recorrência" />
+                      <SelectValue placeholder={t('plans.backoffice.fieldPeriodPlaceholder')} />
                     </SelectTrigger>
-
                     <SelectContent>
-                      <SelectItem value="/mês">Mês</SelectItem>
-                      <SelectItem value="/ano">Ano</SelectItem>
-                      <SelectItem value="/semestre">Semestral</SelectItem>
+                      <SelectItem value={t('plans.backoffice.periodValueMonth')}>
+                        {t('plans.backoffice.periodMonth')}
+                      </SelectItem>
+                      <SelectItem value={t('plans.backoffice.periodValueYear')}>
+                        {t('plans.backoffice.periodYear')}
+                      </SelectItem>
+                      <SelectItem value={t('plans.backoffice.periodValueSemester')}>
+                        {t('plans.backoffice.periodSemester')}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                <div className='flex flex-col gap-2'>
-                  <Label>Plano Destaque</Label>
+                <div className="flex flex-col gap-2">
+                  <Label>{t('plans.backoffice.fieldPopular')}</Label>
                   <Switch
-                    name='isPopular'
+                    name="isPopular"
                     checked={planForm.watch('isPopular')}
-                    onCheckedChange={value => planForm.setValue('isPopular', value)} />
+                    onCheckedChange={(value) => planForm.setValue('isPopular', value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>{t('plans.backoffice.fieldStatus', 'Status')}</Label>
+                  <Select
+                    value={planForm.watch('status') ?? 'active'}
+                    onValueChange={(value) => planForm.setValue('status', value as 'active' | 'archived')}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">{t('plans.backoffice.status.active', 'Ativo')}</SelectItem>
+                      <SelectItem value="archived">{t('plans.backoffice.status.archived', 'Arquivado')}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              <Card className="col-span-1 border-border/80 shadow-sm p-4 flex flex-col">
+              <div className="col-span-1 border border-border/80 rounded-xl shadow-sm p-4 flex flex-col bg-muted/20">
                 <div>
-                  <Label className='my-2 mb-3'>Funcionalidades *</Label>
+                  <Label className="my-2 mb-3">{t('plans.backoffice.fieldFeatures')} *</Label>
                   {fields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-5 my-5">
                       <Input
                         control={planForm.control}
                         name={`features.${index}.value`}
-                        placeholder={`Funcionalidade ${index + 1}`}
+                        placeholder={t('plans.backoffice.featurePlaceholder', { index: index + 1 })}
                         className="bg-background/50 flex-1"
                         required
                       />
                       <Button
                         type="button"
-                        variant={"destructive"}
+                        variant="destructive"
                         onClick={() => remove(index)}
                         className="hover:opacity-80"
                       >
@@ -199,33 +218,28 @@ function PlansFormComponent() {
                   ))}
                 </div>
 
-                <Button
-                  type="button"
-                  onClick={() => append({})}
-                  className="flex items-center  gap-1 mt-5"
-                >
-                  <Plus className="w-4 h-4" /> Adicionar funcionalidade
+                <Button type="button" onClick={() => append({})} className="flex items-center gap-1 mt-5">
+                  <Plus className="w-4 h-4" />
+                  {t('plans.backoffice.addFeature')}
                 </Button>
-              </Card>
+              </div>
             </div>
 
-            <div className='flex flex-row gap-3 items-center '>
+            <div className="flex flex-row gap-3 items-center">
               <Button variant="outline" type="reset">
                 <X />
-                Resetar
+                {t('default.reset')}
               </Button>
-
               <Button type="submit">
                 <Save />
-                Salvar
+                {t('default.save')}
               </Button>
-
             </div>
           </Form>
         </div>
       </PageShell>
     </PrivateLayout>
-  )
+  );
 }
 
-export default PlansFormComponent
+export default PlansFormComponent;

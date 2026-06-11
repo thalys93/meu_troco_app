@@ -27,3 +27,12 @@ dist-ssr
 functions/lib
 functions/.env
 functions/node_modules
+
+firestore.rules
+firestore.indexes.json
+.firebaserc
+
+# IDEs
+.firebase
+.vscode
+.cursor

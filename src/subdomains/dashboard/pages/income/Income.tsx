@@ -9,7 +9,7 @@ const IncomePage = () => {
 
   return (
     <PrivateLayout>
-      <div className='container mx-auto px-4 md:px-6 mt-8 md:-mt-6 pb-24 md:pb-0'>
+      <div className="container mx-auto w-full max-w-lg px-4 md:px-6 mt-4 md:mt-0 pb-28 md:pb-10">
         <TransactionForm type="receita" />
       </div>
     </PrivateLayout>

@@ -1,9 +1,20 @@
-import { addDoc, collection, deleteDoc, doc, getDoc, getDocs, query, updateDoc, where } from "firebase/firestore";
+import { addDoc, collection, deleteDoc, deleteField, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import { FireStore } from "./firebase";
 import useUserStore from "@/store/UserStore";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CardsService } from "./cards-service";
-import { NO_CARD_ID, isPocketCardId } from "@/constants/cards";
+import { NO_WALLET_ID } from "@/constants/wallets";
+import { normalizeLocalDateString } from "@/subdomains/dashboard/utils/month-range";
+import {
+    MIN_WALLET_ALLOCATIONS,
+    resolveWalletIdFromTransaction,
+    stripAllocationsFromPayload,
+    validateAllocationsForSave,
+    type WalletAllocation,
+} from "@/utils/transaction-allocations";
+
+export type { WalletAllocation };
+
+export type TransactionType = 'receita' | 'despesa' | 'conta';
 
 export interface Transaction {
     id?: string;
@@ -11,32 +22,94 @@ export interface Transaction {
     date: string;
     description: string;
     category: string;
-    type: 'receita' | 'despesa';
-    cardId: string;
+    type: TransactionType;
+    paid?: boolean;
+    walletId: string;
+    cardId?: string;
+    allocations?: WalletAllocation[];
 }
 
-const createTransaction = async (data: Transaction, uid: string) => {
-    const cardId = data.cardId?.trim() || NO_CARD_ID;
-    const payload = { ...data, cardId };
+const formatDateToYmd = (value: Date) =>
+    `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(
+        value.getDate()
+    ).padStart(2, "0")}`;
 
-    if (isPocketCardId(cardId)) {
-        const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
-        const docRef = await addDoc(ref, { ...payload, createdAt: new Date() });
-        return docRef.id;
+const normalizeTransactionDate = (rawDate: unknown): string => {
+    if (typeof rawDate === "string") {
+        return normalizeLocalDateString(rawDate) ?? rawDate;
     }
 
-    const card = await CardsService.getById(cardId);
-    if (!card) throw new Error("Card not found");
+    if (rawDate instanceof Date) {
+        return Number.isNaN(rawDate.getTime()) ? "" : formatDateToYmd(rawDate);
+    }
 
-    const newBalance = data.type === 'receita'
-        ? card.balance + data.value
-        : card.balance - data.value;
+    if (
+        rawDate &&
+        typeof rawDate === "object" &&
+        "toDate" in rawDate &&
+        typeof rawDate.toDate === "function"
+    ) {
+        const parsed = rawDate.toDate() as Date;
+        return Number.isNaN(parsed.getTime()) ? "" : formatDateToYmd(parsed);
+    }
 
-    await CardsService.update(cardId, { balance: newBalance });
+    return "";
+};
+
+const resolveWalletId = resolveWalletIdFromTransaction;
+
+const toFirestoreUpdatePayload = (payload: Transaction) => {
+    const stripped = stripAllocationsFromPayload(payload);
+    const keepsAllocations =
+        payload.allocations && payload.allocations.length >= MIN_WALLET_ALLOCATIONS;
+
+    if (keepsAllocations) {
+        return stripped;
+    }
+
+    return { ...stripped, allocations: deleteField() };
+};
+
+const normalizeTransactionPayload = (data: Transaction): Transaction => {
+    const walletId = resolveWalletId(data);
+    const base = { ...data, walletId };
+
+    if (!data.allocations || data.allocations.length < 2) {
+        const { allocations: _removed, ...withoutAllocations } = base;
+        return { ...withoutAllocations, walletId };
+    }
+
+    const validation = validateAllocationsForSave(data.value, data.allocations);
+    if (!validation.ok) {
+        throw new Error(`Invalid allocations: ${validation.reason}`);
+    }
+
+    return {
+        ...base,
+        walletId: validation.walletId,
+        allocations: validation.allocations,
+    };
+};
+
+const createTransaction = async (data: Transaction, uid: string) => {
+    const payload = normalizeTransactionPayload(data);
+    const firestorePayload = {
+        ...stripAllocationsFromPayload(payload),
+        createdAt: new Date(),
+    };
+
+    if (payload.type === 'conta') {
+        Object.assign(firestorePayload, { paid: payload.paid ?? false });
+    }
 
     const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
-    const docRef = await addDoc(ref, { ...payload, createdAt: new Date() });
+    const docRef = await addDoc(ref, firestorePayload);
     return docRef.id;
+}
+
+const toggleBillPaid = async (uid: string, id: string, paid: boolean) => {
+    const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
+    await updateDoc(ref, { paid });
 }
 
 const deleteTransaction = async (uid: string, id: string) => {
@@ -48,30 +121,10 @@ const editTransaction = async (uid: string, id: string, data: Transaction) => {
     const oldTransaction = await getUserTransaction(uid, id);
     if (!oldTransaction) throw new Error("Transaction not found");
 
-    const newCardId = data.cardId?.trim() || NO_CARD_ID;
-    const payload = { ...data, cardId: newCardId };
-
-    if (!isPocketCardId(oldTransaction.cardId)) {
-        const oldCard = await CardsService.getById(oldTransaction.cardId);
-        if (oldCard) {
-            const revertedBalance = oldTransaction.type === 'receita'
-                ? oldCard.balance - oldTransaction.value
-                : oldCard.balance + oldTransaction.value;
-            await CardsService.update(oldTransaction.cardId, { balance: revertedBalance });
-        }
-    }
-
-    if (!isPocketCardId(newCardId)) {
-        const newCard = await CardsService.getById(newCardId);
-        if (!newCard) throw new Error("Card not found");
-        const newBalance = data.type === 'receita'
-            ? newCard.balance + data.value
-            : newCard.balance - data.value;
-        await CardsService.update(newCardId, { balance: newBalance });
-    }
+    const payload = normalizeTransactionPayload(data);
 
     const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
-    await updateDoc(ref, payload);
+    await updateDoc(ref, toFirestoreUpdatePayload(payload));
 }
 
 export const useDeleteTransaction = () => {
@@ -92,8 +145,11 @@ export const getUserTransaction = async (uid: string, id: string): Promise<Trans
     const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
     const docSnap = await getDoc(ref);
     if (docSnap.exists()) {
+        const raw = docSnap.data() as Transaction & { date?: unknown };
         return {
-            ...(docSnap.data() as Transaction),
+            ...raw,
+            walletId: resolveWalletId(raw),
+            date: normalizeTransactionDate(raw.date),
             id: docSnap.id,
         };
     }
@@ -113,10 +169,15 @@ export const getUserTransactions = async (uid: string): Promise<Transaction[]> =
     const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
     const snapshot = await getDocs(ref);
 
-    return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-    })) as Transaction[];
+    return snapshot.docs.map((doc) => {
+        const raw = doc.data() as Transaction & { date?: unknown };
+        return {
+            ...raw,
+            walletId: resolveWalletId(raw),
+            date: normalizeTransactionDate(raw.date),
+            id: doc.id,
+        };
+    }) as Transaction[];
 };
 export const useUserTransactions = () => {
     const { uid } = useUserStore();
@@ -135,5 +196,15 @@ export const useCreateTransaction = () => {
     return useMutation({
         mutationFn: (data: Transaction) => createTransaction(data, uid),
         retry: false
+    });
+};
+
+export const useToggleBillPaid = () => {
+    const { uid } = useUserStore();
+
+    return useMutation({
+        mutationFn: ({ id, paid }: { id: string; paid: boolean }) =>
+            toggleBillPaid(uid, id, paid),
+        retry: false,
     });
 };

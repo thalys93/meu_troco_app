@@ -2,9 +2,13 @@ import React from 'react'
 import { DollarSign, Facebook, Instagram, Twitter } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import LegalModals from '@/shared/components/LegalModals'
+import { Link, useLocation } from 'react-router-dom'
+import { FacebookLogoIcon, GithubLogo, LinkedinLogo, ThreadsLogoIcon } from '@phosphor-icons/react'
 
 function Footer() {
     const { t } = useTranslation();
+    const location = useLocation();
+    const shouldShowBackofficeLink = !location.pathname.startsWith('/backoffice');
 
     const [legalModal, setLegalModal] = React.useState<{ isOpen: boolean, type: 'terms' | 'privacy' }>({
         isOpen: false,
@@ -55,21 +59,27 @@ function Footer() {
                         <div>
                             <h3 className="font-semibold mb-4">{t('footer.social_groups')}</h3>
                             <div className="flex gap-4">
-                                <a href="#" className="text-muted-foreground/50 hover:text-primary transition-colors">
-                                    <Facebook className="w-5 h-5" />
+                                <a href="https://www.linkedin.com/in/thalys-dev202/" className="text-muted-foreground/50 hover:text-primary transition-colors">
+                                    <LinkedinLogo className="w-5 h-5" />
                                 </a>
-                                <a href="#" className="text-muted-foreground/50 hover:text-primary transition-colors">
-                                    <Twitter className="w-5 h-5" />
+                                <a href="https://www.threads.com/@thalys_xavierr" className="text-muted-foreground/50 hover:text-primary transition-colors">
+                                    <ThreadsLogoIcon className="w-5 h-5" />
                                 </a>
-                                <a href="#" className="text-muted-foreground/50 hover:text-primary transition-colors">
-                                    <Instagram className="w-5 h-5" />
+                                <a href="https://github.com/thalys93/meu_troco_app" className="text-muted-foreground/50 hover:text-primary transition-colors">
+                                    <GithubLogo className="w-5 h-5" />
                                 </a>
                             </div>
                         </div>
                     </div>
 
                     <div className="border-t border-border/50 mt-8 pt-8 text-center text-muted-foreground select-none hover:text-emerald-500 transition-all">
-                        <p>&copy; {new Date().getFullYear()} Meu Troco. {t('footer.all_rights')}.</p>
+                        {shouldShowBackofficeLink ? (
+                            <Link to="/backoffice/login" aria-label={t('footer.backoffice_access', 'Acesso operacional')} className="inline-block cursor-pointer">
+                                &copy; {new Date().getFullYear()} Meu Troco. {t('footer.all_rights')}.
+                            </Link>
+                        ) : (
+                            <p>&copy; {new Date().getFullYear()} Meu Troco. {t('footer.all_rights')}.</p>
+                        )}
                     </div>
                 </div>
             </div>

@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { useUserTransactions } from '@/utils/services/api/transation';
-import { isPocketCardId, POCKET_CARD_NAME } from '@/constants/cards';
-import { useCardsStore } from '@/store/useCardsStore';
+import { LEGACY_POCKET_CARD_NAME } from '@/constants/wallets';
+import { useWalletsStore } from '@/store/useWalletsStore';
+import { computePocketBalance } from '@/utils/wallet-balance';
 
 /**
  * Saldo do "Bolso" (Sem Cartão): soma de receitas menos despesas
@@ -10,20 +11,12 @@ import { useCardsStore } from '@/store/useCardsStore';
  */
 export function usePocketBalance(): number {
     const { data: transactions = [] } = useUserTransactions();
-    const { cards } = useCardsStore();
+    const { wallets } = useWalletsStore();
 
     const legacyPocketId = useMemo(
-        () => cards.find((c) => c.name === POCKET_CARD_NAME)?.id,
-        [cards]
+        () => wallets.find((wallet) => wallet.name === LEGACY_POCKET_CARD_NAME)?.id,
+        [wallets]
     );
 
-    return useMemo(() => {
-        const pocketTransactions = transactions.filter((t) => {
-            const cardId = (t as { cardId?: string }).cardId;
-            return isPocketCardId(cardId) || cardId === legacyPocketId;
-        });
-        return pocketTransactions.reduce((acc, t) => {
-            return t.type === 'receita' ? acc + t.value : acc - t.value;
-        }, 0);
-    }, [transactions, legacyPocketId]);
+    return useMemo(() => computePocketBalance(transactions, legacyPocketId ? [legacyPocketId] : []), [transactions, legacyPocketId]);
 }

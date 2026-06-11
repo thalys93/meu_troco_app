@@ -1,37 +1,27 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
-  TrendingUp,
   Smartphone,
-  Shield,
-  Zap,
   Monitor,
+  Loader2,
 } from 'lucide-react';
+import { RoadmapVerticalTimeline } from '@/components/roadmap/RoadmapVerticalTimeline';
+import { useGetPublicRoadmap } from '@/utils/services/api/roadmap-service';
 import { useNavigate } from 'react-router-dom';
 import PublicLayout from '@/subdomains/app/layout/PublicLayout';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion'
 import MockupDashboard from './MockupDashboard';
-import financeIMG from '@/assets/finances_bg.jpg';
 import { useIsMobile } from '../../../../hooks/use-mobile';
-import {
-  mockBanks,
-  mockTransactionTypes,
-  mockRecentTransactions,
-  mockBudgetItems,
-  mockSecurityItems
-} from './data';
+import { mockSecurityItems } from './data';
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [mockupTab, setMockupTab] = React.useState<'dashboard' | 'transactions'>('dashboard');
   const [mockupDevice, setMockupDevice] = React.useState<'desktop' | 'mobile'>('desktop');
   const isMobile = useIsMobile();
-
-  // const { theme } = useTheme();
-  // const { data: plans } = useGetPlans();
-  // const handlePricingClick = (planTitle: string) => {navigate('oauth/register', { state: { plan: planTitle } });};
+  const { data: roadmapTree, isLoading: roadmapLoading } = useGetPublicRoadmap(i18n.language);
 
   React.useEffect(() => {
     if (isMobile) setMockupDevice('mobile');
@@ -131,124 +121,31 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <section id="funcionalidades" className="relative z-10 py-24 container mx-auto px-4">
-          <div className="text-center mb-16 px-4">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6">
-              {t('landing_v2.connect.title')} <br />
-              <span className="text-primary">{t('landing_v2.connect.subtitle')}</span>
-            </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              {t('landing_v2.connect.description')}
-            </p>
-          </div>
-
-          <div className="max-w-xl mx-auto mb-16">
-            <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="font-semibold text-lg">{t('landing_v2.connect.card_title')}</h3>
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Zap className="w-4 h-4 text-primary" />
-                </div>
-              </div>
-              <div className="space-y-4">
-                {mockBanks.map((bank) => (
-                  <div key={bank.name} className="flex items-center justify-between p-4 rounded-2xl bg-muted/50 border border-border/50">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-background border border-border overflow-hidden flex items-center justify-center">
-                        <img src={bank.logo} alt={bank.name} className="w-full h-full object-cover" />
-                      </div>
-                      <span className="font-medium">{bank.name}</span>
-                    </div>
-                    <div className="text-sm text-primary">{t('landing_v2.connect.connected')}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="relative z-10 py-24 bg-muted/20 backdrop-blur-[2px]">
-          <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                {t('landing_v2.transactions.title')} <br />
-                <span className="text-primary">{t('landing_v2.transactions.subtitle')}</span>
+        <section id="roadmap" className="relative z-10 py-24 container mx-auto px-4">
+          <div className="max-w-6xl mx-auto space-y-10">
+            <div className="text-center max-w-3xl mx-auto">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4">
+                {t('landing_v2.roadmap.title')}
               </h2>
-              <div className="flex flex-wrap justify-center gap-4 text-sm font-medium">
-                {mockTransactionTypes.map((type) => (
-                  <div key={type.id} className="flex items-center gap-2 px-3 py-1 rounded-full border border-border bg-background">
-                    <div className={`w-2 h-2 rounded-full ${type.id === 'Income' ? 'bg-emerald-400' : type.id === 'Expense' ? 'bg-destructive' : 'bg-primary'}`} />
-                    {t(type.labelKey)}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="max-w-4xl mx-auto rounded-3xl border border-border bg-card shadow-lg overflow-hidden">
-              <div className="p-6 border-b border-border bg-muted/50 flex items-center justify-between">
-                <span className="font-semibold">{t('landing_v2.transactions.recent_title')}</span>
-                <Button variant="ghost" size="sm">{t('landing_v2.transactions.view_all')}</Button>
-              </div>
-              <div className="divide-y divide-border">
-                {mockRecentTransactions.map((tr, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center font-bold text-xs">
-                        {tr.name[0]}
-                      </div>
-                      <div>
-                        <div className="font-medium">{tr.name}</div>
-                        <div className="text-xs text-muted-foreground">{tr.cat}</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className={`font-semibold ${tr.green ? 'text-emerald-500' : ''}`}>{tr.price}</div>
-                      <div className="text-xs text-muted-foreground">{t(tr.dateKey)}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section id="sobre" className="relative z-10 py-24 container mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
-            <div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">
-                {t('landing_v2.budgeting.title')} <br />
-                <span className="text-primary">{t('landing_v2.budgeting.subtitle')}</span>
-              </h2>
-              <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-                {t('landing_v2.budgeting.description')}
+              <p className="text-muted-foreground text-lg">
+                {t('landing_v2.roadmap.description')}
               </p>
-              <div className="space-y-4">
-                {mockBudgetItems.map((b, i) => (
-                  <div key={i} className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>{b.icon} {t(b.labelKey)}</span>
-                      <span className="font-medium text-muted-foreground">{b.val}%</span>
-                    </div>
-                    <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${b.val > 80 ? 'bg-amber-400' : 'bg-primary'}`}
-                        style={{ width: `${b.val}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
-            <div className="relative">
-              <div className="aspect-square bg-gradient-to-br from-zinc-900/20 to-zinc-500/10 rounded-[40px] flex items-center justify-center overflow-hidden">
-                <img src={financeIMG} className='w-full h-full object-cover opacity-80' />
+
+            {roadmapLoading && (
+              <div className="flex justify-center py-16">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </div>
-              <div className="absolute -bottom-6 -right-6 bg-card border border-border p-6 rounded-2xl shadow-xl animate-bounce-slow">
-                <TrendingUp className="w-8 h-8 text-primary mb-2" />
-                <div className="text-sm font-bold">{t('landing_v2.budgeting.emergency_fund')}</div>
-                <div className="text-2xl font-bold text-emerald-500">R$ 12.450</div>
-              </div>
-            </div>
+            )}
+
+            {!roadmapLoading && roadmapTree && (
+              <RoadmapVerticalTimeline
+                tree={roadmapTree}
+                variant="public"
+                showPreviewBanner={false}
+                className="border border-border/60 shadow-lg"
+              />
+            )}
           </div>
         </section>
 

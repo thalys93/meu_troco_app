@@ -1,14 +1,5 @@
-import PrivateLayout from '@/subdomains/dashboard/layout/PrivateLayout';
-import { CardList } from './components/CardList';
+import { Navigate } from "react-router-dom";
 
-const CardsPage = () => {
-    return (
-        <PrivateLayout>
-            <div className="container mx-auto max-w-5xl mt-8 mb-20 md:mb-28 px-4 md:px-6">
-                <CardList />
-            </div>
-        </PrivateLayout>
-    );
-};
+const CardsPage = () => <Navigate to="/dashboard/wallets" replace />;
 
 export default CardsPage;

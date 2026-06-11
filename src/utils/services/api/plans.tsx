@@ -9,11 +9,24 @@ export interface Plan {
     period?: string;
     features: (string | { value: string })[];
     isPopular?: boolean;    
+    status?: PlanStatus;
 }
+
+export type PlanStatus = 'active' | 'archived';
+
+const mapPlan = (id: string, data: Record<string, unknown>): Plan => ({
+    id,
+    title: (data.title as string) ?? '',
+    price: (data.price as string) ?? '',
+    period: data.period as string | undefined,
+    features: Array.isArray(data.features) ? data.features as Plan['features'] : [],
+    isPopular: data.isPopular === true,
+    status: (data.status as PlanStatus | undefined) ?? 'active',
+});
 
 const createPlan = async (data: Plan) => {
     const ref = collection(FireStore, 'plans');
-    const docRef = await addDoc(ref, data);
+    const docRef = await addDoc(ref, { ...data, status: data.status ?? 'active' });
     return docRef.id;
 }
 
@@ -30,14 +43,18 @@ const deletePlan = async (id: string) => {
 const getPlans = async () => {
     const ref = collection(FireStore, 'plans');
     const snapshot = await getDocs(ref);  
-    const mappedSnapshot = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));  
-    return mappedSnapshot as Plan[];
+    return snapshot.docs.map((doc) => mapPlan(doc.id, doc.data()));
+}
+
+const getActivePlans = async () => {
+    const plans = await getPlans();
+    return plans.filter((plan) => (plan.status ?? 'active') === 'active');
 }
 
 const getPlan = async (id: string) => {
     const ref = doc(FireStore, 'plans', id);
     const docSnap = await getDoc(ref);
-    return docSnap.exists() ? (docSnap.data() as Plan) : null;
+    return docSnap.exists() ? mapPlan(docSnap.id, docSnap.data()) : null;
 }
 
 export const useGetPlan = (id: string) => {    
@@ -52,7 +69,17 @@ export const useGetPlans = () => {
     return useQuery({
         queryKey: ['plans'],
         queryFn: () => getPlans(),
-        retry: false
+        retry: false,
+        staleTime: 60_000
+    })
+}
+
+export const useGetActivePlans = () => {
+    return useQuery({
+        queryKey: ['plans', 'active'],
+        queryFn: () => getActivePlans(),
+        retry: false,
+        staleTime: 60_000
     })
 }
 

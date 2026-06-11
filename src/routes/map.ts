@@ -1,17 +1,6 @@
 import LandingPage from "@/subdomains/app/pages/home/Landing";
 import LoginPage from "@/subdomains/app/pages/oauth/Login";
 import RegisterPage from "@/subdomains/app/pages/oauth/Register";
-import PlansFormComponent from "@/subdomains/backoffice/pages/plans/PlanForm";
-import SessionValidation from "@/subdomains/backoffice/components/SessionValidation";
-import BackofficeHomePage from "@/subdomains/backoffice/pages/home/Home";
-import BackofficeLoginPage from "@/subdomains/backoffice/pages/login/Login";
-import PlansPage from "@/subdomains/backoffice/pages/plans/Plans";
-import BackOfficeProfilePage from "@/subdomains/backoffice/pages/profile/Profile";
-import NotificationsPage from "@/subdomains/backoffice/pages/notifications/Notifications";
-import NotificationFormPage from "@/subdomains/backoffice/pages/notifications/NotificationForm";
-import CategoriesPage from "@/subdomains/backoffice/pages/categories/Categories";
-import CategoryFormPage from "@/subdomains/backoffice/pages/categories/CategoryForm";
-import UsersPage from "@/subdomains/backoffice/pages/users/Users";
 import DashboardPage from "@/subdomains/dashboard/pages/home/Dashboard";
 import ExpensesPage from "@/subdomains/dashboard/pages/expenses/Expenses";
 import IncomePage from "@/subdomains/dashboard/pages/income/Income";
@@ -22,12 +11,30 @@ import TransactionsPage from "@/subdomains/dashboard/pages/transactions/Transact
 import CurrencyConverter from "@/subdomains/dashboard/pages/converter/CurrencyConverter";
 import CardsPage from "@/subdomains/dashboard/pages/cards/CardsPage";
 import WalletsPage from "@/subdomains/dashboard/pages/wallets/WalletsPage";
-import { ReactElement } from "react";
+import { lazy, type ComponentType } from "react";
+import AccountSuspendedPage from "@/subdomains/app/pages/account/AccountSuspended";
 
+const PlansFormComponent = lazy(() => import("@/subdomains/backoffice/pages/plans/PlanForm"));
+const SessionValidation = lazy(() => import("@/subdomains/backoffice/components/SessionValidation"));
+const BackofficeHomePage = lazy(() => import("@/subdomains/backoffice/pages/home/Home"));
+const BackofficeLoginPage = lazy(() => import("@/subdomains/backoffice/pages/login/Login"));
+const PlansPage = lazy(() => import("@/subdomains/backoffice/pages/plans/Plans"));
+const BackOfficeProfilePage = lazy(() => import("@/subdomains/backoffice/pages/profile/Profile"));
+const NotificationsPage = lazy(() => import("@/subdomains/backoffice/pages/notifications/Notifications"));
+const NotificationFormPage = lazy(() => import("@/subdomains/backoffice/pages/notifications/NotificationForm"));
+const CategoriesPage = lazy(() => import("@/subdomains/backoffice/pages/categories/Categories"));
+const CategoryFormPage = lazy(() => import("@/subdomains/backoffice/pages/categories/CategoryForm"));
+const UsersPage = lazy(() => import("@/subdomains/backoffice/pages/users/Users"));
+const GoalCatalogPage = lazy(() => import("@/subdomains/backoffice/pages/goal-catalog/GoalCatalog"));
+const InternalTasksPage = lazy(() => import("@/subdomains/backoffice/pages/internal-tasks/InternalTasks"));
+const InternalTaskViewPage = lazy(() => import("@/subdomains/backoffice/pages/internal-tasks/InternalTaskView"));
+const InternalTaskFormPage = lazy(() => import("@/subdomains/backoffice/pages/internal-tasks/InternalTaskForm"));
+const RoadmapPage = lazy(() => import("@/subdomains/backoffice/pages/roadmap/Roadmap"));
+const RoadmapCatalogPage = lazy(() => import("@/subdomains/backoffice/pages/roadmap/RoadmapCatalog"));
 
 type RouteItem = {
     path: string
-    element: () => ReactElement;
+    element: ComponentType;
 };
 
 type RoutesGroup = {
@@ -45,7 +52,8 @@ export const AppRoutes: RoutesGroup = {
     public: [
         { path: "", element: LandingPage },
         { path: "oauth/login", element: LoginPage },
-        { path: "oauth/register", element: RegisterPage }
+        { path: "oauth/register", element: RegisterPage },
+        { path: "account-suspended", element: AccountSuspendedPage }
     ]
 }
 
@@ -83,6 +91,13 @@ export const BackOfficeRoutes: RoutesGroup = {
         { path: "users", element: UsersPage },
         { path: "plans", element: PlansPage },
         { path: "plan/:id?", element: PlansFormComponent },
+        { path: "goal-catalog", element: GoalCatalogPage },
+        { path: "internal-tasks", element: InternalTasksPage },
+        { path: "internal-task/new", element: InternalTaskFormPage },
+        { path: "internal-task/:id/edit", element: InternalTaskFormPage },
+        { path: "internal-task/:id", element: InternalTaskViewPage },
+        { path: "roadmap", element: RoadmapPage },
+        { path: "roadmap-catalog", element: RoadmapCatalogPage },
         { path: "notifications", element: NotificationsPage },
         { path: "notification/:id?", element: NotificationFormPage },
         { path: "categories", element: CategoriesPage },

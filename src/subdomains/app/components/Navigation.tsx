@@ -18,9 +18,7 @@ function Navigation({ type, title }: { type: "simple" | "full", title?: string }
 
     const navigationItems = [
         { name: t("navigation.home"), href: '#hero' },
-        { name: t("navigation.about"), href: '#sobre' },
-        { name: t("navigation.funcionalities"), href: '#funcionalidades' },
-        // { name: 'Preços', href: '#precos' },
+        { name: t("navigation.roadmap"), href: '#roadmap' },
         { name: t('navigation.benefits'), href: '#beneficios' },
     ];
 

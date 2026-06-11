@@ -4,24 +4,31 @@ import { AccountTypes } from '@/types/enums/AccountsTypes';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 import { getUserCreatedAt, getUserDisplayName, getUserPlanKey, FREE_PLAN_KEY } from './users-list-utils';
+import { cn } from '@/lib/utils';
 
 type UserRowProps = {
   user: User;
+  onEdit?: (user: User) => void;
 };
 
-function UserRow({ user }: UserRowProps) {
+function UserRow({ user, onEdit }: UserRowProps) {
   const { t } = useTranslation();
   const displayName = getUserDisplayName(user);
   const planKey = getUserPlanKey(user);
   const createdAt = getUserCreatedAt(user);
   const isAdmin = user.accountType === AccountTypes.ADMIN;
   const avatar = user.details?.avatar;
+  const status = user.status ?? 'active';
 
   const planLabel =
     planKey === FREE_PLAN_KEY ? t('users.backoffice.plan.free') : planKey;
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 py-3 hover:bg-muted/30 transition-colors">
+    <button
+      type="button"
+      onClick={() => onEdit?.(user)}
+      className="w-full text-left flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-3 py-3 hover:bg-muted/30 transition-colors"
+    >
       <div className="min-w-0 flex-1 flex items-center gap-3">
         {avatar ? (
           <img
@@ -49,6 +56,17 @@ function UserRow({ user }: UserRowProps) {
                 ? t('users.backoffice.accountType.admin')
                 : t('users.backoffice.accountType.user')}
             </Badge>
+            <Badge
+              variant="outline"
+              className={cn(
+                'rounded-md font-normal',
+                status === 'active' && 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
+                status === 'inactive' && 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30',
+                status === 'blocked' && 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30'
+              )}
+            >
+              {t(`users.backoffice.status.${status}`, status)}
+            </Badge>
           </div>
           <p className="text-xs text-muted-foreground truncate mt-0.5">{user.email}</p>
         </div>
@@ -65,7 +83,7 @@ function UserRow({ user }: UserRowProps) {
           </span>
         )}
       </div>
-    </div>
+    </button>
   );
 }
 

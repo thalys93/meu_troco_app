@@ -12,9 +12,10 @@ import {
     ChartTooltipContent,
 } from '@/components/ui/chart';
 import { Bar, BarChart, XAxis, YAxis } from 'recharts';
-import { LayoutGrid, Bell, ArrowUpRight } from 'lucide-react';
+import { LayoutGrid, Bell, ArrowUpRight, Users, ShoppingBag, Map } from 'lucide-react';
 import type { NotificationType } from '@/types/Notification';
 import { BackofficeUsersError } from '@/utils/helpers/authGuard';
+import MetricCard from '@/subdomains/backoffice/components/MetricCard';
 
 const COLORS = {
     users: 'hsl(142.1 76.2% 36.3%)',
@@ -110,6 +111,37 @@ function BackofficeHomePage() {
                 description={t('backoffice.stats.description')}
                 eyebrow={t('sidebar.backoffice')}
             >
+                <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Link to="/backoffice/users">
+                            <MetricCard
+                                title={t('backoffice.stats.users')}
+                                value={isLoading ? '...' : data.users}
+                                icon={Users}
+                                subtitle={t('users.backoffice.title')}
+                                iconClassName="text-emerald-500"
+                            />
+                        </Link>
+                        <Link to="/backoffice/plans">
+                            <MetricCard
+                                title={t('backoffice.plans')}
+                                value={t('plans.backoffice.status.active', 'Ativos')}
+                                icon={ShoppingBag}
+                                subtitle={t('backoffice.plans.description')}
+                                iconClassName="text-sky-500"
+                            />
+                        </Link>
+                        <Link to="/backoffice/roadmap">
+                            <MetricCard
+                                title={t('roadmap.title')}
+                                value={t('roadmap.view.kanban')}
+                                icon={Map}
+                                subtitle={t('roadmap.description')}
+                                iconClassName="text-amber-500"
+                            />
+                        </Link>
+                    </div>
+
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                     <div
                         className={cn(
@@ -243,6 +275,7 @@ function BackofficeHomePage() {
                             ))}
                         </div>
                     </div>
+                </div>
                 </div>
             </PageShell>
         </PrivateLayout>

@@ -13,6 +13,7 @@ export function createUser(provider: AccountProviders, user: FirebaseUser, data?
                 fullName: user.displayName,
                 email: user.email,
                 accountType: AccountTypes.USER,
+                status: "active",
                 details: {
                     firstName: "",
                     lastName: "",
@@ -38,6 +39,7 @@ export function createUser(provider: AccountProviders, user: FirebaseUser, data?
                 fullName: data.firstName + data.lastName,
                 email: data.email,
                 accountType: AccountTypes.USER,
+                status: "active",
                 details: {
                     firstName: data.firstName,
                     lastName: data.lastName,

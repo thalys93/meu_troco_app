@@ -8,9 +8,12 @@ export type User = {
     fullName: string;
     email: string;    
     accountType?: AccountTypes;
+    status?: UserStatus;
     details?: UserDetails;
     billing?: UserBilling;
 }
+
+export type UserStatus = 'active' | 'inactive' | 'blocked';
 
 export type UserDetails = {
     createdAt: FirebaseTimestamp,

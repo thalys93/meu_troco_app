@@ -1,62 +1,78 @@
-## Meu Troco - Branch de Desenvolvimento
-> O Meu Troco é um aplicativo de finanças pessoais criado para ajudar pessoas a organizarem sua vida financeira de forma prática, visual e objetiva.
+# PROD Branch## Meu Troco - Branch de Produção
+
+> O Meu Troco é um aplicativo de finanças pessoais criado para ajudar pessoas a organizarem sua vida financeira de forma prática, visual e objetiva.  
 Sem planilhas caóticas. Sem complicação. Só controle real do seu dinheiro.
 
-> ⚠️ Esta é a branch de desenvolvimento.
-> Pode conter features incompletas, refatorações em andamento e breaking changes.
-
-----
-
-Esta branch concentra:
-- Novas features
-- Refatorações estruturais
-- Melhorias de arquitetura
-- Ajustes de performance
-- Testes de UI/UX
-
-Não é uma versão estável para produção.
+> ✅ Esta é a branch de produção.
+> Código estável, validado e pronto para deploy.
 
 ---
 
-## 🧠 Objetivo da Branch `dev`
+Esta branch contém:
+- Código validado e revisado
+- Features finalizadas e testadas
+- Correções aprovadas
+- Versão preparada para ambiente produtivo
 
-A branch `dev` é o ambiente de evolução contínua do projeto.
+Não realizar desenvolvimento direto nesta branch.
+
+---
+
+## 🎯 Objetivo da Branch `prod`
+
+A branch `prod` representa a versão estável e publicada do sistema.
 
 Fluxo padrão:
 
-- prod → versão estável (produtiva)
-- dev → integração de features  
-- feature/* → novas funcionalidades  
-- fix/* → correções emergenciais  
+- prod → versão estável (produção)
+- dev → integração de features
+- feature/* → novas funcionalidades
+- fix/* → correções emergenciais
+
+Merge permitido apenas via PR aprovado a partir da `dev` ou `fix/*`.
 
 ---
 
-## 🚀 Como Rodar em Desenvolvimento
+## 🚀 Deploy
 
-```bash
-# Clonar repositório
-git clone <repo-url>
+O deploy deve ser realizado exclusivamente a partir desta branch.
 
-# Acessar projeto
-cd meu-troco
+Checklist obrigatório antes de merge:
 
-# Instalar dependências
-npm install / bun install
+- [ ] Build sem erros
+- [ ] Testes passando
+- [ ] Revisão de código concluída
+- [ ] Changelog atualizado
+- [ ] Versionamento ajustado (SemVer)
 
-# Rodar ambiente de desenvolvimento
-npm run dev / bun dev
+---
 
-```
+## 🔒 Regras Importantes
 
-## 🧪 Padrões de Desenvolvimento
+- ❌ Não commitar diretamente na `prod`
+- ❌ Não testar features experimentais
+- ❌ Não alterar configurações críticas sem revisão
 
-- Nome de branch: feature/nome-da-feature
-- Commits semânticos
-- PR obrigatório antes de merge
-- Código deve passar por revisão
-- Evitar lógica de negócio na camada de UI
+- ✅ Apenas código estável
+- ✅ PR obrigatório
+- ✅ Histórico limpo e rastreável
+
+---
+
+## 🏷 Versionamento
+
+Seguir padrão **SemVer**:
+
+MAJOR.MINOR.PATCH
+
+Exemplo:
+- 1.0.0 → primeira versão estável
+- 1.1.0 → nova feature compatível
+- 1.1.1 → correção de bug
+
+---
 
 ## 👨‍💻 Manutenção
 
-Responsável: thalys93
-Projeto em evolução ativa.
+Responsável: thalys93  
+Ambiente produtivo. Mudanças exigem responsabilidade.

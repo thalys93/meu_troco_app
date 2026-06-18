@@ -39,6 +39,7 @@ import {
   compareTransactionsByColumn,
   filterTransactionsByPreferences,
   getDefaultSortOrderForColumn,
+  isBillPaid,
   summarizeIncomeExpense,
   summarizeTransactionTypes,
 } from '@/subdomains/dashboard/utils/transaction-filters';
@@ -92,7 +93,7 @@ type SortableTableHeadProps = {
   sortOrder: "asc" | "desc";
   onSort: (column: TransactionTableSortColumn) => void;
   className?: string;
-  align?: "left" | "right";
+  align?: "left" | "right" | "center";
 };
 
 function SortableTableHead({
@@ -113,6 +114,7 @@ function SortableTableHead({
         className={cn(
           "inline-flex items-center gap-1.5 rounded-md transition-colors hover:text-foreground",
           align === "right" && "ml-auto",
+          align === "center" && "mx-auto",
           isActive && "text-foreground"
         )}
       >
@@ -460,9 +462,17 @@ const TransactionList = ({
     return summarizeIncomeExpense(filteredTransactions);
   }, [filteredTransactions]);
 
+  const excludePaidBillsFromSum = filterType === 'conta';
+
   const tableNetSum = React.useMemo(
-    () => filteredTransactions.reduce((acc, tr) => acc + transactionSignedAmount(tr), 0),
-    [filteredTransactions]
+    () =>
+      filteredTransactions.reduce((acc, tr) => {
+        if (excludePaidBillsFromSum && isBillPaid(tr)) {
+          return acc;
+        }
+        return acc + transactionSignedAmount(tr);
+      }, 0),
+    [excludePaidBillsFromSum, filteredTransactions]
   );
 
   const resolveDayGroupLabel = React.useCallback(
@@ -701,7 +711,7 @@ const TransactionList = ({
     (transaction: Transaction) => {
       if (isReadOnly) return;
       if (!transaction.id || transaction.type !== 'conta') return;
-      const nextPaid = transaction.paid !== true;
+      const nextPaid = !isBillPaid(transaction);
       setTogglingPaidId(transaction.id);
       toggleBillPaid(
         { id: transaction.id, paid: nextPaid },
@@ -793,7 +803,7 @@ const TransactionList = ({
           : getWalletBadgeData(transaction.walletId || transaction.cardId);
         const zebra = currentRowIndex % 2 === 1;
         const isBill = transaction.type === 'conta';
-        const isBillPaid = transaction.paid === true;
+        const isBillPaidRow = isBillPaid(transaction);
         const isTogglingThisPaid =
           isTogglingPaid && togglingPaidId === transaction.id;
 
@@ -820,8 +830,8 @@ const TransactionList = ({
             className={cn(
               'border-0 transition-colors',
               isTableVariant && 'cursor-pointer select-none',
-              isBill && !isBillPaid && 'border-l-2 border-l-amber-500/50',
-              isBill && isBillPaid && 'opacity-60',
+              isBill && !isBillPaidRow && 'border-l-2 border-l-amber-500/50',
+              isBill && isBillPaidRow && 'opacity-60',
               zebra
                 ? 'bg-muted/30 hover:bg-muted/45 dark:bg-muted/15 dark:hover:bg-muted/25'
                 : 'bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20',
@@ -887,7 +897,7 @@ const TransactionList = ({
                 <span
                   className={cn(
                     'text-sm font-medium leading-snug line-clamp-2 text-foreground',
-                    isBill && isBillPaid && 'line-through'
+                    isBill && isBillPaidRow && 'line-through'
                   )}
                 >
                   {transaction.description}
@@ -950,7 +960,7 @@ const TransactionList = ({
               >
                 {isBill && (
                   <Checkbox
-                    checked={isBillPaid}
+                    checked={isBillPaidRow}
                     disabled={isTogglingThisPaid || isReadOnly}
                     onCheckedChange={() => handleToggleBillPaid(transaction)}
                     aria-label={t('transactionList.paid')}
@@ -1203,7 +1213,11 @@ const TransactionList = ({
                     <div className="min-w-0 space-y-0.5">
                       <p className="text-xs font-medium text-muted-foreground">{t('sidebar.bills')}</p>
                       <p className="truncate text-base font-semibold text-amber-600 dark:text-amber-400">
-                        {formatSummaryValue(tableFilteredSummary.billsTotal)}
+                        {formatSummaryValue(
+                          filterType === 'conta'
+                            ? tableFilteredSummary.billsPendingTotal
+                            : tableFilteredSummary.billsTotal
+                        )}
                       </p>
                     </div>
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
@@ -1458,9 +1472,15 @@ const TransactionList = ({
                         className={cn(TABLE_HEAD_CLASS, "w-[14%] px-3")}
                       />
                       {showPaidColumn && (
-                        <TableHead className={cn(TABLE_HEAD_CLASS, "w-[8%] px-3 text-center")}>
-                          {t('transactionList.paid')}
-                        </TableHead>
+                        <SortableTableHead
+                          column="paid"
+                          label={t('transactionList.paid')}
+                          activeColumn={tableSortColumn}
+                          sortOrder={tableSortOrder}
+                          onSort={handleTableSortClick}
+                          align="center"
+                          className={cn(TABLE_HEAD_CLASS, "w-[8%] px-3 text-center")}
+                        />
                       )}
                       <SortableTableHead
                         column="value"

@@ -87,6 +87,11 @@ export function compareTransactionsByColumn(
     }
     case "type":
       return a.type.localeCompare(b.type) * direction;
+    case "paid": {
+      const aPaid = isBillPaid(a) ? 1 : 0;
+      const bPaid = isBillPaid(b) ? 1 : 0;
+      return (aPaid - bPaid) * direction;
+    }
     case "value":
       return (a.value - b.value) * direction;
     default:
@@ -158,14 +163,20 @@ export const filterTransactionsByPreferences = (
     );
 };
 
+export const isBillPaid = (transaction: Transaction): boolean =>
+  transaction.type === "conta" && transaction.paid === true;
+
+export const isBillPending = (transaction: Transaction): boolean =>
+  transaction.type === "conta" && !isBillPaid(transaction);
+
 export const summarizeTransactionTypes = (
   transactions: Transaction[]
 ): TransactionTypesSummary => {
   const income = transactions.filter((tr) => tr.type === "receita");
   const expense = transactions.filter((tr) => tr.type === "despesa");
   const bills = transactions.filter((tr) => tr.type === "conta");
-  const paidBills = bills.filter((tr) => tr.paid === true);
-  const pendingBills = bills.filter((tr) => tr.paid !== true);
+  const paidBills = bills.filter(isBillPaid);
+  const pendingBills = bills.filter(isBillPending);
 
   return {
     incomeTotal: income.reduce((acc, tr) => acc + tr.value, 0),

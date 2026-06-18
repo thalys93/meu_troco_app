@@ -30,6 +30,7 @@ const TABLE_SORT_COLUMNS: TransactionTableSortColumn[] = [
   'date',
   'category',
   'type',
+  'paid',
   'value',
 ];
 

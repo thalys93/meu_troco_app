@@ -34,6 +34,7 @@ import { Edit, GripVertical, Save, Trash2, X } from 'lucide-react';
 import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
+import { EntityActionsMenu, type ActionMenuItem } from '@/components/EntityActionsMenu';
 import {
     buildItemPayloadFromLocalized,
     emptyRoadmapItemLocalized,
@@ -103,7 +104,26 @@ function RoadmapCard({
         data: { status: item.status },
     });
 
-    return (
+    const actionItems = React.useMemo<ActionMenuItem[]>(
+        () => [
+            {
+                id: 'edit',
+                label: t('default.edit'),
+                icon: <Edit className="h-4 w-4" />,
+                onSelect: () => onEdit(item),
+            },
+            {
+                id: 'delete',
+                label: t('transactionList.delete'),
+                icon: <Trash2 className="h-4 w-4" />,
+                onSelect: () => onDelete(item),
+                destructive: true,
+            },
+        ],
+        [item, onDelete, onEdit, t]
+    );
+
+    const card = (
         <article
             ref={setNodeRef}
             style={{ transform: CSS.Translate.toString(transform) }}
@@ -132,6 +152,12 @@ function RoadmapCard({
                 <Badge variant="secondary">{translateRoadmapPriority(t, item.priority)}</Badge>
             </div>
         </article>
+    );
+
+    return (
+        <EntityActionsMenu items={actionItems} menuLabel={t('transactionList.actions')}>
+            {card}
+        </EntityActionsMenu>
     );
 }
 

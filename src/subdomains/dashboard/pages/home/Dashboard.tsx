@@ -40,7 +40,7 @@ function DashboardHomeBody() {
     goToPreviousMonth,
     resetCurrentMonth,
     layoutMode,
-    transactionListFilters
+    transactionListFilters,
   } = useDashboardPreferences();
   const isMobile = useIsMobile();
   const { categoryLookup } = useCategories();
@@ -153,15 +153,11 @@ function DashboardHomeBody() {
     >
       {isNotionDesktop ? (
         <>
-          <motion.div variants={itemVariants} className="pt-2 pb-2">
+          <motion.div variants={itemVariants} className="space-y-3 pt-2 pb-2">
             <TransactionList
               transactions={transactions}
               isLoading={isLoading}
-              scrollClassName={
-                isNotionDesktop
-                  ? "h-[min(58vh,620px)] md:h-[min(60vh,660px)] min-h-[300px] max-h-[400px]"
-                  : "max-h-[min(58vh,620px)] md:max-h-[min(60vh,660px)] overflow-auto"
-              }
+              scrollClassName="h-[min(58vh,620px)] md:h-[min(60vh,660px)] min-h-[300px] max-h-[400px]"
               title={t('dashboard.listTitle')}
               selectedMonth={selectedMonth}
               onPreviousMonth={goToPreviousMonth}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable, useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import PrivateLayout from '@/subdomains/backoffice/layout/PrivateLayout';
@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { Calendar, Edit, GripVertical, Plus, Trash2, User } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { EntityActionsMenu, type ActionMenuItem } from '@/components/EntityActionsMenu';
 
 type AnyFilter<T extends string> = 'all' | T;
 
@@ -48,7 +49,26 @@ function TaskCardContent({
     const overdue = isOverdue(task.dueDate);
     const preview = task.description ? stripMarkdownPreview(task.description) : '';
 
-    return (
+    const actionItems = useMemo<ActionMenuItem[] | null>(() => {
+        if (!onEdit || !onDelete) return null;
+        return [
+            {
+                id: 'edit',
+                label: t('default.edit'),
+                icon: <Edit className="h-3.5 w-3.5" />,
+                onSelect: () => onEdit(task),
+            },
+            {
+                id: 'delete',
+                label: t('transactionList.delete'),
+                icon: <Trash2 className="h-3.5 w-3.5" />,
+                onSelect: () => onDelete(task),
+                destructive: true,
+            },
+        ];
+    }, [onDelete, onEdit, task, t]);
+
+    const card = (
         <article
             className={cn(
                 'rounded-xl border border-border/70 border-l-[3px] bg-card p-4 shadow-sm space-y-3',
@@ -112,6 +132,14 @@ function TaskCardContent({
                 )}
             </div>
         </article>
+    );
+
+    if (!actionItems) return card;
+
+    return (
+        <EntityActionsMenu items={actionItems} menuLabel={t('transactionList.actions')}>
+            {card}
+        </EntityActionsMenu>
     );
 }
 

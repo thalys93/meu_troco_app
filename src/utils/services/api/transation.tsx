@@ -27,6 +27,7 @@ export interface Transaction {
     walletId: string;
     cardId?: string;
     allocations?: WalletAllocation[];
+    recurrenceId?: string;
 }
 
 const formatDateToYmd = (value: Date) =>

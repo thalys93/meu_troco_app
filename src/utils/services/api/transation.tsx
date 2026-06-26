@@ -27,6 +27,7 @@ export interface Transaction {
     walletId: string;
     cardId?: string;
     allocations?: WalletAllocation[];
+    recurrenceId?: string;
 }
 
 const formatDateToYmd = (value: Date) =>
@@ -56,7 +57,36 @@ const normalizeTransactionDate = (rawDate: unknown): string => {
     return "";
 };
 
-const resolveWalletId = resolveWalletIdFromTransaction;
+const normalizePaidField = (type: TransactionType, paid: unknown): boolean | undefined => {
+    if (type !== 'conta') return undefined;
+    if (paid === true || paid === 1 || paid === 'true') return true;
+    if (paid === false || paid === 0 || paid === 'false') return false;
+    return false;
+};
+
+const normalizeTransactionValue = (value: unknown): number => {
+    if (typeof value === 'number' && Number.isFinite(value)) return value;
+    if (typeof value === 'string') {
+        const parsed = Number.parseFloat(value.replace(',', '.'));
+        return Number.isFinite(parsed) ? parsed : 0;
+    }
+    return 0;
+};
+
+const mapFirestoreTransaction = (
+    id: string,
+    raw: Transaction & { date?: unknown; value?: unknown; paid?: unknown }
+): Transaction => {
+    const type = raw.type;
+    return {
+        ...raw,
+        walletId: resolveWalletIdFromTransaction(raw),
+        date: normalizeTransactionDate(raw.date),
+        value: normalizeTransactionValue(raw.value),
+        paid: normalizePaidField(type, raw.paid),
+        id,
+    };
+};
 
 const toFirestoreUpdatePayload = (payload: Transaction) => {
     const stripped = stripAllocationsFromPayload(payload);
@@ -71,7 +101,7 @@ const toFirestoreUpdatePayload = (payload: Transaction) => {
 };
 
 const normalizeTransactionPayload = (data: Transaction): Transaction => {
-    const walletId = resolveWalletId(data);
+    const walletId = resolveWalletIdFromTransaction(data);
     const base = { ...data, walletId };
 
     if (!data.allocations || data.allocations.length < 2) {
@@ -145,13 +175,8 @@ export const getUserTransaction = async (uid: string, id: string): Promise<Trans
     const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
     const docSnap = await getDoc(ref);
     if (docSnap.exists()) {
-        const raw = docSnap.data() as Transaction & { date?: unknown };
-        return {
-            ...raw,
-            walletId: resolveWalletId(raw),
-            date: normalizeTransactionDate(raw.date),
-            id: docSnap.id,
-        };
+        const raw = docSnap.data() as Transaction & { date?: unknown; value?: unknown; paid?: unknown };
+        return mapFirestoreTransaction(docSnap.id, raw);
     }
     return null;
 };
@@ -170,14 +195,9 @@ export const getUserTransactions = async (uid: string): Promise<Transaction[]> =
     const snapshot = await getDocs(ref);
 
     return snapshot.docs.map((doc) => {
-        const raw = doc.data() as Transaction & { date?: unknown };
-        return {
-            ...raw,
-            walletId: resolveWalletId(raw),
-            date: normalizeTransactionDate(raw.date),
-            id: doc.id,
-        };
-    }) as Transaction[];
+        const raw = doc.data() as Transaction & { date?: unknown; value?: unknown; paid?: unknown };
+        return mapFirestoreTransaction(doc.id, raw);
+    });
 };
 export const useUserTransactions = () => {
     const { uid } = useUserStore();

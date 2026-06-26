@@ -18,12 +18,92 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { EntityActionsMenu, type ActionMenuItem } from '@/components/EntityActionsMenu';
 
 type PlanFilter = 'active' | 'archived' | 'all';
+
+type PlanCardWithActionsProps = {
+  plan: Plan;
+  onEdit: () => void;
+  onArchiveToggle: () => void;
+  onRequestDelete: () => void;
+  t: ReturnType<typeof useTranslation>['t'];
+};
+
+function PlanCardWithActions({ plan, onEdit, onArchiveToggle, onRequestDelete, t }: PlanCardWithActionsProps) {
+  const isArchived = (plan.status ?? 'active') === 'archived';
+
+  const actionItems = React.useMemo<ActionMenuItem[]>(
+    () => [
+      {
+        id: 'edit',
+        label: t('default.edit'),
+        icon: <Edit className="h-4 w-4" />,
+        onSelect: onEdit,
+      },
+      {
+        id: 'archive',
+        label: isArchived
+          ? t('plans.backoffice.restore', 'Reativar')
+          : t('plans.backoffice.archive', 'Arquivar'),
+        icon: <Archive className="h-4 w-4" />,
+        onSelect: onArchiveToggle,
+      },
+      {
+        id: 'delete',
+        label: t('transactionList.delete'),
+        icon: <Trash className="h-4 w-4" />,
+        onSelect: onRequestDelete,
+        destructive: true,
+      },
+    ],
+    [isArchived, onArchiveToggle, onEdit, onRequestDelete, t]
+  );
+
+  const card = (
+    <PricingCard
+      features={plan.features as string[]}
+      price={plan.price}
+      title={plan.title}
+      period={plan.period}
+      className="bo-surface-elevated hover:shadow-md transition-shadow"
+      actions={
+        <div className="flex flex-col gap-3">
+          {isArchived && (
+            <Badge variant="outline" className="w-fit bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30">
+              {t('plans.backoffice.status.archived', 'Arquivado')}
+            </Badge>
+          )}
+          <div className="flex flex-col md:flex-row justify-end gap-3">
+            <Button onClick={onEdit}>
+              <Edit />
+              {t('default.edit')}
+            </Button>
+            <Button variant="outline" onClick={onArchiveToggle}>
+              <Archive />
+              {isArchived
+                ? t('plans.backoffice.restore', 'Reativar')
+                : t('plans.backoffice.archive', 'Arquivar')}
+            </Button>
+            <Button className="flex flex-row items-center gap-2" variant="destructive" onClick={onRequestDelete}>
+              <Trash />
+              {t('transactionList.delete')}
+            </Button>
+          </div>
+        </div>
+      }
+    />
+  );
+
+  return (
+    <EntityActionsMenu items={actionItems} menuLabel={t('transactionList.actions')}>
+      {card}
+    </EntityActionsMenu>
+  );
+}
 
 function PlansPage() {
   const { t } = useTranslation();
@@ -32,6 +112,7 @@ function PlansPage() {
   const deletePlan = useDeletePlan();
   const updatePlan = useUpdatePlan();
   const [filter, setFilter] = React.useState<PlanFilter>('active');
+  const [pendingDeletePlan, setPendingDeletePlan] = React.useState<Plan | null>(null);
 
   const filteredPlans = React.useMemo(() => {
     const list = plans ?? [];
@@ -106,63 +187,15 @@ function PlansPage() {
 
         <div className={cn('grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6', isLoading && 'animate-pulse')}>
           {filteredPlans.map((plan: Plan) => (
-            <PricingCard
+            <PlanCardWithActions
               key={plan.id}
-              features={plan.features as string[]}
-              price={plan.price}
-              title={plan.title}
-              period={plan.period}
-              className="bo-surface-elevated hover:shadow-md transition-shadow"
-              actions={
-                <div className="flex flex-col gap-3">
-                  {(plan.status ?? 'active') === 'archived' && (
-                    <Badge variant="outline" className="w-fit bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30">
-                      {t('plans.backoffice.status.archived', 'Arquivado')}
-                    </Badge>
-                  )}
-                  <div className="flex flex-col md:flex-row justify-end gap-3">
-                  <Button onClick={() => navigate(`/backoffice/plan/${plan.id}`)}>
-                    <Edit />
-                    {t('default.edit')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => handleStatusChange(plan, (plan.status ?? 'active') === 'archived' ? 'active' : 'archived')}
-                  >
-                    <Archive />
-                    {(plan.status ?? 'active') === 'archived'
-                      ? t('plans.backoffice.restore', 'Reativar')
-                      : t('plans.backoffice.archive', 'Arquivar')}
-                  </Button>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button className="flex flex-row items-center gap-2" variant="destructive">
-                        <Trash />
-                        {t('transactionList.delete')}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{t('plans.backoffice.deleteConfirmTitle')}</DialogTitle>
-                        <DialogDescription>
-                          {t('plans.backoffice.deleteConfirmDescription', { title: plan.title })}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <DialogFooter>
-                        <DialogClose asChild>
-                          <Button variant="outline">{t('default.cancel')}</Button>
-                        </DialogClose>
-                        <DialogClose asChild>
-                          <Button variant="destructive" onClick={() => handleDelete(plan.id)}>
-                            {t('transactionList.delete')}
-                          </Button>
-                        </DialogClose>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
-                  </div>
-                </div>
+              plan={plan}
+              t={t}
+              onEdit={() => navigate(`/backoffice/plan/${plan.id}`)}
+              onArchiveToggle={() =>
+                handleStatusChange(plan, (plan.status ?? 'active') === 'archived' ? 'active' : 'archived')
               }
+              onRequestDelete={() => setPendingDeletePlan(plan)}
             />
           ))}
 
@@ -178,6 +211,34 @@ function PlansPage() {
           )}
         </div>
         </div>
+
+        <Dialog open={!!pendingDeletePlan} onOpenChange={(open) => !open && setPendingDeletePlan(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t('plans.backoffice.deleteConfirmTitle')}</DialogTitle>
+              <DialogDescription>
+                {pendingDeletePlan &&
+                  t('plans.backoffice.deleteConfirmDescription', { title: pendingDeletePlan.title })}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">{t('default.cancel')}</Button>
+              </DialogClose>
+              <DialogClose asChild>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    if (pendingDeletePlan?.id) handleDelete(pendingDeletePlan.id);
+                    setPendingDeletePlan(null);
+                  }}
+                >
+                  {t('transactionList.delete')}
+                </Button>
+              </DialogClose>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </PageShell>
     </PrivateLayout>
   );

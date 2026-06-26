@@ -11,6 +11,7 @@ import TransactionsPage from "@/subdomains/dashboard/pages/transactions/Transact
 import CurrencyConverter from "@/subdomains/dashboard/pages/converter/CurrencyConverter";
 import CardsPage from "@/subdomains/dashboard/pages/cards/CardsPage";
 import WalletsPage from "@/subdomains/dashboard/pages/wallets/WalletsPage";
+import OrcamentoRedirect from "@/subdomains/dashboard/pages/orcamento/OrcamentoRedirect";
 import { lazy, type ComponentType } from "react";
 import AccountSuspendedPage from "@/subdomains/app/pages/account/AccountSuspended";
 
@@ -74,6 +75,8 @@ export const DashboardRoutes: RoutesGroup = {
         { path: 'transactions', element: TransactionsPage },
         { path: 'converter', element: CurrencyConverter },
         { path: 'wallets', element: WalletsPage },
+        { path: 'orcamento', element: OrcamentoRedirect },
+        { path: 'orcamento/:id', element: OrcamentoRedirect },
         { path: 'cards', element: CardsPage },
     ]
 }

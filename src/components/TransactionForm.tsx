@@ -37,6 +37,7 @@ import {
 import { computeWalletDisplayBalance } from '@/utils/wallet-balance';
 import { getCurrentMonthKey } from '@/subdomains/dashboard/utils/month-range';
 import { useAccountStatus } from '@/hooks/use-account-status';
+import { useMarkRecurrenceGenerated } from '@/utils/services/api/recurrence';
 
 interface TransactionFormProps {
   type: TransactionType;
@@ -46,6 +47,9 @@ interface TransactionFormProps {
   /** Fechar sheet / voltar sem depender de `navigate(-1)`. */
   onCancel?: () => void;
   mode?: 'page' | 'sheet';
+  prefill?: Partial<Transaction>;
+  recurrenceId?: string;
+  recurrenceMonthKey?: string;
 }
 
 const initialValues = {
@@ -64,7 +68,7 @@ type FieldErrors = {
   allocations: boolean;
 };
 
-const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, onCancel, mode = 'page' }: TransactionFormProps) => {
+const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, onCancel, mode = 'page', prefill, recurrenceId, recurrenceMonthKey }: TransactionFormProps) => {
   const [category, setCategory] = useState<string>('');
   const [selectedWalletId, setSelectedWalletId] = useState<string>('');
   const [displayValue, setDisplayValue] = useState<string>('');
@@ -97,6 +101,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   const pocketBalance = usePocketBalance();
   const { t, i18n } = useTranslation();
   const { isReadOnly } = useAccountStatus();
+  const { mutate: markRecurrenceGenerated } = useMarkRecurrenceGenerated();
 
   const realWallets = useMemo(
     () => wallets.filter((wallet) => wallet.name !== LEGACY_POCKET_CARD_NAME),
@@ -161,6 +166,22 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   React.useEffect(() => {
     if (id) refetchTransaction()
   }, [id])
+
+  React.useEffect(() => {
+    if (id || !prefill) return;
+    transactionForm.reset({
+      ...initialValues,
+      description: prefill.description ?? '',
+      date: prefill.date ?? initialValues.date,
+    });
+    if (prefill.category) setCategory(prefill.category);
+    if (prefill.walletId) setSelectedWalletId(prefill.walletId);
+    if (prefill.value !== undefined) {
+      const v = prefill.value;
+      if (v === 0) setDisplayValue('');
+      else setDisplayValue(v.toFixed(2).replace('.', i18n.language === 'pt-BR' ? ',' : '.'));
+    }
+  }, [id, prefill, i18n.language]);
 
   React.useEffect(() => {
     if (!id || !transaction) return
@@ -269,6 +290,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
       category,
       walletId: selectedWalletId?.trim() || NO_WALLET_ID,
       ...(type === 'conta' && !id ? { paid: false } : {}),
+      ...(recurrenceId ? { recurrenceId } : {}),
     };
 
     if (!splitAcrossWallets) {
@@ -356,6 +378,9 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
         setAllocationRows(createAllocationDraftRows());
         refetchUserTransactions();
         if (uid) fetchWallets(uid);
+        if (recurrenceId && recurrenceMonthKey) {
+          markRecurrenceGenerated({ id: recurrenceId, monthKey: recurrenceMonthKey });
+        }
         onSuccess?.();
       },
       onError: () => {

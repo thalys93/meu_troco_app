@@ -11,7 +11,9 @@ import {
     translateRoadmapStatus,
 } from '@/utils/roadmap/roadmap-i18n';
 import { Edit, Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { EntityActionsMenu, type ActionMenuItem } from '@/components/EntityActionsMenu';
 
 type RoadmapColumnStatus = 'planned' | 'in_progress' | 'done';
 
@@ -35,7 +37,26 @@ function RoadmapVerticalItemAccordion({
     const { t } = useTranslation();
     const accent = statusAccent[item.status as RoadmapColumnStatus] ?? statusAccent.planned;
 
-    return (
+    const actionItems = useMemo<ActionMenuItem[] | null>(() => {
+        if (variant !== 'admin' || !onEdit || !onDelete) return null;
+        return [
+            {
+                id: 'edit',
+                label: t('default.edit'),
+                icon: <Edit className="h-3.5 w-3.5" />,
+                onSelect: () => onEdit(item.id),
+            },
+            {
+                id: 'delete',
+                label: t('transactionList.delete'),
+                icon: <Trash2 className="h-3.5 w-3.5" />,
+                onSelect: () => onDelete(item.id),
+                destructive: true,
+            },
+        ];
+    }, [item.id, onDelete, onEdit, t, variant]);
+
+    const accordionItem = (
         <AccordionItem
             value={item.id}
             className={cn(
@@ -71,6 +92,14 @@ function RoadmapVerticalItemAccordion({
                 </AccordionContent>
             )}
         </AccordionItem>
+    );
+
+    if (!actionItems) return accordionItem;
+
+    return (
+        <EntityActionsMenu items={actionItems} menuLabel={t('transactionList.actions')}>
+            {accordionItem}
+        </EntityActionsMenu>
     );
 }
 

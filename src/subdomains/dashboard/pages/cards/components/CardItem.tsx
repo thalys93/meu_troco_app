@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Wallet } from "../../../../../types/Wallet";
 import { Button } from "@/components/ui/button";
 import { Card as UICard, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { getCardFlagIcon } from "../../../../../utils/cardUtils";
 import { Handbag } from "@phosphor-icons/react";
 import { cn } from "@/lib/utils";
+import { EntityActionsMenu, type ActionMenuItem } from "@/components/EntityActionsMenu";
 
 interface CardItemProps {
     card: Wallet;
@@ -35,7 +36,33 @@ export function CardItem({ card, onEdit, onAdjust, onDelete, displayBalance, mon
             ? t("wallets.benefitBalance", "Saldo do benefício")
             : t("wallets.availableBalance", "Saldo disponível");
 
+    const actionItems = useMemo<ActionMenuItem[]>(
+        () => [
+            {
+                id: 'adjust',
+                label: t('wallets.adjust', 'Ajustar saldo'),
+                icon: <SlidersHorizontal className="h-4 w-4" />,
+                onSelect: () => onAdjust(card),
+            },
+            {
+                id: 'edit',
+                label: t('default.edit'),
+                icon: <Edit className="h-4 w-4" />,
+                onSelect: () => onEdit(card),
+            },
+            {
+                id: 'delete',
+                label: t('transactionList.delete'),
+                icon: <Trash className="h-4 w-4" />,
+                onSelect: () => onDelete(card),
+                destructive: true,
+            },
+        ],
+        [card, onAdjust, onDelete, onEdit, t]
+    );
+
     return (
+        <EntityActionsMenu items={actionItems} menuLabel={t('transactionList.actions')}>
         <UICard
             className={cn("overflow-hidden border-2 shadow-md transition-all hover:shadow-lg duration-500")}
             style={{
@@ -85,5 +112,6 @@ export function CardItem({ card, onEdit, onAdjust, onDelete, displayBalance, mon
                 </Button>
             </CardFooter>
         </UICard>
+        </EntityActionsMenu>
     );
 }

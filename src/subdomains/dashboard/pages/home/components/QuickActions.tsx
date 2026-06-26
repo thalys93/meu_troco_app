@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { PlusCircle, MinusCircle, Receipt, BarChart3, Wallet, Send, ArrowLeftRight, Scale3D } from 'lucide-react';
+import { PlusCircle, MinusCircle, Receipt, BarChart3, Wallet, Scale3D } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';

@@ -4,7 +4,7 @@ import PageShell from '@/subdomains/backoffice/components/PageShell';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash, Download, ArrowDownLeft, ArrowUpRight, Receipt } from 'lucide-react';
+import { Plus, Trash, Download, ArrowDownLeft, ArrowUpRight, Receipt, Pen } from 'lucide-react';
 import {
     useGetAllCategoriesAdmin,
     useDeleteCategory,
@@ -47,6 +47,7 @@ import {
     toOrderUpdates,
     withListOrderIndices
 } from './category-list-utils';
+import { EntityActionsMenu, type ActionMenuItem } from '@/components/EntityActionsMenu';
 
 type CategorySectionConfig = {
     type: CategoryTransactionType;
@@ -102,8 +103,28 @@ function CategoryRow({ category, listIndex, isDimmed, onOpenEdit, onDelete }: Ca
     const { t, i18n } = useTranslation();
     const label = getCategoryLocalized(category, i18n.language);
     const Icon = resolveCategoryIcon(category.icon);
+    const [deleteOpen, setDeleteOpen] = useState(false);
 
-    return (
+    const actionItems = useMemo<ActionMenuItem[]>(
+        () => [
+            {
+                id: 'edit',
+                label: t('default.edit'),
+                icon: <Pen className="h-4 w-4" />,
+                onSelect: () => onOpenEdit(category, listIndex),
+            },
+            {
+                id: 'delete',
+                label: t('transactionList.delete'),
+                icon: <Trash className="h-4 w-4" />,
+                onSelect: () => setDeleteOpen(true),
+                destructive: true,
+            },
+        ],
+        [category, listIndex, onOpenEdit, t]
+    );
+
+    const row = (
         <div
             role="button"
             tabIndex={0}
@@ -155,7 +176,7 @@ function CategoryRow({ category, listIndex, isDimmed, onOpenEdit, onDelete }: Ca
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}
             >
-                <Dialog>
+                <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                     <DialogTrigger asChild>
                         <Button variant="destructive" size="sm">
                             <Trash className="w-4 h-4 mr-1" />
@@ -183,6 +204,12 @@ function CategoryRow({ category, listIndex, isDimmed, onOpenEdit, onDelete }: Ca
                 </Dialog>
             </div>
         </div>
+    );
+
+    return (
+        <EntityActionsMenu items={actionItems} menuLabel={t('transactionList.actions')}>
+            {row}
+        </EntityActionsMenu>
     );
 }
 

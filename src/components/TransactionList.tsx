@@ -1,12 +1,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Receipt, Loader2, EllipsisVertical, Trash, Pen, ChevronLeft, ChevronRight, Plus, ChevronDown, ChevronRight as ChevronRightIcon, ArrowDown, ArrowUp } from 'lucide-react';
+import { TrendingUp, TrendingDown, Receipt, Loader2, Trash, Pen, ChevronLeft, ChevronRight, Plus, ChevronDown, ChevronRight as ChevronRightIcon, ArrowDown, ArrowUp, Repeat } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Transaction, type TransactionType, useDeleteTransaction, useToggleBillPaid, useUserTransactions } from '@/utils/services/api/transation';
+import { Transaction, type TransactionType, useCreateTransaction, useDeleteTransaction, useToggleBillPaid, useUserTransactions } from '@/utils/services/api/transation';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
-import TransactionRowActionsMenu, { TransactionRowActionsDropdown } from './transaction-table/TransactionRowActionsMenu';
+import { EntityActionsDropdown, EntityActionsMenu, type ActionMenuItem } from '@/components/EntityActionsMenu';
 import TransactionTableInlineRow from './transaction-table/TransactionTableInlineRow';
 import {
   createEmptyDraft,
@@ -34,13 +34,11 @@ import {
   useDashboardPreferences,
   type TransactionTableSortColumn,
 } from '@/subdomains/dashboard/context/dashboard-preferences';
-import { transactionSignedAmount } from '@/subdomains/dashboard/utils/transaction-month-nets';
 import {
   compareTransactionsByColumn,
   filterTransactionsByPreferences,
   getDefaultSortOrderForColumn,
-  summarizeIncomeExpense,
-  summarizeTransactionTypes,
+  isBillPaid,
 } from '@/subdomains/dashboard/utils/transaction-filters';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './ui/sheet';
 import {
@@ -61,11 +59,30 @@ import {
   hasMultipleAllocations,
   resolveAllocations,
 } from '@/utils/transaction-allocations';
-import {
-  createOverlayDismissGuard,
-  deferDropdownMenuAction,
-} from '@/lib/dropdown-menu-action';
+import { createOverlayDismissGuard } from '@/lib/dropdown-menu-action';
 import { useAccountStatus } from '@/hooks/use-account-status';
+import { useUserRecurrences, useDeleteRecurrence, useMarkRecurrenceGenerated } from '@/utils/services/api/recurrence';
+import type { Recurrence } from '@/types/Recurrence';
+import {
+  buildTransactionFromRecurrence,
+  buildTransactionPrefillFromRecurrence,
+} from '@/subdomains/dashboard/utils/recurrence';
+import {
+  mergeRecurrenceListItems,
+  sortListItems,
+  sumPrevisto,
+  sumRealizado,
+  getRecurrenceById,
+  type TransactionListItem,
+} from '@/subdomains/dashboard/utils/merge-recurrence-list';
+import RecurrenceRowPopover from '@/components/recurrence/RecurrenceRowPopover';
+import RecurrenceWizard from '@/subdomains/dashboard/pages/orcamento/components/RecurrenceWizard';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 /** Portais Radix + calendário (react-day-picker `.rdp`) ficam fora do nó do Dialog; precisamos ignorar esses cliques. */
 const QUICK_ADD_OUTSIDE_PORTAL_SELECTOR =
@@ -92,7 +109,7 @@ type SortableTableHeadProps = {
   sortOrder: "asc" | "desc";
   onSort: (column: TransactionTableSortColumn) => void;
   className?: string;
-  align?: "left" | "right";
+  align?: "left" | "right" | "center";
 };
 
 function SortableTableHead({
@@ -113,6 +130,7 @@ function SortableTableHead({
         className={cn(
           "inline-flex items-center gap-1.5 rounded-md transition-colors hover:text-foreground",
           align === "right" && "ml-auto",
+          align === "center" && "mx-auto",
           isActive && "text-foreground"
         )}
       >
@@ -250,6 +268,17 @@ const TransactionList = ({
     () => new Set()
   );
   const [filtersOpen, setFiltersOpen] = React.useState<boolean>(false);
+  const [wizardOpen, setWizardOpen] = React.useState(false);
+  const [wizardEditItem, setWizardEditItem] = React.useState<Recurrence | null>(null);
+  const [generateSheetOpen, setGenerateSheetOpen] = React.useState(false);
+  const [generatePrefill, setGeneratePrefill] = React.useState<Partial<Transaction> | undefined>();
+  const [generateRecurrenceId, setGenerateRecurrenceId] = React.useState<string | undefined>();
+  const [generateType, setGenerateType] = React.useState<TransactionType>('despesa');
+  const [markingRecurrencePaidId, setMarkingRecurrencePaidId] = React.useState<string | null>(null);
+  const { data: recurrences = [] } = useUserRecurrences();
+  const { mutate: deleteRecurrence } = useDeleteRecurrence();
+  const { mutate: createTransaction } = useCreateTransaction();
+  const { mutate: markRecurrenceGenerated } = useMarkRecurrenceGenerated();
   const isTableVariant = variant === 'table';
   const showPaidColumn = filterType === 'Todos' || filterType === 'conta';
   const tableColumnCount = showPaidColumn ? 8 : 7;
@@ -324,13 +353,6 @@ const TransactionList = ({
     const formatted = `$${amount.toLocaleString()}`;
     return type === 'receita' ? `+${formatted}` : `-${formatted}`;
   };
-
-  const formatSummaryValue = React.useCallback((amount: number) => {
-    if (formatCurrency) {
-      return formatCurrency(amount);
-    }
-    return `$${amount.toLocaleString()}`;
-  }, [formatCurrency]);
 
   const formatTableDate = (dateString: string) => {
     const date = parseLocalDateInput(dateString);
@@ -452,17 +474,53 @@ const TransactionList = ({
     [displayTransactions, effectiveFilters, sortFilterOptions]
   );
 
-  const tableFilteredSummary = React.useMemo(() => {
-    return summarizeTransactionTypes(filteredTransactions);
-  }, [filteredTransactions]);
+  const monthKeyForRecurrence = selectedMonth ?? '';
+  const excludePaidBillsFromSum = filterType === 'conta';
 
-  const tableFilteredIncomeExpenseSummary = React.useMemo(() => {
-    return summarizeIncomeExpense(filteredTransactions);
-  }, [filteredTransactions]);
+  const mergedListItems = React.useMemo(() => {
+    const merged = mergeRecurrenceListItems(
+      filteredTransactions,
+      recurrences,
+      monthKeyForRecurrence,
+      filterType
+    );
+    return sortListItems(merged, effectiveFilters, sortFilterOptions);
+  }, [
+    filteredTransactions,
+    recurrences,
+    monthKeyForRecurrence,
+    filterType,
+    effectiveFilters,
+    sortFilterOptions,
+  ]);
 
-  const tableNetSum = React.useMemo(
-    () => filteredTransactions.reduce((acc, tr) => acc + transactionSignedAmount(tr), 0),
-    [filteredTransactions]
+  const pendingTemplateItems = React.useMemo(
+    () => mergedListItems.filter((item) => item.kind === 'recurrence-template'),
+    [mergedListItems]
+  );
+
+  const tableRealizadoSum = React.useMemo(() => {
+    const base = sumRealizado(
+      filteredTransactions.filter((tr) => {
+        if (excludePaidBillsFromSum && isBillPaid(tr)) return false;
+        return true;
+      })
+    );
+    return base;
+  }, [excludePaidBillsFromSum, filteredTransactions]);
+
+  const tablePrevistoSum = React.useMemo(
+    () =>
+      sumPrevisto(
+        filteredTransactions.filter((tr) => {
+          if (excludePaidBillsFromSum && isBillPaid(tr)) return false;
+          return true;
+        }),
+        recurrences,
+        monthKeyForRecurrence,
+        filterType
+      ),
+    [excludePaidBillsFromSum, filteredTransactions, recurrences, monthKeyForRecurrence, filterType]
   );
 
   const resolveDayGroupLabel = React.useCallback(
@@ -528,12 +586,21 @@ const TransactionList = ({
 
   const tableSumDisplay = React.useMemo(() => {
     if (formatCurrency) {
-      const sign = tableNetSum >= 0 ? '+' : '-';
-      return `${sign}${formatCurrency(Math.abs(tableNetSum))}`;
+      const sign = tableRealizadoSum >= 0 ? '+' : '-';
+      return `${sign}${formatCurrency(Math.abs(tableRealizadoSum))}`;
     }
-    const sign = tableNetSum >= 0 ? '+' : '-';
-    return `${sign}$${Math.abs(tableNetSum).toLocaleString()}`;
-  }, [formatCurrency, tableNetSum]);
+    const sign = tableRealizadoSum >= 0 ? '+' : '-';
+    return `${sign}$${Math.abs(tableRealizadoSum).toLocaleString()}`;
+  }, [formatCurrency, tableRealizadoSum]);
+
+  const tablePrevistoDisplay = React.useMemo(() => {
+    if (formatCurrency) {
+      const sign = tablePrevistoSum >= 0 ? '+' : '-';
+      return `${sign}${formatCurrency(Math.abs(tablePrevistoSum))}`;
+    }
+    const sign = tablePrevistoSum >= 0 ? '+' : '-';
+    return `${sign}$${Math.abs(tablePrevistoSum).toLocaleString()}`;
+  }, [formatCurrency, tablePrevistoSum]);
 
   const handleSheetOpenChange = React.useCallback((open: boolean) => {
     if (!open) {
@@ -600,6 +667,86 @@ const TransactionList = ({
     [defaultCreateDate, isReadOnly]
   );
 
+  const openCreateAction = React.useCallback(
+    (type: TransactionType) => {
+      if (useInlineTable) {
+        openInlineCreate(type);
+        return;
+      }
+      openCreateSheet(type);
+    },
+    [openCreateSheet, openInlineCreate, useInlineTable]
+  );
+
+  const openRecurrenceWizard = React.useCallback((item?: Recurrence) => {
+    if (isReadOnly) return;
+    setWizardEditItem(item ?? null);
+    setWizardOpen(true);
+  }, [isReadOnly]);
+
+  const closeRecurrenceWizard = React.useCallback(() => {
+    setWizardOpen(false);
+    setWizardEditItem(null);
+  }, []);
+
+  const openGenerateFromRecurrence = React.useCallback(
+    (recurrence: Recurrence) => {
+      if (isReadOnly || !selectedMonth) return;
+      const prefill = buildTransactionPrefillFromRecurrence(recurrence, selectedMonth);
+      setGeneratePrefill(prefill);
+      setGenerateRecurrenceId(recurrence.id);
+      setGenerateType(recurrence.type);
+      setGenerateSheetOpen(true);
+    },
+    [isReadOnly, selectedMonth]
+  );
+
+  const closeGenerateSheet = React.useCallback(() => {
+    setGenerateSheetOpen(false);
+    setGeneratePrefill(undefined);
+    setGenerateRecurrenceId(undefined);
+  }, []);
+
+  const markRecurrencePaidAndGenerate = React.useCallback(
+    (recurrence: Recurrence) => {
+      if (isReadOnly || !selectedMonth || !recurrence.id || recurrence.type !== 'conta') return;
+      setMarkingRecurrencePaidId(recurrence.id);
+      createTransaction(buildTransactionFromRecurrence(recurrence, selectedMonth, { paid: true }), {
+        onSuccess: () => {
+          markRecurrenceGenerated(
+            { id: recurrence.id!, monthKey: selectedMonth },
+            {
+              onSuccess: () => {
+                refetch();
+                toast({
+                  title: t('transactionList.recurrence.markPaidSuccess'),
+                  variant: 'success',
+                });
+                setMarkingRecurrencePaidId(null);
+              },
+              onError: () => {
+                refetch();
+                toast({
+                  title: t('transactionList.paidToggleError'),
+                  variant: 'destructive',
+                });
+                setMarkingRecurrencePaidId(null);
+              },
+            }
+          );
+        },
+        onError: () => {
+          toast({
+            title: t('transactionList.paidToggleError'),
+            variant: 'destructive',
+          });
+          setMarkingRecurrencePaidId(null);
+        },
+      });
+    },
+    [createTransaction, isReadOnly, markRecurrenceGenerated, refetch, selectedMonth, t]
+  );
+
   const openInlineEdit = React.useCallback((transaction: Transaction) => {
     if (isReadOnly) return;
     if (!transaction.id) return;
@@ -631,6 +778,51 @@ const TransactionList = ({
       openInlineEdit(transaction);
     },
     [openEditSheet, openInlineEdit, useInlineTable]
+  );
+
+  const buildTransactionActionItems = React.useCallback(
+    (transaction: Transaction, onEdit: () => void): ActionMenuItem[] => [
+      {
+        id: 'edit',
+        label: t('transactionList.edit'),
+        icon: <Pen className="h-4 w-4" />,
+        onSelect: onEdit,
+      },
+      {
+        id: 'delete',
+        label: t('transactionList.delete'),
+        icon: <Trash className="h-4 w-4" />,
+        onSelect: () => openDeleteDialog(transaction),
+        destructive: true,
+      },
+    ],
+    [openDeleteDialog, t]
+  );
+
+  const buildRecurrenceActionItems = React.useCallback(
+    (recurrence: Recurrence): ActionMenuItem[] => [
+      {
+        id: 'edit',
+        label: t('default.edit'),
+        icon: <Pen className="h-4 w-4" />,
+        onSelect: () => openRecurrenceWizard(recurrence),
+      },
+      {
+        id: 'delete',
+        label: t('transactionList.delete'),
+        icon: <Trash className="h-4 w-4" />,
+        onSelect: () => {
+          if (!recurrence.id) return;
+          deleteRecurrence(recurrence.id, {
+            onSuccess: () => {
+              toast({ title: t('recurrence.toast.deleted'), variant: 'success' });
+            },
+          });
+        },
+        destructive: true,
+      },
+    ],
+    [deleteRecurrence, openRecurrenceWizard, t]
   );
 
   const transactionsById = React.useMemo(
@@ -701,7 +893,7 @@ const TransactionList = ({
     (transaction: Transaction) => {
       if (isReadOnly) return;
       if (!transaction.id || transaction.type !== 'conta') return;
-      const nextPaid = transaction.paid !== true;
+      const nextPaid = !isBillPaid(transaction);
       setTogglingPaidId(transaction.id);
       toggleBillPaid(
         { id: transaction.id, paid: nextPaid },
@@ -793,7 +985,7 @@ const TransactionList = ({
           : getWalletBadgeData(transaction.walletId || transaction.cardId);
         const zebra = currentRowIndex % 2 === 1;
         const isBill = transaction.type === 'conta';
-        const isBillPaid = transaction.paid === true;
+        const isBillPaidRow = isBillPaid(transaction);
         const isTogglingThisPaid =
           isTogglingPaid && togglingPaidId === transaction.id;
 
@@ -812,16 +1004,24 @@ const TransactionList = ({
           openTableRowEdit(transaction);
         };
 
-        const rowContent = (
-          <>
+        const linkedRecurrence = getRecurrenceById(
+          recurrences,
+          transaction.recurrenceId
+        );
+
+        const transactionActionItems = buildTransactionActionItems(transaction, () =>
+          openTableRowEdit(transaction)
+        );
+
+        const mainTableRow = (
           <TableRow
             role={isTableVariant ? 'button' : 'button'}
             tabIndex={isTableVariant ? 0 : 0}
             className={cn(
               'border-0 transition-colors',
               isTableVariant && 'cursor-pointer select-none',
-              isBill && !isBillPaid && 'border-l-2 border-l-amber-500/50',
-              isBill && isBillPaid && 'opacity-60',
+              isBill && !isBillPaidRow && 'border-l-2 border-l-amber-500/50',
+              isBill && isBillPaidRow && 'opacity-60',
               zebra
                 ? 'bg-muted/30 hover:bg-muted/45 dark:bg-muted/15 dark:hover:bg-muted/25'
                 : 'bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20',
@@ -887,11 +1087,17 @@ const TransactionList = ({
                 <span
                   className={cn(
                     'text-sm font-medium leading-snug line-clamp-2 text-foreground',
-                    isBill && isBillPaid && 'line-through'
+                    isBill && isBillPaidRow && 'line-through'
                   )}
                 >
                   {transaction.description}
                 </span>
+                {linkedRecurrence && (
+                  <RecurrenceRowPopover
+                    recurrence={linkedRecurrence}
+                    monthKey={selectedMonth}
+                  />
+                )}
                 {isSplitTransaction && (
                   <Badge
                     variant="outline"
@@ -950,7 +1156,7 @@ const TransactionList = ({
               >
                 {isBill && (
                   <Checkbox
-                    checked={isBillPaid}
+                    checked={isBillPaidRow}
                     disabled={isTogglingThisPaid || isReadOnly}
                     onCheckedChange={() => handleToggleBillPaid(transaction)}
                     aria-label={t('transactionList.paid')}
@@ -974,52 +1180,22 @@ const TransactionList = ({
               className="border-b border-border/30 py-2 pr-4 pl-2 text-right align-middle"
               onClick={(e) => e.stopPropagation()}
             >
-              {useInlineTable ? (
-                <TransactionRowActionsDropdown
-                  onEdit={() => openTableRowEdit(transaction)}
-                  onDelete={() => openDeleteDialog(transaction)}
+              {!isReadOnly && (
+                <EntityActionsDropdown
+                  items={buildTransactionActionItems(transaction, () =>
+                    openTableRowEdit(transaction)
+                  )}
+                  menuLabel={t('transactionList.actions')}
                 />
-              ) : (
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    >
-                      <EllipsisVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel className="select-none">
-                      {t('transactionList.actions')}
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onSelect={(event) =>
-                        deferDropdownMenuAction(event, () => openDeleteDialog(transaction))
-                      }
-                    >
-                      <div className="flex flex-row items-center gap-2">
-                        <Trash className="h-4 w-4" /> {t('transactionList.delete')}
-                      </div>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="flex flex-row items-center gap-2"
-                      onSelect={(event) =>
-                        deferDropdownMenuAction(event, () => openEditSheet(transaction))
-                      }
-                    >
-                      <Pen className="h-4 w-4" /> {t('transactionList.edit')}
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               )}
             </TableCell>
           </TableRow>
-          {isSplitTransaction &&
-            isExpanded &&
-            resolveAllocations(transaction).map((allocation, allocationIndex) => {
+        );
+
+        const installmentRows =
+          isSplitTransaction &&
+          isExpanded &&
+          resolveAllocations(transaction).map((allocation, allocationIndex) => {
               const installmentWallet = getWalletBadgeData(allocation.walletId);
               return (
                 <TableRow
@@ -1084,27 +1260,177 @@ const TransactionList = ({
                   <TableCell className="border-b border-border/20 py-1.5 pr-4" />
                 </TableRow>
               );
-            })}
-          </>
-        );
+            });
 
-        if (useInlineTable) {
-          return (
-            <TransactionRowActionsMenu
-              key={transaction.id}
-              onEdit={() => openTableRowEdit(transaction)}
-              onDelete={() => openDeleteDialog(transaction)}
+        return (
+          <React.Fragment key={transaction.id}>
+            <EntityActionsMenu
+              items={transactionActionItems}
+              menuLabel={t('transactionList.actions')}
+              enableContextMenu={!isReadOnly}
             >
-              {rowContent}
-            </TransactionRowActionsMenu>
-          );
-        }
+              {mainTableRow}
+            </EntityActionsMenu>
+            {installmentRows}
+          </React.Fragment>
+        );
+    };
 
-        return <React.Fragment key={transaction.id}>{rowContent}</React.Fragment>;
+    const renderRecurrenceTemplateRow = (recurrence: Recurrence) => {
+      const currentRowIndex = rowIndex;
+      rowIndex += 1;
+      const CatIcon = getCategoryIcon(recurrence.category);
+      const walletBadge = getWalletBadgeData(recurrence.walletId);
+      const isBill = recurrence.type === 'conta';
+      const zebra = currentRowIndex % 2 === 1;
+      const isMarkingPaid = markingRecurrencePaidId === recurrence.id;
+      const templateDate =
+        selectedMonth && recurrence.dueDay
+          ? buildTransactionPrefillFromRecurrence(recurrence, selectedMonth).date
+          : undefined;
+
+      const recurrenceActionItems = buildRecurrenceActionItems(recurrence);
+
+      const recurrenceRow = (
+        <TableRow
+          className={cn(
+            'border-0 transition-colors cursor-pointer',
+            isBill ? 'border-l-2 border-l-amber-500/40' : 'border-l-2 border-l-red-500/40',
+            zebra
+              ? 'bg-muted/20 hover:bg-muted/35 dark:bg-muted/10'
+              : 'bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20',
+            isMarkingPaid && 'pointer-events-none opacity-70'
+          )}
+          onDoubleClick={() => openRecurrenceWizard(recurrence)}
+        >
+          <TableCell className="border-b border-border/30 py-2 pl-4 pr-2 align-middle">
+            <div className="flex items-center gap-2.5">
+              <span
+                className={cn(
+                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-md',
+                  isBill
+                    ? 'bg-amber-500/12 text-amber-600 dark:text-amber-400'
+                    : 'bg-red-500/12 text-red-600 dark:text-red-400'
+                )}
+              >
+                {isBill ? <Receipt className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+              </span>
+              <span className="text-sm font-medium leading-snug line-clamp-2 text-foreground">
+                {recurrence.description}
+              </span>
+              <RecurrenceRowPopover
+                recurrence={recurrence}
+                monthKey={selectedMonth}
+                isPending
+                onGenerate={() => openGenerateFromRecurrence(recurrence)}
+                onMarkPaid={
+                  isBill ? () => markRecurrencePaidAndGenerate(recurrence) : undefined
+                }
+              />
+            </div>
+          </TableCell>
+          <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
+            <Badge variant="secondary" className="h-6 max-w-[180px] gap-1.5 px-2 py-0 text-xs font-normal">
+              <span
+                className="h-2.5 w-2.5 shrink-0 rounded-full border border-border/50"
+                style={{ backgroundColor: walletBadge.color }}
+                aria-hidden
+              />
+              <span className="truncate">{walletBadge.name}</span>
+            </Badge>
+          </TableCell>
+          <TableCell className="border-b border-border/30 py-2 px-3 align-middle text-sm text-muted-foreground whitespace-nowrap">
+            {templateDate ? formatTableDate(templateDate) : t('transactionList.recurrence.perMonth')}
+          </TableCell>
+          <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
+            <Badge variant="secondary" className="h-6 gap-1.5 px-2 py-0 text-xs font-normal">
+              {CatIcon && <CatIcon className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />}
+              {getCategoryLabel(recurrence.category)}
+            </Badge>
+          </TableCell>
+          <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
+            <Badge
+              variant="secondary"
+              className={cn(
+                'h-6 border-0 px-2 py-0 text-xs font-medium',
+                isBill
+                  ? 'bg-amber-500/12 text-amber-700 dark:text-amber-400'
+                  : 'bg-red-500/12 text-red-700 dark:text-red-400'
+              )}
+            >
+              {isBill ? t('sidebar.bills') : t('landing_v2.transactions.expense')}
+            </Badge>
+          </TableCell>
+          {showPaidColumn && (
+            <TableCell
+              className="border-b border-border/30 py-2 px-3 align-middle text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {isBill && (
+                <Checkbox
+                  checked={false}
+                  disabled={isReadOnly || isMarkingPaid}
+                  onCheckedChange={(checked) => {
+                    if (checked) markRecurrencePaidAndGenerate(recurrence);
+                  }}
+                  aria-label={t('transactionList.recurrence.markPaid')}
+                />
+              )}
+            </TableCell>
+          )}
+          <TableCell
+            className={cn(
+              'border-b border-border/30 py-2 px-3 text-right align-middle font-mono text-sm font-semibold tabular-nums whitespace-nowrap',
+              isBill
+                ? 'text-amber-600 dark:text-amber-400'
+                : 'text-red-600 dark:text-red-400'
+            )}
+          >
+            {formatAmount(recurrence.estimatedValue, recurrence.type)}
+          </TableCell>
+          <TableCell
+            className="border-b border-border/30 py-2 pr-4 pl-2 text-right align-middle"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {!isReadOnly && (
+              <EntityActionsDropdown
+                items={recurrenceActionItems}
+                menuLabel={t('transactionList.actions')}
+              />
+            )}
+          </TableCell>
+        </TableRow>
+      );
+
+      return (
+        <EntityActionsMenu
+          key={`recurrence-${recurrence.id}`}
+          items={recurrenceActionItems}
+          menuLabel={t('transactionList.actions')}
+          enableContextMenu={!isReadOnly}
+        >
+          {recurrenceRow}
+        </EntityActionsMenu>
+      );
+    };
+
+    const renderListItem = (item: TransactionListItem) => {
+      if (item.kind === 'recurrence-template') {
+        return renderRecurrenceTemplateRow(item.data);
+      }
+      return renderTransactionRow(item.data);
     };
 
     if (effectiveFilters.tableSortColumn !== "date") {
-      return filteredTransactions.map((transaction) => renderTransactionRow(transaction));
+      return mergedListItems.map((item, index) => (
+        <React.Fragment key={
+          item.kind === 'recurrence-template'
+            ? `recurrence-${item.data.id}`
+            : item.data.id ?? `tx-${index}`
+        }>
+          {renderListItem(item)}
+        </React.Fragment>
+      ));
     }
 
     return groupedByDay.flatMap((group) => {
@@ -1132,136 +1458,52 @@ const TransactionList = ({
       );
 
       return [daySeparatorRow, ...transactionRows];
-    });
+    }).concat(
+      pendingTemplateItems.length > 0
+        ? pendingTemplateItems.map((item) =>
+            renderRecurrenceTemplateRow(item.data)
+          )
+        : []
+    );
   };
 
   return (
     <>
       <Card className={cn("glass-card", variant === 'table' && "rounded-xl border-border/60")}>
         <CardHeader>
-          {variant === 'table' && showQuickAdd && (
-            <div
-              aria-label={t('dashboard.monthFilter.label')}
-              className={cn(
-                'grid grid-cols-1 gap-2 mb-3',
-                filterType === 'conta'
-                  ? 'md:grid-cols-1'
-                  : filterType === 'Todos'
-                    ? 'md:grid-cols-3'
-                    : 'md:grid-cols-2'
-              )}
-            >
-              {(filterType === 'Todos' || filterType === 'receita') && (
-                <div className="group relative overflow-hidden rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 space-y-0.5">
-                      <p className="text-xs font-medium text-muted-foreground">{t('sidebar.income')}</p>
-                      <p className="truncate text-base font-semibold text-emerald-600 dark:text-emerald-400">
-                        {formatSummaryValue(tableFilteredSummary.incomeTotal)}
-                      </p>
-                    </div>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
-                      <TrendingUp className="h-4 w-4" />
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <Badge className="h-5 border-0 bg-emerald-500/15 px-1.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-300">
-                      {tableFilteredSummary.incomeCount}
-                    </Badge>
-                    <span className="text-[11px] text-muted-foreground">
-                      {t('filters.items', { defaultValue: 'transações' })}
-                    </span>
-                  </div>
-                </div>
-              )}
-              {(filterType === 'Todos' || filterType === 'despesa') && (
-                <div className="group relative overflow-hidden rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 space-y-0.5">
-                      <p className="text-xs font-medium text-muted-foreground">{t('sidebar.expenses')}</p>
-                      <p className="truncate text-base font-semibold text-red-600 dark:text-red-400">
-                        {formatSummaryValue(tableFilteredSummary.expenseTotal)}
-                      </p>
-                    </div>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-500/10 text-red-500">
-                      <TrendingDown className="h-4 w-4" />
-                    </span>
-                  </div>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <Badge className="h-5 border-0 bg-red-500/15 px-1.5 text-[11px] font-semibold text-red-700 dark:text-red-300">
-                      {tableFilteredSummary.expenseCount}
-                    </Badge>
-                    <span className="text-[11px] text-muted-foreground">
-                      {t('filters.items', { defaultValue: 'transações' })}
-                    </span>
-                  </div>
-                </div>
-              )}
-              {(filterType === 'Todos' || filterType === 'conta') && (
-                <div className="group relative overflow-hidden rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0 space-y-0.5">
-                      <p className="text-xs font-medium text-muted-foreground">{t('sidebar.bills')}</p>
-                      <p className="truncate text-base font-semibold text-amber-600 dark:text-amber-400">
-                        {formatSummaryValue(tableFilteredSummary.billsTotal)}
-                      </p>
-                    </div>
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">
-                      <Receipt className="h-4 w-4" />
-                    </span>
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    <Badge className="h-5 border-0 bg-amber-500/15 px-1.5 text-[11px] font-semibold text-amber-700 dark:text-amber-300">
-                      {tableFilteredSummary.billsCount}
-                    </Badge>
-                    <span className="text-[11px] text-muted-foreground">
-                      {t('filters.items', { defaultValue: 'transações' })}
-                    </span>
-                    {filterType === 'conta' && (
-                      <span className="text-[11px] text-muted-foreground">
-                        · {tableFilteredSummary.billsPaidCount}/{tableFilteredSummary.billsCount} {t('transactionList.paid').toLowerCase()}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className={cn("font-semibold", variant === 'table' ? "text-base md:text-lg tracking-tight" : "text-lg")}>
               {title}
             </CardTitle>
             <div className="flex flex-wrap items-center gap-2">
-              {variant === 'table' && showQuickAdd && (
-                <>
-                  <Button
-                    size="sm"
-                    className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
-                    disabled={isReadOnly}
-                    onClick={() => openInlineCreate('receita')}
-                  >
-                    <Plus className="h-4 w-4 shrink-0" />
-                    {t('dashboard.actions.receipt')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="gap-1.5 bg-red-600 text-white hover:bg-red-700 shadow-sm"
-                    disabled={isReadOnly}
-                    onClick={() => openInlineCreate('despesa')}
-                  >
-                    <Plus className="h-4 w-4 shrink-0" />
-                    {t('dashboard.actions.expense')}
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="gap-1.5 bg-amber-600 text-white hover:bg-amber-700 shadow-sm"
-                    disabled={isReadOnly}
-                    onClick={() => openInlineCreate('conta')}
-                  >
-                    <Plus className="h-4 w-4 shrink-0" />
-                    {t('dashboard.actions.bill')}
-                  </Button>
-                </>
+              {!isReadOnly && (
+                <DropdownMenu modal={false}>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" className="gap-1.5">
+                      <Plus className="h-4 w-4 shrink-0" />
+                      {t('default.add')}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => openCreateAction('receita')}>
+                      <TrendingUp className="mr-2 h-4 w-4 text-emerald-500" />
+                      {t('dashboard.actions.receipt')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => openCreateAction('despesa')}>
+                      <TrendingDown className="mr-2 h-4 w-4 text-red-500" />
+                      {t('dashboard.actions.expense')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => openCreateAction('conta')}>
+                      <Receipt className="mr-2 h-4 w-4 text-amber-500" />
+                      {t('dashboard.actions.bill')}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onSelect={() => openRecurrenceWizard()}>
+                      <Repeat className="mr-2 h-4 w-4 text-muted-foreground" />
+                      {t('transactionList.quickAdd.recurringExpense')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             <TransactionFiltersDialog
               open={filtersOpen}
@@ -1406,7 +1648,7 @@ const TransactionList = ({
                 scrollClassName || 'h-[min(78vh,760px)]'
               )}
             >
-              {!useInlineTable && filteredTransactions?.length === 0 ? (
+              {!useInlineTable && filteredTransactions?.length === 0 && pendingTemplateItems.length === 0 ? (
                 <p className="text-muted-foreground text-center py-12 px-4 text-sm">
                   {t('transactionList.empty')}
                 </p>
@@ -1458,9 +1700,15 @@ const TransactionList = ({
                         className={cn(TABLE_HEAD_CLASS, "w-[14%] px-3")}
                       />
                       {showPaidColumn && (
-                        <TableHead className={cn(TABLE_HEAD_CLASS, "w-[8%] px-3 text-center")}>
-                          {t('transactionList.paid')}
-                        </TableHead>
+                        <SortableTableHead
+                          column="paid"
+                          label={t('transactionList.paid')}
+                          activeColumn={tableSortColumn}
+                          sortOrder={tableSortOrder}
+                          onSort={handleTableSortClick}
+                          align="center"
+                          className={cn(TABLE_HEAD_CLASS, "w-[8%] px-3 text-center")}
+                        />
                       )}
                       <SortableTableHead
                         column="value"
@@ -1527,20 +1775,30 @@ const TransactionList = ({
                   <TableFooter className="border-0 bg-transparent">
                     <TableRow className="border-0 hover:bg-transparent">
                       <TableCell
-                        colSpan={showPaidColumn ? 6 : 5}
-                        className="sticky bottom-0 z-10 border-t border-border/50 bg-muted py-2.5 pl-4 pr-2 text-sm font-semibold text-muted-foreground shadow-[0_-1px_0_0_hsl(var(--border)/0.35)]"
+                        colSpan={showPaidColumn ? 7 : 6}
+                        className="sticky bottom-0 z-10 border-t border-border/50 bg-muted py-2 pl-4 pr-2 text-sm font-semibold text-muted-foreground shadow-[0_-1px_0_0_hsl(var(--border)/0.35)]"
                       >
-                        {t('transactionList.table.sum')}
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          'sticky bottom-0 z-10 border-t border-border/50 bg-muted py-2.5 px-3 text-right align-middle font-mono text-sm font-bold tabular-nums shadow-[0_-1px_0_0_hsl(var(--border)/0.35)]',
-                          tableNetSum >= 0
-                            ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-red-600 dark:text-red-400'
-                        )}
-                      >
-                        {tableSumDisplay}
+                        <span>{t('transactionList.footer.realized')}: </span>
+                        <span
+                          className={cn(
+                            tableRealizadoSum >= 0
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-red-600 dark:text-red-400'
+                          )}
+                        >
+                          {tableSumDisplay}
+                        </span>
+                        <span className="mx-2 text-muted-foreground/60">·</span>
+                        <span>{t('transactionList.footer.forecast')}: </span>
+                        <span
+                          className={cn(
+                            tablePrevistoSum >= 0
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-red-600 dark:text-red-400'
+                          )}
+                        >
+                          {tablePrevistoDisplay}
+                        </span>
                       </TableCell>
                       <TableCell className="sticky bottom-0 z-10 border-t border-border/50 bg-muted py-2.5 pr-4 pl-2 shadow-[0_-1px_0_0_hsl(var(--border)/0.35)]" />
                     </TableRow>
@@ -1550,26 +1808,40 @@ const TransactionList = ({
             </ScrollArea>
           ) : (
             <ScrollArea className={scrollClassName}>
-              {filteredTransactions?.length === 0 ? (
+              {mergedListItems.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
                   {t('transactionList.empty')}
                 </p>
               ) : (
-                groupedByDay.map((group) => (
+                <>
+                {groupedByDay.map((group) => (
                   <div key={group.dateKey} className="mb-3">
                     <div className="flex items-center justify-between mb-2 px-1">
                       <p className="text-xs font-semibold capitalize text-muted-foreground">{group.label}</p>
                       <span className="text-[11px] tabular-nums text-muted-foreground/80">{group.items.length}</span>
                     </div>
-                    {group.items.map((transaction) => (
+                    {group.items.map((transaction) => {
+                      const linkedRecurrence = getRecurrenceById(
+                        recurrences,
+                        transaction.recurrenceId
+                      );
+                      const listActionItems = buildTransactionActionItems(transaction, () =>
+                        openEditSheet(transaction)
+                      );
+                      const listCard = (
                       <div
-                        key={transaction.id}
                         className={cn(
                           "flex items-center justify-between p-4 rounded-xl border bg-background/50 shadow-sm hover:shadow-md transition-all mb-2",
                           isPendingTransaction(transaction.id) && "pointer-events-none animate-pulse"
                         )}
                       >
                         <div className="flex items-center gap-3">
+                          {linkedRecurrence && (
+                            <RecurrenceRowPopover
+                              recurrence={linkedRecurrence}
+                              monthKey={selectedMonth}
+                            />
+                          )}
                           <div
                             className={cn(
                               "w-10 h-10 rounded-full flex items-center justify-center",
@@ -1621,39 +1893,71 @@ const TransactionList = ({
                           >
                             {formatAmount(transaction.value, transaction.type)}
                           </div>
-                          <DropdownMenu modal={false}>
-                            <DropdownMenuTrigger asChild>
-                              <Button size='icon' variant='ghost'>
-                                <EllipsisVertical className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuLabel className='select-none'>{t('transactionList.actions')}</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onSelect={(event) =>
-                                  deferDropdownMenuAction(event, () => openDeleteDialog(transaction))
-                                }
-                              >
-                                <div className='flex flex-row items-center gap-2'>
-                                  <Trash className='h-4 w-4' /> {t('transactionList.delete')}
-                                </div>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className='flex flex-row items-center gap-2'
-                                onSelect={(event) =>
-                                  deferDropdownMenuAction(event, () => openEditSheet(transaction))
-                                }
-                              >
-                                <Pen className='h-4 w-4' /> {t('transactionList.edit')}
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {!isReadOnly && (
+                            <EntityActionsDropdown
+                              items={listActionItems}
+                              menuLabel={t('transactionList.actions')}
+                            />
+                          )}
                         </div>
                       </div>
-                    ))}
+                      );
+
+                      return (
+                        <EntityActionsMenu
+                          key={transaction.id}
+                          items={listActionItems}
+                          menuLabel={t('transactionList.actions')}
+                          enableContextMenu={!isReadOnly}
+                        >
+                          {listCard}
+                        </EntityActionsMenu>
+                      );
+                    })}
                   </div>
-                ))
+                ))}
+                {pendingTemplateItems.length > 0 && (
+                  <div className="mb-3">
+                    {pendingTemplateItems.map((item) => {
+                      const recurrence = item.data;
+                      const isBill = recurrence.type === 'conta';
+                      return (
+                        <div
+                          key={recurrence.id}
+                          className={cn(
+                            'flex items-center justify-between p-4 rounded-xl border bg-background/50 shadow-sm mb-2',
+                            isBill ? 'border-l-4 border-l-amber-500/50' : 'border-l-4 border-l-red-500/50'
+                          )}
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <RecurrenceRowPopover
+                              recurrence={recurrence}
+                              monthKey={selectedMonth}
+                              isPending
+                              onGenerate={() => openGenerateFromRecurrence(recurrence)}
+                              onMarkPaid={
+                                isBill ? () => markRecurrencePaidAndGenerate(recurrence) : undefined
+                              }
+                            />
+                            <div className="min-w-0">
+                              <p className="font-medium leading-tight truncate">{recurrence.description}</p>
+                              <Badge variant="secondary" className="text-xs mt-1">
+                                {getCategoryLabel(recurrence.category)}
+                              </Badge>
+                            </div>
+                          </div>
+                          <p className={cn(
+                            'font-semibold shrink-0',
+                            isBill ? 'text-amber-500' : 'text-red-500'
+                          )}>
+                            {formatAmount(recurrence.estimatedValue, recurrence.type)}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                </>
               )}
 
             </ScrollArea>
@@ -1711,6 +2015,48 @@ const TransactionList = ({
         </SheetContent>
       </Sheet>
       )}
+      <Sheet modal={false} open={generateSheetOpen} onOpenChange={(open) => !open && closeGenerateSheet()}>
+        <SheetContent
+          side="right"
+          className="z-[50] flex h-svh max-h-svh w-full max-w-[min(100vw,28rem)] flex-col gap-0 overflow-hidden p-0 sm:w-[28rem]"
+        >
+          <SheetHeader className="shrink-0 space-y-1 border-b border-border/50 px-6 pb-4 pt-6 text-left">
+            <SheetTitle>{t('recurrence.generateTitle')}</SheetTitle>
+            <SheetDescription>{t('recurrence.generateDescription')}</SheetDescription>
+          </SheetHeader>
+          <div className="flex min-h-0 flex-1 flex-col px-6 pb-6 pt-4">
+            {generateSheetOpen && (
+              <TransactionForm
+                key={`generate-${generateRecurrenceId}-${selectedMonth}`}
+                type={generateType}
+                mode="sheet"
+                prefill={generatePrefill}
+                recurrenceId={generateRecurrenceId}
+                recurrenceMonthKey={selectedMonth}
+                onSuccess={closeGenerateSheet}
+                onCancel={closeGenerateSheet}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
+      <Dialog open={wizardOpen} onOpenChange={(open) => !open && closeRecurrenceWizard()}>
+        <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {wizardEditItem?.id ? t('recurrence.edit') : t('recurrence.add')}
+            </DialogTitle>
+          </DialogHeader>
+          {wizardOpen && (
+            <RecurrenceWizard
+              recurrenceId={wizardEditItem?.id}
+              initialData={wizardEditItem ?? undefined}
+              onComplete={closeRecurrenceWizard}
+              onCancel={closeRecurrenceWizard}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

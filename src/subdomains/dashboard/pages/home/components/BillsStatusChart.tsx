@@ -7,6 +7,10 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Transaction } from "@/utils/services/api/transation";
+import {
+  isBillPaid,
+  isBillPending,
+} from "@/subdomains/dashboard/utils/transaction-filters";
 import { useTranslation } from "react-i18next";
 
 type BillsStatusChartProps = {
@@ -37,28 +41,32 @@ export default function BillsStatusChart({ transactions }: BillsStatusChartProps
     [transactions]
   );
 
-  const paidTotal = React.useMemo(
-    () =>
-      bills
-        .filter((item) => item.paid === true)
-        .reduce((acc, item) => acc + item.value, 0),
+  const paidBills = React.useMemo(
+    () => bills.filter(isBillPaid),
     [bills]
+  );
+
+  const pendingBills = React.useMemo(
+    () => bills.filter(isBillPending),
+    [bills]
+  );
+
+  const paidTotal = React.useMemo(
+    () => paidBills.reduce((acc, item) => acc + item.value, 0),
+    [paidBills]
   );
 
   const pendingTotal = React.useMemo(
-    () =>
-      bills
-        .filter((item) => item.paid !== true)
-        .reduce((acc, item) => acc + item.value, 0),
-    [bills]
+    () => pendingBills.reduce((acc, item) => acc + item.value, 0),
+    [pendingBills]
   );
 
-  const paidCount = bills.filter((item) => item.paid === true).length;
-  const pendingCount = bills.length - paidCount;
+  const paidCount = paidBills.length;
+  const pendingCount = pendingBills.length;
 
   const data = React.useMemo(() => {
     const slices = [];
-    if (paidTotal > 0) {
+    if (paidCount > 0) {
       slices.push({
         status: "paid",
         label: t("dashboard.billsChart.paid"),
@@ -67,7 +75,7 @@ export default function BillsStatusChart({ transactions }: BillsStatusChartProps
         stroke: "hsl(var(--background))",
       });
     }
-    if (pendingTotal > 0) {
+    if (pendingCount > 0) {
       slices.push({
         status: "pending",
         label: t("dashboard.billsChart.pending"),
@@ -77,7 +85,7 @@ export default function BillsStatusChart({ transactions }: BillsStatusChartProps
       });
     }
     return slices;
-  }, [paidTotal, pendingTotal, t]);
+  }, [paidCount, paidTotal, pendingCount, pendingTotal, t]);
 
   const chartConfig = React.useMemo(
     () => ({
@@ -96,9 +104,10 @@ export default function BillsStatusChart({ transactions }: BillsStatusChartProps
         <p className="text-xs text-muted-foreground">
           {bills.length > 0
             ? t("dashboard.billsChart.summary", {
-                paid: paidCount,
+                paidCount,
                 total: bills.length,
-                pending: formatCurrency(pendingTotal),
+                pendingCount,
+                pendingAmount: formatCurrency(pendingTotal),
               })
             : t("dashboard.billsChart.noData")}
         </p>
@@ -169,9 +178,11 @@ export default function BillsStatusChart({ transactions }: BillsStatusChartProps
             </PieChart>
           </ChartContainer>
         )}
-        {bills.length > 0 && pendingCount > 0 && (
+        {pendingCount > 0 && (
           <p className="mt-2 text-center text-xs text-muted-foreground">
-            {t("dashboard.billsChart.pendingCount", { count: pendingCount })}
+            {t("dashboard.billsChart.pendingAmount", {
+              amount: formatCurrency(pendingTotal),
+            })}
           </p>
         )}
       </CardContent>

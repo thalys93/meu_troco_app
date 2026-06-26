@@ -10,7 +10,9 @@ import {
     translateRoadmapStatus,
 } from '@/utils/roadmap/roadmap-i18n';
 import { Edit, Trash2 } from 'lucide-react';
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { EntityActionsMenu, type ActionMenuItem } from '@/components/EntityActionsMenu';
 
 type RoadmapColumnStatus = 'planned' | 'in_progress' | 'done';
 
@@ -34,7 +36,26 @@ function RoadmapTimelineCard({
     const { t } = useTranslation();
     const accent = statusAccent[item.status as RoadmapColumnStatus] ?? statusAccent.planned;
 
-    return (
+    const actionItems = useMemo<ActionMenuItem[] | null>(() => {
+        if (variant !== 'admin' || !onEdit || !onDelete) return null;
+        return [
+            {
+                id: 'edit',
+                label: t('default.edit'),
+                icon: <Edit className="h-3.5 w-3.5" />,
+                onSelect: () => onEdit(item.id),
+            },
+            {
+                id: 'delete',
+                label: t('transactionList.delete'),
+                icon: <Trash2 className="h-3.5 w-3.5" />,
+                onSelect: () => onDelete(item.id),
+                destructive: true,
+            },
+        ];
+    }, [item.id, onDelete, onEdit, t, variant]);
+
+    const card = (
         <article className={cn('rounded-xl border border-border/70 border-t-[3px] bg-card/95 p-4 shadow-sm space-y-2 backdrop-blur-sm', accent.card, accent.glow)}>
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -62,6 +83,14 @@ function RoadmapTimelineCard({
                 <Badge variant="secondary" className="text-[10px]">{translateRoadmapPriority(t, item.priority)}</Badge>
             </div>
         </article>
+    );
+
+    if (!actionItems) return card;
+
+    return (
+        <EntityActionsMenu items={actionItems} menuLabel={t('transactionList.actions')}>
+            {card}
+        </EntityActionsMenu>
     );
 }
 

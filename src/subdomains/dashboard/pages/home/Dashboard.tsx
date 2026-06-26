@@ -14,9 +14,6 @@ import { useDefaultCard } from '@/hooks/useDefaultCard';
 import { useDashboardPreferences } from '../../context/dashboard-preferences';
 import {
   getMonthRangeByKey,
-  parseLocalDateInput,
-  parseLocalDateInputAtEndOfDay,
-  parseLocalDateInputAtStartOfDay,
 } from '../../utils/month-range';
 import ExpenseByCategoryChart from './components/ExpenseByCategoryChart';
 import MonthlyExpenseTrendChart from './components/MonthlyExpenseTrendChart';
@@ -43,26 +40,13 @@ function DashboardHomeBody() {
     goToPreviousMonth,
     resetCurrentMonth,
     layoutMode,
-    transactionListFilters
+    transactionListFilters,
   } = useDashboardPreferences();
   const isMobile = useIsMobile();
   const { categoryLookup } = useCategories();
   const isNotionDesktop = layoutMode === 'notion' && !isMobile;
   const monthRange = useMemo(() => getMonthRangeByKey(selectedMonth), [selectedMonth]);
 
-  const monthTransactions = useMemo(() => {
-    const start = parseLocalDateInputAtStartOfDay(monthRange.startDate);
-    const end = parseLocalDateInputAtEndOfDay(monthRange.endDate);
-    const startMs = start.getTime();
-    const endMs = end.getTime();
-    if (Number.isNaN(startMs) || Number.isNaN(endMs)) return [];
-    return transactions.filter((item) => {
-      const date = parseLocalDateInput(item.date);
-      const dateMs = date.getTime();
-      if (Number.isNaN(dateMs)) return false;
-      return dateMs >= startMs && dateMs <= endMs;
-    });
-  }, [monthRange.endDate, monthRange.startDate, transactions]);
   const effectiveFilters = useMemo(() => {
     if (!transactionListFilters.dateRangeLockedToMonth) {
       return transactionListFilters;
@@ -100,6 +84,14 @@ function DashboardHomeBody() {
   const summary = useMemo(
     () => summarizeIncomeExpense(filteredTransactions),
     [filteredTransactions]
+  );
+  const billsChartTransactions = useMemo(
+    () =>
+      filterTransactionsByPreferences(transactions, {
+        ...effectiveFilters,
+        type: "conta",
+      }, { categoryLookup }),
+    [categoryLookup, effectiveFilters, transactions]
   );
 
   const monthIncome = useMemo(
@@ -161,15 +153,11 @@ function DashboardHomeBody() {
     >
       {isNotionDesktop ? (
         <>
-          <motion.div variants={itemVariants} className="pt-2 pb-2">
+          <motion.div variants={itemVariants} className="space-y-3 pt-2 pb-2">
             <TransactionList
               transactions={transactions}
               isLoading={isLoading}
-              scrollClassName={
-                isNotionDesktop
-                  ? "h-[min(58vh,620px)] md:h-[min(60vh,660px)] min-h-[300px] max-h-[400px]"
-                  : "max-h-[min(58vh,620px)] md:max-h-[min(60vh,660px)] overflow-auto"
-              }
+              scrollClassName="h-[min(58vh,620px)] md:h-[min(60vh,660px)] min-h-[300px] max-h-[400px]"
               title={t('dashboard.listTitle')}
               selectedMonth={selectedMonth}
               onPreviousMonth={goToPreviousMonth}
@@ -190,7 +178,7 @@ function DashboardHomeBody() {
               transactions={trendTransactions}
               selectedMonth={selectedMonth}
             />
-            <BillsStatusChart transactions={monthTransactions} />
+            <BillsStatusChart transactions={billsChartTransactions} />
           </motion.div>
 
           <motion.div
@@ -291,7 +279,7 @@ function DashboardHomeBody() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <BillsStatusChart transactions={monthTransactions} />
+            <BillsStatusChart transactions={billsChartTransactions} />
           </motion.div>
 
           <motion.div variants={itemVariants} className="pt-4 pb-16">

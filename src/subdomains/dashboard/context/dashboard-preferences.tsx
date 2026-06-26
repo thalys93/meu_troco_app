@@ -14,6 +14,7 @@ export type TransactionTableSortColumn =
   | "wallet"
   | "category"
   | "type"
+  | "paid"
   | "value";
 
 /** @deprecated use TransactionSortOrder */
@@ -55,6 +56,7 @@ const TABLE_SORT_COLUMNS: TransactionTableSortColumn[] = [
   "wallet",
   "category",
   "type",
+  "paid",
   "value",
 ];
 

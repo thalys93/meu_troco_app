@@ -109,15 +109,24 @@
   "lang.portuguese": "Portuguese",
   "lang.spanish": "Spanish",
   "lang.english": "English",
+  "brand.name": "Meu Troco",
+  "brand.suffix": "Finance",
+  "brand.full": "Meu Troco Finance",
   "navigation.home": "Home",
+  "navigation.dashboard": "Dashboard",
+  "navigation.transactions": "Transactions",
+  "navigation.reports": "Reports",
+  "navigation.forecasts": "Forecasts",
+  "navigation.profile": "Profile",
   "navigation.about": "About",
   "navigation.funcionalities": "Funcionalities",
   "navigation.roadmap": "Roadmap",
   "navigation.benefits": "Benefits",
   "navigation.signIn": "Sign In",
+  "navigation.signUpFree": "Sign up free",
   "navigation.back": "Back",
   "footer.all_rights": "All rights reserved",
-  "footer.description": "Your money under control, your way.",
+  "footer.description": "Simple, powerful personal finance. Every penny in the right place.",
   "footer.privacy_policy": "Privacy Policy",
   "footer.backoffice_access": "Operational access",
   "footer.social_groups": "Social media",
@@ -326,7 +335,7 @@
   "benefits.text_3": "Without unnecessary complications",
   "benefits.text_4": "Ideal for personal use",
   "benefits.why_use": "Why use o",
-  "buttons.accessThePlatform": "Access My Exchange",
+  "buttons.accessThePlatform": "Access Meu Troco Finance",
   "buttons.start_now": "Start now",
   "callToAction.keepYour": "Keep your",
   "callToAction.money": "money",
@@ -504,7 +513,7 @@
   "dashboard.cardTotalMonthHint": "Income − expenses in the selected month",
   "dashboard.insightTextMonth": "Summary of cash flow for the selected month.",
   "dashboard.welcomeGreeting": "Welcome,",
-  "dashboard.welcomeTitle": "Welcome to Meu Troco",
+  "dashboard.welcomeTitle": "Welcome to Meu Troco Finance",
   "dashboard.welcomeDescription": "meu troco is a simple tool to help you manage your personal finances.",
   "dashboard.welcomeUnderstand": "I understand",
   "categories": {
@@ -923,6 +932,82 @@
       "button": "Start Now"
     }
   },
+  "landing_v3": {
+    "hero": {
+      "badge": "Every penny in the right place.",
+      "title_line1": "Personal finance that fits",
+      "title_line2": "your real life.",
+      "description": "Organize income, expenses, and goals without spreadsheets, jargon, or month-end surprises. Your money under control, your way.",
+      "cta_primary": "Start for free",
+      "cta_demo": "See demo",
+      "social_proof": "Thousands already manage their finances with peace of mind",
+      "device_desktop": "Dashboard",
+      "device_mobile": "Mobile"
+    },
+    "features": {
+      "dashboard": {
+        "title": "Your dashboard,",
+        "subtitle": "everything at a glance.",
+        "description": "See balance, income, and expenses for the month in one place. No spreadsheets, no wasted time.",
+        "bullet1": "Balance and monthly summary",
+        "bullet2": "Quick actions to log entries",
+        "bullet3": "Daily insights that guide you"
+      },
+      "transactions": {
+        "title": "Transactions,",
+        "subtitle": "organized your way.",
+        "description": "Filter by month, type, and category. Find any entry in seconds.",
+        "bullet1": "Full searchable list",
+        "bullet2": "Income and expense summary",
+        "bullet3": "History always at hand"
+      },
+      "reports": {
+        "title": "Reports,",
+        "subtitle": "clear and visual.",
+        "description": "Understand where your money goes with simple charts you can actually read.",
+        "bullet1": "Spending by category",
+        "bullet2": "Monthly trends",
+        "bullet3": "One-click export"
+      },
+      "forecasts": {
+        "title": "Forecasts,",
+        "subtitle": "before surprises hit.",
+        "description": "Smart cash flow projections and alerts so you can act before problems arise.",
+        "bullet1": "Future balance projection",
+        "bullet2": "Unusual spending alerts",
+        "bullet3": "Scenarios for coming months"
+      },
+      "profile": {
+        "title": "Your profile,",
+        "subtitle": "your way.",
+        "description": "Adjust notifications, preferences, and monthly reports in one place.",
+        "bullet1": "Account data and security",
+        "bullet2": "Customizable notifications",
+        "bullet3": "Monthly email report"
+      }
+    },
+    "roadmap": {
+      "title": "Our roadmap",
+      "description": "Simple, powerful personal finance. Follow what we're building, quarter by quarter."
+    },
+    "security": {
+      "title": "Security and transparency",
+      "subtitle": "Because trust is part of your financial control too.",
+      "f3_title": "Full transparency",
+      "f3_desc": "You know exactly how your data is handled — no hidden fine print.",
+      "f4_title": "Always evolving",
+      "f4_desc": "New features and improvements arrive often, based on what you actually need.",
+      "f5_title": "Support that listens",
+      "f5_desc": "Your feedback shapes the future of Meu Troco Finance. Talk to us anytime."
+    },
+    "cta": {
+      "badge": "Stop guessing",
+      "title": "Turn your maybe,",
+      "subtitle": "into a sure thing.",
+      "description": "Smart insights on your spending and forecasts that help you decide with confidence.",
+      "button": "Start for free"
+    }
+  },
   "sidebar": {
     "settings": "Settings",
     "settingsDescription": "Manage your preferences and settings"
@@ -931,8 +1016,8 @@
   "login.quotes.q2": "Small savings today, big achievements tomorrow. Start now.",
   "login.quotes.q3": "Organize your financial future with simplicity and security.",
   "login.forgotPassword": "Forgot password?",
-  "login.team": "Meu Troco Team",
-  "login.appDescription": "Finance App",
+  "login.team": "Meu Troco Finance Team",
+  "login.appDescription": "Personal finance",
   "login.createAccountNow": "Create one now",
   "converter.title": "Currency Converter",
   "converter.calculatorTitle": "Currency Calculator",

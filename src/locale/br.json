@@ -2,15 +2,24 @@
   "lang.portuguese": "Português",
   "lang.spanish": "Espanhol",
   "lang.english": "Inglês",
+  "brand.name": "Meu Troco",
+  "brand.suffix": "Finance",
+  "brand.full": "Meu Troco Finance",
   "navigation.home": "Home",
+  "navigation.dashboard": "Dashboard",
+  "navigation.transactions": "Transações",
+  "navigation.reports": "Relatórios",
+  "navigation.forecasts": "Previsões",
+  "navigation.profile": "Perfil",
   "navigation.about": "Sobre",
   "navigation.funcionalities": "Funcionalidades",
   "navigation.roadmap": "Roadmap",
   "navigation.benefits": "Benefícios",
   "navigation.signIn": "Entrar",
+  "navigation.signUpFree": "Criar conta grátis",
   "navigation.back": "Voltar",
   "footer.all_rights": "Todos os direitos reservados",
-  "footer.description": "Seu dinheiro sob controle, do seu jeito.",
+  "footer.description": "Finanças pessoais simples e poderosas. Todo centavo no lugar certo.",
   "footer.privacy_policy": "Política de Privacidade",
   "footer.backoffice_access": "Acesso operacional",
   "footer.social_groups": "Redes sociais",
@@ -20,7 +29,7 @@
   "benefits.text_3": "Sem complicações desnecessárias",
   "benefits.text_4": "Ideal para uso pessoal",
   "benefits.why_use": "Por que usar o",
-  "buttons.accessThePlatform": "Acessar Meu Troco",
+  "buttons.accessThePlatform": "Acessar Meu Troco Finance",
   "buttons.start_now": "Começar agora",
   "callToAction.keepYour": "Mantenha seu",
   "callToAction.money": "dinheiro",
@@ -397,7 +406,7 @@
   "dashboard.cardTotalMonthHint": "Receitas − despesas no mês selecionado",
   "dashboard.insightTextMonth": "Resumo do fluxo do mês selecionado.",
   "dashboard.welcomeGreeting": "Bem-vindo,",
-  "dashboard.welcomeTitle": "Bem-vindo ao Meu Troco",
+  "dashboard.welcomeTitle": "Bem-vindo ao Meu Troco Finance",
   "dashboard.welcomeDescription": "o meu troco é uma ferramenta simples para te ajudar a gerenciar suas finanças pessoais.",
   "dashboard.welcomeUnderstand": "Entendido",
   "categories": {
@@ -816,6 +825,82 @@
       "button": "Comece Agora"
     }
   },
+  "landing_v3": {
+    "hero": {
+      "badge": "Todo centavo no lugar certo.",
+      "title_line1": "Finanças pessoais que cabem",
+      "title_line2": "na sua vida real.",
+      "description": "Organize receitas, despesas e metas sem planilha, sem jargão e sem surpresa no fim do mês. Seu dinheiro sob controle, do seu jeito.",
+      "cta_primary": "Começar grátis",
+      "cta_demo": "Ver demonstração",
+      "social_proof": "Milhares de pessoas já organizam suas finanças com tranquilidade",
+      "device_desktop": "Painel",
+      "device_mobile": "Celular"
+    },
+    "features": {
+      "dashboard": {
+        "title": "Seu painel,",
+        "subtitle": "tudo em um olhar.",
+        "description": "Veja saldo, receitas e despesas do mês em um só lugar. Sem abrir planilha, sem perder tempo.",
+        "bullet1": "Saldo e resumo do mês",
+        "bullet2": "Ações rápidas para lançar",
+        "bullet3": "Insights que orientam seu dia"
+      },
+      "transactions": {
+        "title": "Transações,",
+        "subtitle": "organizadas do seu jeito.",
+        "description": "Filtre por mês, tipo e categoria. Encontre qualquer lançamento em segundos.",
+        "bullet1": "Lista completa e pesquisável",
+        "bullet2": "Resumo por receita e despesa",
+        "bullet3": "Histórico sempre à mão"
+      },
+      "reports": {
+        "title": "Relatórios,",
+        "subtitle": "claros e visuais.",
+        "description": "Entenda para onde seu dinheiro vai com gráficos simples que você realmente entende.",
+        "bullet1": "Gastos por categoria",
+        "bullet2": "Tendência mensal",
+        "bullet3": "Exportação em um clique"
+      },
+      "forecasts": {
+        "title": "Previsões,",
+        "subtitle": "antes de surpreender.",
+        "description": "Projeções inteligentes do seu fluxo de caixa e alertas para você agir antes do problema.",
+        "bullet1": "Projeção de saldo futuro",
+        "bullet2": "Alertas de gastos fora do padrão",
+        "bullet3": "Cenários para os próximos meses"
+      },
+      "profile": {
+        "title": "Seu perfil,",
+        "subtitle": "do seu jeito.",
+        "description": "Ajuste notificações, preferências e relatórios mensais num lugar só.",
+        "bullet1": "Dados e segurança da conta",
+        "bullet2": "Notificações personalizáveis",
+        "bullet3": "Relatório mensal por e-mail"
+      }
+    },
+    "roadmap": {
+      "title": "Nosso roadmap",
+      "description": "Finanças pessoais simples e poderosas. Acompanhe o que estamos construindo, trimestre a trimestre."
+    },
+    "security": {
+      "title": "Segurança e transparência",
+      "subtitle": "Porque confiança também faz parte do seu controle financeiro.",
+      "f3_title": "Transparência total",
+      "f3_desc": "Você sabe exatamente como seus dados são tratados — sem letras miúdas escondidas.",
+      "f4_title": "Evolução constante",
+      "f4_desc": "Novas funcionalidades e melhorias chegam com frequência, baseadas no que você realmente precisa.",
+      "f5_title": "Suporte que escuta",
+      "f5_desc": "Sua opinião molda o futuro do Meu Troco Finance. Fale com a gente quando quiser."
+    },
+    "cta": {
+      "badge": "Pare de adivinhar",
+      "title": "Transforme seu talvez,",
+      "subtitle": "em uma certeza.",
+      "description": "Insights inteligentes sobre seus gastos e previsões que ajudam você a tomar decisões com tranquilidade.",
+      "button": "Começar grátis"
+    }
+  },
   "sidebar": {
     "settings": "Configurações",
     "settingsDescription": "Gerencie suas preferências e configurações",
@@ -828,8 +913,8 @@
   "login.quotes.q2": "Pequenas economias hoje, grandes conquistas amanhã. Comece agora.",
   "login.quotes.q3": "Organize seu futuro financeiro com simplicidade e segurança.",
   "login.forgotPassword": "Esqueceu a senha?",
-  "login.team": "Equipe Meu Troco",
-  "login.appDescription": "App de Finanças",
+  "login.team": "Equipe Meu Troco Finance",
+  "login.appDescription": "Finanças pessoais",
   "login.createAccountNow": "Crie uma agora",
   "converter.title": "Conversor de Moedas",
   "converter.calculatorTitle": "Calculadora de Câmbio",

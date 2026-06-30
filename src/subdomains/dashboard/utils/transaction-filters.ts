@@ -2,7 +2,7 @@ import { NO_WALLET_ID, isPocketWalletId } from "@/constants/wallets";
 import { resolveAllocations } from "@/utils/transaction-allocations";
 import { transactionCategoryMatchesFilter } from "@/hooks/use-categories";
 import type { Category } from "@/types/Category";
-import { Transaction } from "@/utils/services/api/transation";
+import { Transaction, type TransactionType } from "@/utils/services/api/transation";
 import { TransactionListFiltersPreference, type TransactionSortOrder, type TransactionTableSortColumn } from "@/subdomains/dashboard/context/dashboard-preferences";
 import {
   parseLocalDateInput,
@@ -12,6 +12,55 @@ import {
 
 const isValidDate = (value: Date) => !Number.isNaN(value.getTime());
 const LEGACY_NO_CARD_ID = "no_card";
+const TRANSACTION_TYPE_FILTER_ALL = "Todos";
+
+export function toggleTransactionTypes(
+  current: string[],
+  clicked: string
+): string[] {
+  if (clicked === TRANSACTION_TYPE_FILTER_ALL) {
+    return [TRANSACTION_TYPE_FILTER_ALL];
+  }
+  const withoutAll = current.filter((t) => t !== TRANSACTION_TYPE_FILTER_ALL);
+  if (withoutAll.includes(clicked)) {
+    const next = withoutAll.filter((t) => t !== clicked);
+    return next.length === 0 ? [TRANSACTION_TYPE_FILTER_ALL] : next;
+  }
+  return [...withoutAll, clicked];
+}
+
+export function transactionMatchesTypeFilter(
+  transactionType: string,
+  types: string[]
+): boolean {
+  return (
+    types.includes(TRANSACTION_TYPE_FILTER_ALL) ||
+    types.includes(transactionType)
+  );
+}
+
+export function isExclusiveContaTypeFilter(types: string[]): boolean {
+  return types.length === 1 && types[0] === "conta";
+}
+
+export function shouldShowPaidColumn(types: string[]): boolean {
+  return (
+    types.includes(TRANSACTION_TYPE_FILTER_ALL) || types.includes("conta")
+  );
+}
+
+export function resolveDefaultCreateType(types: string[]): TransactionType {
+  const specific = types.filter((t) => t !== TRANSACTION_TYPE_FILTER_ALL);
+  if (
+    specific.length === 1 &&
+    (specific[0] === "receita" ||
+      specific[0] === "despesa" ||
+      specific[0] === "conta")
+  ) {
+    return specific[0];
+  }
+  return "despesa";
+}
 
 export type IncomeExpenseSummary = {
   incomeTotal: number;
@@ -136,7 +185,7 @@ export const filterTransactionsByPreferences = (
         filters.categories,
         categoryLookup
       );
-      const matchType = filters.type === "Todos" ? true : tr.type === filters.type;
+      const matchType = transactionMatchesTypeFilter(tr.type, filters.types);
       const matchMin = min !== undefined ? tr.value >= min : true;
       const matchMax = max !== undefined ? tr.value <= max : true;
       const matchStart = startMs !== undefined ? trDateMs >= startMs : true;
@@ -203,3 +252,38 @@ export const summarizeIncomeExpense = (
     expenseCount: summary.expenseCount,
   };
 };
+
+if (import.meta.env.DEV) {
+  const assert = (cond: boolean, msg: string) => {
+    if (!cond) throw new Error(`transaction-filters self-check: ${msg}`);
+  };
+  assert(
+    JSON.stringify(toggleTransactionTypes(["Todos"], "despesa")) ===
+      JSON.stringify(["despesa"]),
+    "Todos -> despesa"
+  );
+  assert(
+    JSON.stringify(toggleTransactionTypes(["despesa"], "conta")) ===
+      JSON.stringify(["despesa", "conta"]),
+    "add conta"
+  );
+  assert(
+    JSON.stringify(toggleTransactionTypes(["despesa", "conta"], "despesa")) ===
+      JSON.stringify(["conta"]),
+    "remove despesa"
+  );
+  assert(
+    JSON.stringify(toggleTransactionTypes(["conta"], "conta")) ===
+      JSON.stringify(["Todos"]),
+    "empty -> Todos"
+  );
+  assert(transactionMatchesTypeFilter("despesa", ["Todos"]), "Todos matches");
+  assert(
+    transactionMatchesTypeFilter("despesa", ["despesa", "conta"]),
+    "multi matches despesa"
+  );
+  assert(
+    !transactionMatchesTypeFilter("receita", ["despesa", "conta"]),
+    "multi excludes receita"
+  );
+}

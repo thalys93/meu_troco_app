@@ -11,11 +11,12 @@ import { useWalletsStore } from '@/store/useWalletsStore';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import type { TransactionTableSortColumn } from '@/subdomains/dashboard/context/dashboard-preferences';
+import { toggleTransactionTypes } from '@/subdomains/dashboard/utils/transaction-filters';
 
 type Filters = {
   card: string;
   categories: string[];
-  type: string;
+  types: string[];
   minValue: string;
   maxValue: string;
   startDate: string;
@@ -58,17 +59,20 @@ export default function TransactionFiltersDialog({
 
   const categoriesForFilter = React.useMemo(() => {
     const todosEntry = { id: 'Todos', icon: List } as CategoryWithIcon;
-    if (filters.type === 'receita') {
-      return [...incomeCategories, todosEntry];
-    }
-    if (filters.type === 'despesa') {
-      return [...expenseCategories, todosEntry];
-    }
-    if (filters.type === 'conta') {
-      return [...billCategories, todosEntry];
+    const specific = filters.types.filter((t) => t !== 'Todos');
+    if (specific.length === 1) {
+      if (specific[0] === 'receita') {
+        return [...incomeCategories, todosEntry];
+      }
+      if (specific[0] === 'despesa') {
+        return [...expenseCategories, todosEntry];
+      }
+      if (specific[0] === 'conta') {
+        return [...billCategories, todosEntry];
+      }
     }
     return allCategories;
-  }, [allCategories, billCategories, expenseCategories, filters.type, incomeCategories]);
+  }, [allCategories, billCategories, expenseCategories, filters.types, incomeCategories]);
   const { wallets, fetchWallets } = useWalletsStore();
 
   React.useEffect(() => {
@@ -108,13 +112,18 @@ export default function TransactionFiltersDialog({
                 { id: 'receita', label: t('sidebar.income', 'Receita'), icon: <TrendingUp className="w-4 h-4 text-primary" /> },
                 { id: 'despesa', label: t('sidebar.expenses', 'Despesa'), icon: <TrendingDown className="w-4 h-4 text-red-500" /> },
                 { id: 'conta', label: t('sidebar.bills', 'Contas'), icon: <Receipt className="w-4 h-4 text-amber-500" /> },
-              ].map((opt) => (
+              ].map((opt) => {
+                const isSelected =
+                  opt.id === 'Todos'
+                    ? filters.types.length === 1 && filters.types[0] === 'Todos'
+                    : filters.types.includes(opt.id);
+                return (
                 <Button
                   key={opt.id}
                   variant="outline"
                   className={cn(
                     "justify-start gap-2 h-10",
-                    filters.type === opt.id &&
+                    isSelected &&
                     (opt.id === "receita"
                       ? "border-primary ring-1 ring-primary/30"
                       : opt.id === "despesa"
@@ -123,12 +132,13 @@ export default function TransactionFiltersDialog({
                           ? "border-amber-500 ring-1 ring-amber-500/30"
                           : "border-foreground ring-1 ring-foreground/20")
                   )}
-                  onClick={() => onChange('type', opt.id)}
+                  onClick={() => onChange('types', toggleTransactionTypes(filters.types, opt.id))}
                 >
                   {opt.icon}
                   {opt.label}
                 </Button>
-              ))}
+              );
+              })}
             </div>
           </div>
 
@@ -293,7 +303,7 @@ export default function TransactionFiltersDialog({
                 }
                 onChange('card', 'Todos');
                 onChange('categories', ['Todos']);
-                onChange('type', 'Todos');
+                onChange('types', ['Todos']);
                 onChange('minValue', '');
                 onChange('maxValue', '');
                 onChange('startDate', '');

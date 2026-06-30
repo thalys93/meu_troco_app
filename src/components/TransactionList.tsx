@@ -39,6 +39,10 @@ import {
   filterTransactionsByPreferences,
   getDefaultSortOrderForColumn,
   isBillPaid,
+  isExclusiveContaTypeFilter,
+  resolveDefaultCreateType,
+  shouldShowPaidColumn,
+  toggleTransactionTypes,
 } from '@/subdomains/dashboard/utils/transaction-filters';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './ui/sheet';
 import {
@@ -242,7 +246,7 @@ const TransactionList = ({
 
   const filterCard = transactionListFilters.card;
   const filterCategories = transactionListFilters.categories;
-  const filterType = transactionListFilters.type;
+  const filterTypes = transactionListFilters.types;
   const minValue = transactionListFilters.minValue;
   const maxValue = transactionListFilters.maxValue;
   const startDate = transactionListFilters.startDate;
@@ -280,7 +284,7 @@ const TransactionList = ({
   const { mutate: createTransaction } = useCreateTransaction();
   const { mutate: markRecurrenceGenerated } = useMarkRecurrenceGenerated();
   const isTableVariant = variant === 'table';
-  const showPaidColumn = filterType === 'Todos' || filterType === 'conta';
+  const showPaidColumn = shouldShowPaidColumn(filterTypes);
   const tableColumnCount = showPaidColumn ? 8 : 7;
   const monthRange = React.useMemo(
     () => (selectedMonth ? getMonthRangeByKey(selectedMonth) : undefined),
@@ -475,21 +479,21 @@ const TransactionList = ({
   );
 
   const monthKeyForRecurrence = selectedMonth ?? '';
-  const excludePaidBillsFromSum = filterType === 'conta';
+  const excludePaidBillsFromSum = isExclusiveContaTypeFilter(filterTypes);
 
   const mergedListItems = React.useMemo(() => {
     const merged = mergeRecurrenceListItems(
       filteredTransactions,
       recurrences,
       monthKeyForRecurrence,
-      filterType
+      filterTypes
     );
     return sortListItems(merged, effectiveFilters, sortFilterOptions);
   }, [
     filteredTransactions,
     recurrences,
     monthKeyForRecurrence,
-    filterType,
+    filterTypes,
     effectiveFilters,
     sortFilterOptions,
   ]);
@@ -518,9 +522,9 @@ const TransactionList = ({
         }),
         recurrences,
         monthKeyForRecurrence,
-        filterType
+        filterTypes
       ),
-    [excludePaidBillsFromSum, filteredTransactions, recurrences, monthKeyForRecurrence, filterType]
+    [excludePaidBillsFromSum, filteredTransactions, recurrences, monthKeyForRecurrence, filterTypes]
   );
 
   const resolveDayGroupLabel = React.useCallback(
@@ -645,12 +649,10 @@ const TransactionList = ({
     return monthRange.endDate;
   }, [monthRange, selectedMonth]);
 
-  const defaultCreateType = React.useMemo((): TransactionType => {
-    if (filterType === 'receita' || filterType === 'despesa' || filterType === 'conta') {
-      return filterType;
-    }
-    return 'despesa';
-  }, [filterType]);
+  const defaultCreateType = React.useMemo(
+    (): TransactionType => resolveDefaultCreateType(filterTypes),
+    [filterTypes]
+  );
 
   const clearInlineSession = React.useCallback(() => {
     setInlineSession(null);
@@ -1511,7 +1513,7 @@ const TransactionList = ({
               filters={{
                 card: filterCard,
                 categories: filterCategories,
-                type: filterType,
+                types: filterTypes,
                 minValue,
                 maxValue,
                 startDate,
@@ -1528,8 +1530,8 @@ const TransactionList = ({
                       return { ...prev, card: value as string };
                     case 'categories':
                       return { ...prev, categories: value as string[] };
-                    case 'type':
-                      return { ...prev, type: value as string };
+                    case 'types':
+                      return { ...prev, types: value as string[] };
                     case 'minValue':
                       return { ...prev, minValue: value as string };
                     case 'maxValue':
@@ -1612,12 +1614,17 @@ const TransactionList = ({
             variant === 'table' && "border-b border-border/40 pb-3 -mx-6 px-6"
           )}>
             <ToggleGroup
-              type="single"
-              value={filterType}
-              onValueChange={(v) =>
-                v &&
-                setTransactionListFilters((prev) => ({ ...prev, type: v }))
-              }
+              type="multiple"
+              value={filterTypes}
+              onValueChange={(next) => {
+                const clicked = next.find((v) => !filterTypes.includes(v))
+                  ?? filterTypes.find((v) => !next.includes(v));
+                if (!clicked) return;
+                setTransactionListFilters((prev) => ({
+                  ...prev,
+                  types: toggleTransactionTypes(prev.types, clicked),
+                }));
+              }}
               variant="outline"
               size="sm"
               className={cn("flex-wrap gap-2", variant === 'table' && "gap-1.5")}

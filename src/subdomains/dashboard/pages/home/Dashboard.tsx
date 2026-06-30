@@ -89,7 +89,7 @@ function DashboardHomeBody() {
     () =>
       filterTransactionsByPreferences(transactions, {
         ...effectiveFilters,
-        type: "conta",
+        types: ["conta"],
       }, { categoryLookup }),
     [categoryLookup, effectiveFilters, transactions]
   );

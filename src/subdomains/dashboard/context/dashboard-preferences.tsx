@@ -24,7 +24,7 @@ export type TransactionDateSortOrder = TransactionSortOrder;
 export type TransactionListFiltersPreference = {
   card: string;
   categories: string[];
-  type: string;
+  types: string[];
   minValue: string;
   maxValue: string;
   startDate: string;
@@ -38,7 +38,7 @@ export const defaultTransactionListFiltersPreference: TransactionListFiltersPref
   {
     card: "Todos",
     categories: ["Todos"],
-    type: "Todos",
+    types: ["Todos"],
     minValue: "",
     maxValue: "",
     startDate: "",
@@ -80,7 +80,13 @@ function parseStoredTransactionListFilters(): TransactionListFiltersPreference {
         o.categories.every((x) => typeof x === "string")
           ? (o.categories as string[])
           : d.categories,
-      type: typeof o.type === "string" ? o.type : d.type,
+      types:
+        Array.isArray(o.types) &&
+        o.types.every((x) => typeof x === "string")
+          ? (o.types as string[])
+          : typeof o.type === "string"
+            ? [o.type]
+            : d.types,
       minValue: typeof o.minValue === "string" ? o.minValue : d.minValue,
       maxValue: typeof o.maxValue === "string" ? o.maxValue : d.maxValue,
       startDate: typeof o.startDate === "string" ? o.startDate : d.startDate,

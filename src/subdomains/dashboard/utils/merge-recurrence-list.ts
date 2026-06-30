@@ -2,7 +2,7 @@ import type { Recurrence } from '@/types/Recurrence';
 import type { Transaction } from '@/utils/services/api/transation';
 import type { TransactionListFiltersPreference, TransactionSortOrder, TransactionTableSortColumn } from '@/subdomains/dashboard/context/dashboard-preferences';
 import { isRecurrenceGeneratedForMonth } from './recurrence';
-import { compareTransactionsByColumn, type TransactionFilterOptions } from './transaction-filters';
+import { compareTransactionsByColumn, transactionMatchesTypeFilter, type TransactionFilterOptions } from './transaction-filters';
 import { transactionSignedAmount } from './transaction-month-nets';
 
 export type TransactionListItem =
@@ -21,17 +21,16 @@ export function getItemSignedAmount(item: TransactionListItem): number {
 
 export function recurrenceMatchesTypeFilter(
   recurrence: Recurrence,
-  typeFilter: string
+  types: string[]
 ): boolean {
-  if (typeFilter === 'Todos') return true;
-  return recurrence.type === typeFilter;
+  return transactionMatchesTypeFilter(recurrence.type, types);
 }
 
 export function mergeRecurrenceListItems(
   transactions: Transaction[],
   recurrences: Recurrence[],
   monthKey: string,
-  typeFilter: string
+  types: string[]
 ): TransactionListItem[] {
   const transactionItems: TransactionListItem[] = transactions.map((data) => ({
     kind: 'transaction',
@@ -41,7 +40,7 @@ export function mergeRecurrenceListItems(
   const pendingTemplates: TransactionListItem[] = recurrences
     .filter((rec) => rec.type !== 'receita')
     .filter((rec) => !isRecurrenceGeneratedForMonth(rec, monthKey))
-    .filter((rec) => recurrenceMatchesTypeFilter(rec, typeFilter))
+    .filter((rec) => recurrenceMatchesTypeFilter(rec, types))
     .map((data) => ({
       kind: 'recurrence-template' as const,
       data,
@@ -132,12 +131,12 @@ export function sumRealizado(transactions: Transaction[]): number {
 export function sumPendingRecurrences(
   recurrences: Recurrence[],
   monthKey: string,
-  typeFilter: string
+  types: string[]
 ): number {
   return recurrences
     .filter((rec) => rec.type !== 'receita')
     .filter((rec) => !isRecurrenceGeneratedForMonth(rec, monthKey))
-    .filter((rec) => recurrenceMatchesTypeFilter(rec, typeFilter))
+    .filter((rec) => recurrenceMatchesTypeFilter(rec, types))
     .reduce((acc, rec) => {
       const signed = rec.type === 'receita' ? rec.estimatedValue : -rec.estimatedValue;
       return acc + signed;
@@ -148,11 +147,11 @@ export function sumPrevisto(
   transactions: Transaction[],
   recurrences: Recurrence[],
   monthKey: string,
-  typeFilter: string
+  types: string[]
 ): number {
   return (
     sumRealizado(transactions) +
-    sumPendingRecurrences(recurrences, monthKey, typeFilter)
+    sumPendingRecurrences(recurrences, monthKey, types)
   );
 }
 

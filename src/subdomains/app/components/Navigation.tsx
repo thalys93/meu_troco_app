@@ -1,7 +1,7 @@
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 import ThemeToggle from '@/components/ThemeToggle'
 import { Button } from '@/components/ui/button'
-import { Coins, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -52,8 +52,12 @@ function Navigation({
             className="flex items-center gap-2.5 cursor-pointer group"
             onClick={() => type === 'full' ? scrollToSection('#hero') : navigate('/')}
         >
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm shadow-primary/20 transition-transform group-hover:scale-105">
-                <Coins className="w-5 h-5 text-primary-foreground" />
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm shadow-primary/20 transition-transform group-hover:scale-105 overflow-hidden">
+                <img
+                    src="/new_rebrand/nobg.png"
+                    alt={label ?? t('brand.full')}
+                    className="w-7 h-7 object-cover"
+                />
             </div>
             <div className="flex items-baseline gap-1.5">
                 <span className="text-lg font-bold tracking-tight group-hover:text-primary transition-colors">

@@ -1,5 +1,4 @@
 import React from 'react'
-import { Coins } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import LegalModals from '@/shared/components/LegalModals'
 import { Link, useLocation } from 'react-router-dom'
@@ -28,9 +27,11 @@ function Footer() {
                     <div className="grid md:grid-cols-3 gap-8">
                         <div>
                             <div className="flex items-center gap-2.5 mb-4">
-                                <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm shadow-primary/20">
-                                    <Coins className="w-5 h-5 text-primary-foreground" />
-                                </div>
+                                <img
+                                    src="/new_rebrand/nobg.png"
+                                    alt={t('brand.full')}
+                                    className="w-9 h-9 object-contain"
+                                />
                                 <div className="flex items-baseline gap-1.5">
                                     <span className="text-lg font-bold tracking-tight">{t('brand.name')}</span>
                                     <span className="text-sm font-semibold text-primary">{t('brand.suffix')}</span>

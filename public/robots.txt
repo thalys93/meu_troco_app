@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+
+Disallow: /dashboard
+Disallow: /backoffice
+Disallow: /oauth
+Disallow: /account-suspended

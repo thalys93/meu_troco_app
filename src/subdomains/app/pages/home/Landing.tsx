@@ -28,6 +28,13 @@ const LandingPage = () => {
     <PublicLayout type='full'>
       <div className="relative overflow-hidden bg-background">
         <div className="absolute inset-0 pointer-events-none">
+          {/* <img
+            src="/new_rebrand/bg.jpg"
+            alt=""
+            aria-hidden
+            className="absolute inset-0 w-full h-full object-contain opacity-25 dark:opacity-35"
+          /> */}
+          <div className="absolute inset-0 bg-background/75" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_2px,transparent_2px),linear-gradient(to_bottom,#80808008_2px,transparent_2px)] bg-[size:40px_40px]" />
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/15 rounded-full blur-[120px] opacity-40 -translate-y-1/2" />
           <div className="absolute top-[15%] left-[10%] w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[100px] opacity-30 px-4" />

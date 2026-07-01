@@ -7,70 +7,98 @@ import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 
-function Navigation({ type, title }: { type: "simple" | "full", title?: string }) {
-    const navigate = useNavigate();
-    const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
-    const { t } = useTranslation();
+type NavItem = {
+    name: string
+    href: string
+}
 
-    const location = useLocation();
+function Navigation({
+    type,
+    title,
+}: {
+    type: 'simple' | 'full'
+    title?: string
+}) {
+    const navigate = useNavigate()
+    const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
+    const { t } = useTranslation()
+    const location = useLocation()
+    const isCallBack = location.pathname === '/oauth/callback'
 
-    const isCallBack = location.pathname === "/oauth/callback"
-
-    const navigationItems = [
-        { name: t("navigation.home"), href: '#hero' },
-        { name: t("navigation.roadmap"), href: '#roadmap' },
-        { name: t('navigation.benefits'), href: '#beneficios' },
-    ];
+    const navigationItems: NavItem[] = [
+        { name: t('navigation.home'), href: '#hero' },
+        { name: t('navigation.dashboard'), href: '#dashboard' },
+        { name: t('navigation.transactions'), href: '#transacoes' },
+        { name: t('navigation.reports'), href: '#relatorios' },
+        { name: t('navigation.forecasts'), href: '#previsoes' },
+        { name: t('navigation.profile'), href: '#perfil' },
+    ]
 
     const scrollToSection = (href: string) => {
+        const id = href.replace('#', '')
+
         if (location.pathname !== '/') {
-            navigate('/' + href);
-            return;
+            navigate({ pathname: '/', hash: id })
+            setMobileMenuOpen(false)
+            return
         }
 
-        const element = document.querySelector(href);
-        if (element) {
-            const offset = 80; // Altura do header + um pouco de respiro
-            const bodyRect = document.body.getBoundingClientRect().top;
-            const elementRect = element.getBoundingClientRect().top;
-            const elementPosition = elementRect - bodyRect;
-            const offsetPosition = elementPosition - offset;
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        setMobileMenuOpen(false)
+    }
 
-            window.scrollTo({
-                top: offsetPosition,
-                behavior: 'smooth'
-            });
-        }
-        setMobileMenuOpen(false);
-    };
+    const BrandLogo = ({ label }: { label?: string }) => (
+        <div
+            className="flex items-center gap-2.5 cursor-pointer group"
+            onClick={() => type === 'full' ? scrollToSection('#hero') : navigate('/')}
+        >
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center shadow-sm shadow-primary/20 transition-transform group-hover:scale-105 overflow-hidden">
+                <img
+                    src="/new_rebrand/nobg.png"
+                    alt={label ?? t('brand.full')}
+                    className="w-7 h-7 object-cover"
+                />
+            </div>
+            <div className="flex items-baseline gap-1.5">
+                <span className="text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
+                    {label ?? t('brand.name')}
+                </span>
+                {!label && (
+                    <span className="text-sm font-semibold text-primary">{t('brand.suffix')}</span>
+                )}
+            </div>
+        </div>
+    )
 
     switch (type) {
-        case "full":
+        case 'full':
             return (
-                <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
+                <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border/40">
                     <div className="container mx-auto px-4">
                         <div className="flex items-center justify-between h-16">
-                            <div className="flex items-center gap-2 cursor-pointer group" onClick={() => scrollToSection('#hero')}>
-                                <img src="/favicon_big.png" className="w-8 h-8 text-primary group-hover:text-emerald-400 transition-all rounded" />
-                                <span className="text-xl font-bold select-none group-hover:text-emerald-400 transition-all">Meu Troco</span>
-                            </div>
-                            <div className="hidden md:flex items-center space-x-8">
+                            <BrandLogo />
+
+                            <div className="hidden xl:flex items-center gap-6">
                                 {navigationItems.map((item) => (
                                     <button
                                         key={item.name}
                                         onClick={() => scrollToSection(item.href)}
-                                        className="text-muted-foreground hover:text-primary transition-colors duration-200 font-medium"
+                                        className="relative text-sm text-muted-foreground hover:text-primary transition-colors duration-200 font-medium after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:bg-primary after:transition-all hover:after:w-full"
                                     >
                                         {item.name}
                                     </button>
                                 ))}
-                                <div className="flex items-center gap-2">
-                                    <LanguageSwitcher />
-                                    <ThemeToggle />
-                                    <Button onClick={() => navigate('oauth/login')}>
-                                        {t("navigation.signIn")}
-                                    </Button>
-                                </div>
+                            </div>
+
+                            <div className="hidden md:flex items-center gap-2">
+                                <LanguageSwitcher />
+                                <ThemeToggle />
+                                <Button variant="ghost" onClick={() => navigate('oauth/login')}>
+                                    {t('navigation.signIn')}
+                                </Button>
+                                <Button onClick={() => navigate('oauth/register')}>
+                                    {t('navigation.signUpFree')}
+                                </Button>
                             </div>
 
                             <div className="md:hidden flex items-center gap-2">
@@ -91,7 +119,7 @@ function Navigation({ type, title }: { type: "simple" | "full", title?: string }
                                     initial={{ opacity: 0, y: -10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                    transition={{ duration: 0.2, ease: "easeOut" }}
+                                    transition={{ duration: 0.2, ease: 'easeOut' }}
                                     className="absolute left-4 right-4 top-[70px] md:hidden p-4 rounded-3xl border border-border/50 bg-background/95 backdrop-blur-xl shadow-2xl z-50"
                                 >
                                     <div className="flex flex-col space-y-1">
@@ -104,9 +132,12 @@ function Navigation({ type, title }: { type: "simple" | "full", title?: string }
                                                 {item.name}
                                             </button>
                                         ))}
-                                        <div className="pt-4 mt-2 border-t border-border/50">
-                                            <Button onClick={() => navigate('oauth/login')} className="w-full rounded-2xl h-12 text-base font-bold">
-                                                {t("navigation.signIn")}
+                                        <div className="pt-4 mt-2 border-t border-border/50 flex flex-col gap-2">
+                                            <Button variant="outline" onClick={() => navigate('oauth/login')} className="w-full rounded-2xl h-12 text-base font-bold">
+                                                {t('navigation.signIn')}
+                                            </Button>
+                                            <Button onClick={() => navigate('oauth/register')} className="w-full rounded-2xl h-12 text-base font-bold">
+                                                {t('navigation.signUpFree')}
                                             </Button>
                                         </div>
                                     </div>
@@ -115,16 +146,13 @@ function Navigation({ type, title }: { type: "simple" | "full", title?: string }
                         </AnimatePresence>
                     </div>
                 </nav>
-            );
-        case "simple":
+            )
+        case 'simple':
             return (
-                <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border/50">
+                <nav className="sticky top-0 z-50 bg-background/90 backdrop-blur-xl border-b border-border/40">
                     <div className="container mx-auto px-4">
                         <div className="flex items-center justify-between h-16">
-                            <div className="flex items-center gap-2 cursor-pointer group" onClick={() => navigate("/")}>
-                                <img src="/favicon_big.png" className="w-8 h-8 text-primary group-hover:text-emerald-400 transition-all rounded" />
-                                <span className="text-xl font-bold select-none group-hover:text-emerald-400 transition-all">{title ? title : "Meu Troco"}</span>
-                            </div>
+                            <BrandLogo label={title} />
                             <div className="flex items-center gap-2">
                                 <LanguageSwitcher />
                                 <ThemeToggle />
@@ -135,7 +163,7 @@ function Navigation({ type, title }: { type: "simple" | "full", title?: string }
                         </div>
                     </div>
                 </nav>
-            );
+            )
     }
 }
 

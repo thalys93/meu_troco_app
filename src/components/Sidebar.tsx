@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, Receipt, User, LogOut, DollarSign, Crown, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
+import { Home, TrendingUp, TrendingDown, Receipt, User, LogOut, Coins, Crown, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from './ui/sidebar';
@@ -38,8 +38,13 @@ const AppSidebar = () => {
         <SidebarHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 px-2">
-              <DollarSign className="w-6 h-6 text-primary" />
-              <span className="font-bold">Meu Troco</span>
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <Coins className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="font-bold text-sm">{t('brand.name')}</span>
+                <span className="text-xs font-semibold text-primary">{t('brand.suffix')}</span>
+              </div>
             </div>
             <LanguageSwitcher />
             <ThemeToggle />

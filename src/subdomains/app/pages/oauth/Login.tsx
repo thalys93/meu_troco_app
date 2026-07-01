@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, DollarSign, Lock, Mail, ArrowLeft } from 'lucide-react';
+import { AlertCircle, Coins, Lock, Mail, ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -25,7 +25,6 @@ const initialValues: LoginForm = {
 const LoginPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const title = "Meu Troco";
   const { isAuthChecking } = usePublicAuthGuard({
     authenticatedRedirectTo: '/dashboard',
     minLoadingMs: 1800,
@@ -110,10 +109,13 @@ const LoginPage = () => {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-10 cursor-pointer group" onClick={() => navigate("/")}>
-            <div className="w-10 h-10 bg-emerald-50 dark:bg-primary/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-emerald-100 dark:border-white/10 group-hover:scale-105 transition-transform">
-              <DollarSign className="w-6 h-6 text-emerald-600 dark:text-primary" />
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-sm shadow-primary/20 group-hover:scale-105 transition-transform">
+              <Coins className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{title ? title : "Meu Troco"}</span>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{t('brand.name')}</span>
+              <span className="text-lg font-semibold text-primary">{t('brand.suffix')}</span>
+            </div>
           </div>
 
           <div className="max-w-md">
@@ -159,8 +161,14 @@ const LoginPage = () => {
           className="w-full max-w-md space-y-8"
         >
           <div className="md:hidden flex justify-center mb-8">
-            <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20">
-              <DollarSign className="w-8 h-8 text-primary" />
+            <div className="flex items-center gap-2">
+              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-sm shadow-primary/20">
+                <Coins className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-bold">{t('brand.name')}</span>
+                <span className="text-sm font-semibold text-primary">{t('brand.suffix')}</span>
+              </div>
             </div>
           </div>
 

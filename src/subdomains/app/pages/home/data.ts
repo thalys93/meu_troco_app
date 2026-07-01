@@ -1,4 +1,5 @@
-import { Shield, Lock, Code, Rocket, MessageCircle } from 'lucide-react';
+import { Code, Rocket, MessageCircle } from 'lucide-react';
+import type { LandingScreen } from './LandingScreenMockup';
 
 export interface Bank {
     name: string;
@@ -57,10 +58,23 @@ export const mockBudgetItems: BudgetItem[] = [
 
 
 
+export const landingFeatures: {
+    id: string;
+    featureKey: string;
+    screen: LandingScreen;
+    reversed: boolean;
+}[] = [
+    { id: 'dashboard', featureKey: 'dashboard', screen: 'dashboard', reversed: false },
+    { id: 'transacoes', featureKey: 'transactions', screen: 'transactions', reversed: true },
+    { id: 'relatorios', featureKey: 'reports', screen: 'reports', reversed: false },
+    { id: 'previsoes', featureKey: 'forecasts', screen: 'forecasts', reversed: true },
+    { id: 'perfil', featureKey: 'profile', screen: 'profile', reversed: false },
+];
+
 export const mockSecurityItems: SecurityItem[] = [
     // { titleKey: 'landing_v2.security.f1_title', descKey: 'landing_v2.security.f1_desc', icon: Shield },
     // { titleKey: 'landing_v2.security.f2_title', descKey: 'landing_v2.security.f2_desc', icon: Lock },
-    { titleKey: 'landing_v2.security.f3_title', descKey: 'landing_v2.security.f3_desc', icon: Code },
-    { titleKey: 'landing_v2.security.f4_title', descKey: 'landing_v2.security.f4_desc', icon: Rocket },
-    { titleKey: 'landing_v2.security.f5_title', descKey: 'landing_v2.security.f5_desc', icon: MessageCircle }
+    { titleKey: 'landing_v3.security.f3_title', descKey: 'landing_v3.security.f3_desc', icon: Code },
+    { titleKey: 'landing_v3.security.f4_title', descKey: 'landing_v3.security.f4_desc', icon: Rocket },
+    { titleKey: 'landing_v3.security.f5_title', descKey: 'landing_v3.security.f5_desc', icon: MessageCircle }
 ];

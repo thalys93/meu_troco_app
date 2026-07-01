@@ -109,15 +109,24 @@
   "lang.portuguese": "Portugués",
   "lang.spanish": "Español",
   "lang.english": "Inglés",
+  "brand.name": "Meu Troco",
+  "brand.suffix": "Finance",
+  "brand.full": "Meu Troco Finance",
   "navigation.home": "Inicio",
+  "navigation.dashboard": "Panel",
+  "navigation.transactions": "Transacciones",
+  "navigation.reports": "Informes",
+  "navigation.forecasts": "Previsiones",
+  "navigation.profile": "Perfil",
   "navigation.about": "Sobre",
   "navigation.funcionalities": "Funcionalidades",
   "navigation.roadmap": "Roadmap",
   "navigation.benefits": "Beneficios",
   "navigation.signIn": "Iniciar sesión",
+  "navigation.signUpFree": "Crear cuenta gratis",
   "navigation.back": "Volver",
   "footer.all_rights": "Todos OS Direitos Reservados",
-  "footer.description": "Tu dinero bajo control, a tu manera.",
+  "footer.description": "Finanzas personales simples y poderosas. Cada centavo en su lugar.",
   "footer.privacy_policy": "Política de privacidad",
   "footer.backoffice_access": "Acceso operativo",
   "footer.social_groups": "Redes sociales",
@@ -411,6 +420,9 @@
   "recurrence.monthlyTotal": "Tu presupuesto mensual",
   "recurrence.add": "Agregar recurrencia",
   "recurrence.edit": "Editar recurrencia",
+  "recurrence.editForm.description": "Ajusta los datos de la recurrencia sin salir de la lista.",
+  "recurrence.editForm.type": "Tipo",
+  "recurrence.editForm.monthlyValue": "Valor mensual estimado",
   "recurrence.empty": "Sin recurrencias. Agrega gastos fijos como luz, alquiler o comida para gatos.",
   "recurrence.loadError": "No se pudo cargar tu presupuesto. Verifica tu conexión o inténtalo de nuevo.",
   "recurrence.repeat": "Generar movimiento",
@@ -493,7 +505,7 @@
   "dashboard.cardTotalMonthHint": "Ingresos − gastos en el mes seleccionado",
   "dashboard.insightTextMonth": "Resumen del flujo del mes seleccionado.",
   "dashboard.welcomeGreeting": "Bienvenido,",
-  "dashboard.welcomeTitle": "Bienvenido a Meu Troco",
+  "dashboard.welcomeTitle": "Bienvenido a Meu Troco Finance",
   "dashboard.welcomeDescription": "meu troco es uma ferramenta sencilla para ayudarte a gestionar tus finanças pessoais.",
   "dashboard.welcomeUnderstand": "Entendido",
   "categories": {
@@ -908,6 +920,82 @@
       "button": "Empezar ahora"
     }
   },
+  "landing_v3": {
+    "hero": {
+      "badge": "Cada centavo en su lugar.",
+      "title_line1": "Finanzas personales que caben",
+      "title_line2": "en tu vida real.",
+      "description": "Organiza ingresos, gastos y metas sin hojas de cálculo, sin jerga y sin sorpresas a fin de mes. Tu dinero bajo control, a tu manera.",
+      "cta_primary": "Empezar gratis",
+      "cta_demo": "Ver demostración",
+      "social_proof": "Miles de personas ya organizan sus finanzas con tranquilidad",
+      "device_desktop": "Panel",
+      "device_mobile": "Móvil"
+    },
+    "features": {
+      "dashboard": {
+        "title": "Tu panel,",
+        "subtitle": "todo de un vistazo.",
+        "description": "Ve saldo, ingresos y gastos del mes en un solo lugar. Sin hojas de cálculo, sin perder tiempo.",
+        "bullet1": "Saldo y resumen del mes",
+        "bullet2": "Acciones rápidas para registrar",
+        "bullet3": "Insights que orientan tu día"
+      },
+      "transactions": {
+        "title": "Transacciones,",
+        "subtitle": "organizadas a tu manera.",
+        "description": "Filtra por mes, tipo y categoría. Encuentra cualquier movimiento en segundos.",
+        "bullet1": "Lista completa y buscable",
+        "bullet2": "Resumen por ingreso y gasto",
+        "bullet3": "Historial siempre a mano"
+      },
+      "reports": {
+        "title": "Informes,",
+        "subtitle": "claros y visuales.",
+        "description": "Entiende a dónde va tu dinero con gráficos simples que realmente comprendes.",
+        "bullet1": "Gastos por categoría",
+        "bullet2": "Tendencia mensual",
+        "bullet3": "Exportación en un clic"
+      },
+      "forecasts": {
+        "title": "Previsiones,",
+        "subtitle": "antes de sorprender.",
+        "description": "Proyecciones inteligentes de tu flujo de caja y alertas para actuar antes del problema.",
+        "bullet1": "Proyección de saldo futuro",
+        "bullet2": "Alertas de gastos inusuales",
+        "bullet3": "Escenarios para los próximos meses"
+      },
+      "profile": {
+        "title": "Tu perfil,",
+        "subtitle": "a tu manera.",
+        "description": "Ajusta notificaciones, preferencias e informes mensuales en un solo lugar.",
+        "bullet1": "Datos y seguridad de la cuenta",
+        "bullet2": "Notificaciones personalizables",
+        "bullet3": "Informe mensual por correo"
+      }
+    },
+    "roadmap": {
+      "title": "Nuestro roadmap",
+      "description": "Finanzas personales simples y poderosas. Sigue lo que estamos construyendo, trimestre a trimestre."
+    },
+    "security": {
+      "title": "Seguridad y transparencia",
+      "subtitle": "Porque la confianza también forma parte de tu control financiero.",
+      "f3_title": "Transparencia total",
+      "f3_desc": "Sabes exactamente cómo se tratan tus datos — sin letra pequeña oculta.",
+      "f4_title": "Evolución constante",
+      "f4_desc": "Nuevas funciones y mejoras llegan con frecuencia, basadas en lo que realmente necesitas.",
+      "f5_title": "Soporte que escucha",
+      "f5_desc": "Tu opinión moldea el futuro de Meu Troco Finance. Habla con nosotros cuando quieras."
+    },
+    "cta": {
+      "badge": "Deja de adivinar",
+      "title": "Convierte tu tal vez,",
+      "subtitle": "en algo seguro.",
+      "description": "Información inteligente sobre tus gastos y previsiones que te ayudan a decidir con tranquilidad.",
+      "button": "Empezar gratis"
+    }
+  },
   "sidebar": {
     "settings": "Ajustes",
     "settingsDescription": "Gestiona tus preferencias y configuraciones",
@@ -917,8 +1005,8 @@
   "login.quotes.q2": "Pequeños ahorros hoy, grandes logros mañana. Empieza ahora.",
   "login.quotes.q3": "Organiza tu futuro financiero con sencillez y seguridad.",
   "login.forgotPassword": "¿Olvidaste tu contraseña?",
-  "login.team": "Equipo Meu Troco",
-  "login.appDescription": "App de Finanzas",
+  "login.team": "Equipo Meu Troco Finance",
+  "login.appDescription": "Finanzas personales",
   "login.createAccountNow": "Crea una ahora",
   "converter.title": "Conversor de Moneda",
   "converter.calculatorTitle": "Calculadora de Cambio",

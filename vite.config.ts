@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { readFileSync, writeFileSync } from "fs";
@@ -8,7 +8,7 @@ const SITEMAP_PAGES = [
   { path: "/", changefreq: "weekly", priority: "1.0" },
 ] as const;
 
-function seoBuildPlugin(): Plugin {
+function seoBuildPlugin(siteUrl: string | undefined): Plugin {
   let outDir = "dist";
 
   return {
@@ -17,7 +17,6 @@ function seoBuildPlugin(): Plugin {
       outDir = config.build.outDir;
     },
     transformIndexHtml(html) {
-      const siteUrl = process.env.VITE_SITE_URL?.replace(/\/$/, "");
       if (!siteUrl) return html;
       return html
         .replace(
@@ -27,7 +26,6 @@ function seoBuildPlugin(): Plugin {
         .replace(/content="\/new_rebrand\/bg\.jpg"/g, `content="${siteUrl}/new_rebrand/bg.jpg"`);
     },
     closeBundle() {
-      const siteUrl = process.env.VITE_SITE_URL?.replace(/\/$/, "");
       if (!siteUrl) return;
 
       const lastmod = new Date().toISOString().split("T")[0];
@@ -57,14 +55,17 @@ ${SITEMAP_PAGES.map(
   };
 }
 
-export default defineConfig(({ mode }) => ({
+export default defineConfig(({ mode }) => {
+  const siteUrl = loadEnv(mode, process.cwd(), "").VITE_SITE_URL?.replace(/\/$/, "");
+
+  return {
   server: {
     host: "::",
     port: 8080,
   },
   plugins: [
     react(),
-    seoBuildPlugin(),
+    seoBuildPlugin(siteUrl),
     mode === "development" && componentTagger(),
   ].filter(Boolean),
   resolve: {
@@ -72,4 +73,5 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+};
+});

@@ -81,6 +81,14 @@ import {
 } from '@/subdomains/dashboard/utils/merge-recurrence-list';
 import RecurrenceRowPopover from '@/components/recurrence/RecurrenceRowPopover';
 import RecurrenceWizard from '@/subdomains/dashboard/pages/orcamento/components/RecurrenceWizard';
+import RecurrenceTableInlineRow from '@/components/recurrence/RecurrenceTableInlineRow';
+import RecurrenceEditForm from '@/components/recurrence/RecurrenceEditForm';
+import {
+  draftFromRecurrence,
+  hasRecurrenceMultipleAllocations,
+  resolveRecurrenceAllocations,
+  type RecurrenceInlineDraft,
+} from '@/components/recurrence/recurrence-inline-utils';
 import {
   Dialog,
   DialogContent,
@@ -93,7 +101,9 @@ const QUICK_ADD_OUTSIDE_PORTAL_SELECTOR =
   '[data-radix-popper-content-wrapper],[data-radix-menu-content],[data-radix-select-viewport],.rdp';
 
 const TRANSACTION_INLINE_ROW_SELECTOR = '[data-transaction-inline-row]';
+const RECURRENCE_INLINE_ROW_SELECTOR = '[data-recurrence-inline-row]';
 const TRANSACTION_DATA_ROW_SELECTOR = '[data-transaction-row-id]';
+const RECURRENCE_DATA_ROW_SELECTOR = '[data-recurrence-row-id]';
 const TRANSACTION_INSTALLMENT_ROW_SELECTOR = '[data-transaction-installment-row]';
 const TRANSACTION_ADD_ROW_SELECTOR = '[data-transaction-add-row]';
 
@@ -273,7 +283,13 @@ const TransactionList = ({
   );
   const [filtersOpen, setFiltersOpen] = React.useState<boolean>(false);
   const [wizardOpen, setWizardOpen] = React.useState(false);
-  const [wizardEditItem, setWizardEditItem] = React.useState<Recurrence | null>(null);
+  const [recurrenceInlineSession, setRecurrenceInlineSession] = React.useState<{
+    recurrenceId: string;
+    draft: RecurrenceInlineDraft;
+  } | null>(null);
+  const [recurrenceEditSheetOpen, setRecurrenceEditSheetOpen] = React.useState(false);
+  const [recurrenceEditSheetItem, setRecurrenceEditSheetItem] = React.useState<Recurrence | null>(null);
+  const recurrenceEditSheetDismissGuardRef = React.useRef(createOverlayDismissGuard());
   const [generateSheetOpen, setGenerateSheetOpen] = React.useState(false);
   const [generatePrefill, setGeneratePrefill] = React.useState<Partial<Transaction> | undefined>();
   const [generateRecurrenceId, setGenerateRecurrenceId] = React.useState<string | undefined>();
@@ -658,6 +674,22 @@ const TransactionList = ({
     setInlineSession(null);
   }, []);
 
+  const clearRecurrenceInlineSession = React.useCallback(() => {
+    setRecurrenceInlineSession(null);
+  }, []);
+
+  const closeRecurrenceEditSheet = React.useCallback(() => {
+    setRecurrenceEditSheetOpen(false);
+    setRecurrenceEditSheetItem(null);
+  }, []);
+
+  const handleRecurrenceEditSheetOpenChange = React.useCallback((open: boolean) => {
+    if (!open) {
+      if (recurrenceEditSheetDismissGuardRef.current.isActive()) return;
+      closeRecurrenceEditSheet();
+    }
+  }, [closeRecurrenceEditSheet]);
+
   const openInlineCreate = React.useCallback(
     (type: TransactionType) => {
       if (isReadOnly) return;
@@ -680,16 +712,32 @@ const TransactionList = ({
     [openCreateSheet, openInlineCreate, useInlineTable]
   );
 
-  const openRecurrenceWizard = React.useCallback((item?: Recurrence) => {
+  const openRecurrenceWizard = React.useCallback(() => {
     if (isReadOnly) return;
-    setWizardEditItem(item ?? null);
     setWizardOpen(true);
   }, [isReadOnly]);
 
   const closeRecurrenceWizard = React.useCallback(() => {
     setWizardOpen(false);
-    setWizardEditItem(null);
   }, []);
+
+  const openRecurrenceEdit = React.useCallback(
+    (recurrence: Recurrence) => {
+      if (isReadOnly || !recurrence.id) return;
+      if (useInlineTable) {
+        setInlineSession(null);
+        setRecurrenceInlineSession({
+          recurrenceId: recurrence.id,
+          draft: draftFromRecurrence(recurrence, i18n.language),
+        });
+        return;
+      }
+      recurrenceEditSheetDismissGuardRef.current.mark();
+      setRecurrenceEditSheetItem(recurrence);
+      setRecurrenceEditSheetOpen(true);
+    },
+    [i18n.language, isReadOnly, useInlineTable]
+  );
 
   const openGenerateFromRecurrence = React.useCallback(
     (recurrence: Recurrence) => {
@@ -752,6 +800,7 @@ const TransactionList = ({
   const openInlineEdit = React.useCallback((transaction: Transaction) => {
     if (isReadOnly) return;
     if (!transaction.id) return;
+    setRecurrenceInlineSession(null);
     setInlineSession({
       mode: 'edit',
       transactionId: transaction.id,
@@ -807,7 +856,7 @@ const TransactionList = ({
         id: 'edit',
         label: t('default.edit'),
         icon: <Pen className="h-4 w-4" />,
-        onSelect: () => openRecurrenceWizard(recurrence),
+        onSelect: () => openRecurrenceEdit(recurrence),
       },
       {
         id: 'delete',
@@ -824,7 +873,7 @@ const TransactionList = ({
         destructive: true,
       },
     ],
-    [deleteRecurrence, openRecurrenceWizard, t]
+    [deleteRecurrence, openRecurrenceEdit, t]
   );
 
   const transactionsById = React.useMemo(
@@ -833,7 +882,7 @@ const TransactionList = ({
   );
 
   React.useEffect(() => {
-    if (!useInlineTable || !inlineSession) return;
+    if (!useInlineTable || (!inlineSession && !recurrenceInlineSession)) return;
 
     const handlePointerDown = (event: PointerEvent) => {
       if (isInsideQuickAddNestedLayer(event.target)) return;
@@ -842,17 +891,26 @@ const TransactionList = ({
       if (!el) return;
 
       if (el.closest(TRANSACTION_INLINE_ROW_SELECTOR)) return;
+      if (el.closest(RECURRENCE_INLINE_ROW_SELECTOR)) return;
       if (el.closest(TRANSACTION_INSTALLMENT_ROW_SELECTOR)) return;
 
       const dataRow = el.closest(TRANSACTION_DATA_ROW_SELECTOR);
       if (dataRow) return;
+
+      const recurrenceDataRow = el.closest(RECURRENCE_DATA_ROW_SELECTOR);
+      if (recurrenceDataRow) return;
 
       if (el.closest(TRANSACTION_ADD_ROW_SELECTOR)) {
         openInlineCreate(defaultCreateType);
         return;
       }
 
-      clearInlineSession();
+      if (recurrenceInlineSession) {
+        clearRecurrenceInlineSession();
+      }
+      if (inlineSession) {
+        clearInlineSession();
+      }
     };
 
     document.addEventListener('pointerdown', handlePointerDown, true);
@@ -860,25 +918,32 @@ const TransactionList = ({
   }, [
     useInlineTable,
     inlineSession,
+    recurrenceInlineSession,
     transactionsById,
     openInlineCreate,
     defaultCreateType,
     clearInlineSession,
+    clearRecurrenceInlineSession,
   ]);
 
   React.useEffect(() => {
-    if (!useInlineTable || !inlineSession) return;
+    if (!useInlineTable || (!inlineSession && !recurrenceInlineSession)) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       if (hasOpenInlineEditOverlay()) return;
       event.preventDefault();
-      clearInlineSession();
+      if (recurrenceInlineSession) {
+        clearRecurrenceInlineSession();
+      }
+      if (inlineSession) {
+        clearInlineSession();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [useInlineTable, inlineSession, clearInlineSession]);
+  }, [useInlineTable, inlineSession, recurrenceInlineSession, clearInlineSession, clearRecurrenceInlineSession]);
 
   const onQuickAddSheetDismissIntercept = React.useCallback(
     (event: { preventDefault: () => void; target: EventTarget; detail?: { originalEvent?: Event } }) => {
@@ -1281,8 +1346,42 @@ const TransactionList = ({
     const renderRecurrenceTemplateRow = (recurrence: Recurrence) => {
       const currentRowIndex = rowIndex;
       rowIndex += 1;
+      const isEditingRecurrence =
+        useInlineTable &&
+        recurrenceInlineSession?.recurrenceId === recurrence.id;
+
+      if (isEditingRecurrence && recurrenceInlineSession) {
+        return (
+          <RecurrenceTableInlineRow
+            key={`recurrence-inline-${recurrence.id}`}
+            recurrenceId={recurrence.id!}
+            draft={recurrenceInlineSession.draft}
+            onDraftChange={(draft) =>
+              setRecurrenceInlineSession((prev) =>
+                prev ? { ...prev, draft } : prev
+              )
+            }
+            onCancel={clearRecurrenceInlineSession}
+            onSaved={clearRecurrenceInlineSession}
+            rowIndex={currentRowIndex}
+            zebra={currentRowIndex % 2 === 1}
+            showPaidColumn={showPaidColumn}
+          />
+        );
+      }
+
       const CatIcon = getCategoryIcon(recurrence.category);
-      const walletBadge = getWalletBadgeData(recurrence.walletId);
+      const isSplitRecurrence = hasRecurrenceMultipleAllocations(recurrence);
+      const allocationCount = resolveRecurrenceAllocations(recurrence).length;
+      const walletBadge = isSplitRecurrence
+        ? {
+            name: t('transactionList.splitWallets', {
+              defaultValue: '{{count}} carteiras',
+              count: allocationCount,
+            }),
+            color: allocationCount >= 3 ? '#8b5cf6' : '#6366f1',
+          }
+        : getWalletBadgeData(recurrence.walletId);
       const isBill = recurrence.type === 'conta';
       const zebra = currentRowIndex % 2 === 1;
       const isMarkingPaid = markingRecurrencePaidId === recurrence.id;
@@ -1295,15 +1394,20 @@ const TransactionList = ({
 
       const recurrenceRow = (
         <TableRow
+          data-recurrence-row-id={recurrence.id}
           className={cn(
             'border-0 transition-colors cursor-pointer',
             isBill ? 'border-l-2 border-l-amber-500/40' : 'border-l-2 border-l-red-500/40',
             zebra
               ? 'bg-muted/20 hover:bg-muted/35 dark:bg-muted/10'
               : 'bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20',
-            isMarkingPaid && 'pointer-events-none opacity-70'
+            isMarkingPaid && 'pointer-events-none opacity-70',
+            useInlineTable &&
+              recurrenceInlineSession &&
+              recurrenceInlineSession.recurrenceId !== recurrence.id &&
+              'opacity-50'
           )}
-          onDoubleClick={() => openRecurrenceWizard(recurrence)}
+          onDoubleClick={() => openRecurrenceEdit(recurrence)}
         >
           <TableCell className="border-b border-border/30 py-2 pl-4 pr-2 align-middle">
             <div className="flex items-center gap-2.5">
@@ -1928,38 +2032,53 @@ const TransactionList = ({
                     {pendingTemplateItems.map((item) => {
                       const recurrence = item.data;
                       const isBill = recurrence.type === 'conta';
+                      const recurrenceActionItems = buildRecurrenceActionItems(recurrence);
                       return (
-                        <div
+                        <EntityActionsMenu
                           key={recurrence.id}
-                          className={cn(
-                            'flex items-center justify-between p-4 rounded-xl border bg-background/50 shadow-sm mb-2',
-                            isBill ? 'border-l-4 border-l-amber-500/50' : 'border-l-4 border-l-red-500/50'
-                          )}
+                          items={recurrenceActionItems}
+                          menuLabel={t('transactionList.actions')}
+                          enableContextMenu={!isReadOnly}
                         >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <RecurrenceRowPopover
-                              recurrence={recurrence}
-                              monthKey={selectedMonth}
-                              isPending
-                              onGenerate={() => openGenerateFromRecurrence(recurrence)}
-                              onMarkPaid={
-                                isBill ? () => markRecurrencePaidAndGenerate(recurrence) : undefined
-                              }
-                            />
-                            <div className="min-w-0">
-                              <p className="font-medium leading-tight truncate">{recurrence.description}</p>
-                              <Badge variant="secondary" className="text-xs mt-1">
-                                {getCategoryLabel(recurrence.category)}
-                              </Badge>
+                          <div
+                            className={cn(
+                              'flex items-center justify-between p-4 rounded-xl border bg-background/50 shadow-sm mb-2',
+                              isBill ? 'border-l-4 border-l-amber-500/50' : 'border-l-4 border-l-red-500/50'
+                            )}
+                          >
+                            <div className="flex items-center gap-3 min-w-0">
+                              <RecurrenceRowPopover
+                                recurrence={recurrence}
+                                monthKey={selectedMonth}
+                                isPending
+                                onGenerate={() => openGenerateFromRecurrence(recurrence)}
+                                onMarkPaid={
+                                  isBill ? () => markRecurrencePaidAndGenerate(recurrence) : undefined
+                                }
+                              />
+                              <div className="min-w-0">
+                                <p className="font-medium leading-tight truncate">{recurrence.description}</p>
+                                <Badge variant="secondary" className="text-xs mt-1">
+                                  {getCategoryLabel(recurrence.category)}
+                                </Badge>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <p className={cn(
+                                'font-semibold',
+                                isBill ? 'text-amber-500' : 'text-red-500'
+                              )}>
+                                {formatAmount(recurrence.estimatedValue, recurrence.type)}
+                              </p>
+                              {!isReadOnly && (
+                                <EntityActionsDropdown
+                                  items={recurrenceActionItems}
+                                  menuLabel={t('transactionList.actions')}
+                                />
+                              )}
                             </div>
                           </div>
-                          <p className={cn(
-                            'font-semibold shrink-0',
-                            isBill ? 'text-amber-500' : 'text-red-500'
-                          )}>
-                            {formatAmount(recurrence.estimatedValue, recurrence.type)}
-                          </p>
-                        </div>
+                        </EntityActionsMenu>
                       );
                     })}
                   </div>
@@ -2047,17 +2166,50 @@ const TransactionList = ({
           </div>
         </SheetContent>
       </Sheet>
+      {!useInlineTable && recurrenceEditSheetOpen && (
+        <div
+          aria-hidden
+          className="fixed inset-0 z-[45] bg-black/30 dark:bg-black/40"
+          onPointerDown={() => {
+            if (recurrenceEditSheetDismissGuardRef.current.isActive()) return;
+            closeRecurrenceEditSheet();
+          }}
+        />
+      )}
+      <Sheet
+        modal={false}
+        open={recurrenceEditSheetOpen}
+        onOpenChange={handleRecurrenceEditSheetOpenChange}
+      >
+        <SheetContent
+          side="right"
+          className="z-[50] flex h-svh max-h-svh w-full max-w-[min(100vw,28rem)] flex-col gap-0 overflow-hidden p-0 sm:w-[28rem]"
+          onPointerDownOutside={onQuickAddSheetDismissIntercept}
+          onInteractOutside={onQuickAddSheetDismissIntercept}
+        >
+          <SheetHeader className="shrink-0 space-y-1 border-b border-border/50 px-6 pb-4 pt-6 text-left">
+            <SheetTitle>{t('recurrence.edit')}</SheetTitle>
+            <SheetDescription>{t('recurrence.editForm.description')}</SheetDescription>
+          </SheetHeader>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pb-6 pt-4">
+            {recurrenceEditSheetOpen && recurrenceEditSheetItem && (
+              <RecurrenceEditForm
+                key={recurrenceEditSheetItem.id}
+                recurrence={recurrenceEditSheetItem}
+                onSuccess={closeRecurrenceEditSheet}
+                onCancel={closeRecurrenceEditSheet}
+              />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
       <Dialog open={wizardOpen} onOpenChange={(open) => !open && closeRecurrenceWizard()}>
         <DialogContent className="max-h-[90vh] max-w-xl overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {wizardEditItem?.id ? t('recurrence.edit') : t('recurrence.add')}
-            </DialogTitle>
+            <DialogTitle>{t('recurrence.add')}</DialogTitle>
           </DialogHeader>
           {wizardOpen && (
             <RecurrenceWizard
-              recurrenceId={wizardEditItem?.id}
-              initialData={wizardEditItem ?? undefined}
               onComplete={closeRecurrenceWizard}
               onCancel={closeRecurrenceWizard}
             />

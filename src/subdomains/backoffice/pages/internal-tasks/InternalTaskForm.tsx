@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form } from '@/components/ui/form';
+import { DatePicker } from '@/components/ui/date-picker';
 import { MarkdownEditor } from '@/components/ui/markdown-editor';
 import { toast } from '@/hooks/use-toast';
 import type { InternalTask, Priority, WorkStatus } from '@/types/backoffice';
@@ -183,7 +184,15 @@ function InternalTaskFormPage() {
                         </div>
                         <div className="space-y-2">
                             <Label>{t('internalTasks.fieldDueDate', 'Prazo')}</Label>
-                            <Input name="dueDate" type="date" control={form.control} />
+                            <DatePicker
+                                value={form.watch('dueDate') || ''}
+                                onChange={(value) =>
+                                    form.setValue('dueDate', value, {
+                                        shouldDirty: true,
+                                        shouldValidate: true,
+                                    })
+                                }
+                            />
                         </div>
                     </div>
 

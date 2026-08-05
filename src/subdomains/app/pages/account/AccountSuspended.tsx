@@ -8,7 +8,7 @@ function AccountSuspendedPage() {
     const { t } = useTranslation();
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-background via-background to-emerald-950/10 flex items-center justify-center p-4">
+        <main className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
             <Card className="w-full max-w-md border-border/70 bg-card/90 shadow-xl">
                 <CardHeader className="text-center space-y-4">
                     <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/10 text-amber-500">

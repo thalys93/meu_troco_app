@@ -75,7 +75,7 @@ function BackofficeLoginPage() {
         transition={{ duration: 0.8 }}
         className="hidden md:flex md:w-1/2 lg:w-[50%] relative p-12 flex-col justify-between overflow-hidden"
       >
-        <div className="absolute inset-0 bg-white/80 dark:bg-emerald-950/30 transition-colors duration-500" />
+        <div className="absolute inset-0 bg-white/80 dark:bg-primary/5 transition-colors duration-500" />
 
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
@@ -96,7 +96,7 @@ function BackofficeLoginPage() {
               y: [0, 50, 0],
             }}
             transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-            className="absolute -bottom-1/4 -right-1/4 w-[70%] h-[70%] bg-emerald-200 dark:bg-emerald-600 rounded-full filter blur-[100px]"
+            className="absolute -bottom-1/4 -right-1/4 w-[70%] h-[70%] bg-amber-200/80 dark:bg-primary/40 rounded-full filter blur-[100px]"
           />
         </div>
 
@@ -107,8 +107,8 @@ function BackofficeLoginPage() {
             className="flex items-center gap-3 mb-10 cursor-pointer group"
             onClick={() => navigate('/')}
           >
-            <div className="w-10 h-10 bg-emerald-50 dark:bg-primary/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-emerald-100 dark:border-white/10 group-hover:scale-105 transition-transform">
-              <Shield className="w-6 h-6 text-emerald-600 dark:text-primary" />
+            <div className="w-10 h-10 bg-primary/10 dark:bg-primary/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-primary/20 dark:border-white/10 group-hover:scale-105 transition-transform">
+              <Shield className="w-6 h-6 text-primary" />
             </div>
             <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               {title}
@@ -119,7 +119,7 @@ function BackofficeLoginPage() {
             <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight mb-6">
               {t('backoffice.login.hero_title')}
             </h2>
-            <p className="text-slate-600 dark:text-emerald-100/70 text-lg leading-relaxed">
+            <p className="text-slate-600 dark:text-white/70 text-lg leading-relaxed">
               {t('backoffice.login.hero_description')}
             </p>
           </div>
@@ -131,14 +131,14 @@ function BackofficeLoginPage() {
               {t('backoffice.login.description')}
             </p>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-primary/20 border border-emerald-200 dark:border-primary/30 flex items-center justify-center text-emerald-700 dark:text-primary font-bold">
+              <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-primary/20 border border-primary/20 dark:border-primary/30 flex items-center justify-center text-primary font-bold">
                 MT
               </div>
               <div>
                 <p className="text-slate-900 dark:text-white font-medium text-sm">
                   {t('backoffice.login.team')}
                 </p>
-                <p className="text-slate-500 dark:text-emerald-400 text-xs select-none">
+                <p className="text-slate-500 dark:text-primary/80 text-xs select-none">
                   {t('backoffice.login.teamDescription')}
                 </p>
               </div>

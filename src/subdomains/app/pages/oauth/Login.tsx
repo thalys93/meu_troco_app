@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, DollarSign, Lock, Mail, ArrowLeft } from 'lucide-react';
+import { AlertCircle, Coins, Lock, Mail, ArrowLeft } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -25,7 +25,6 @@ const initialValues: LoginForm = {
 const LoginPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const title = "Meu Troco";
   const { isAuthChecking } = usePublicAuthGuard({
     authenticatedRedirectTo: '/dashboard',
     minLoadingMs: 1800,
@@ -81,7 +80,7 @@ const LoginPage = () => {
         transition={{ duration: 0.8 }}
         className="hidden md:flex md:w-1/2 lg:w-[50%] relative p-12 flex-col justify-between overflow-hidden"
       >
-        <div className="absolute inset-0 bg-white dark:bg-emerald-950/20 transition-colors duration-500" />
+        <div className="absolute inset-0 bg-white dark:bg-primary/5 transition-colors duration-500" />
 
         <div className="absolute inset-0 overflow-hidden">
           <motion.div
@@ -102,7 +101,7 @@ const LoginPage = () => {
               y: [0, 50, 0]
             }}
             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute -bottom-1/4 -right-1/4 w-[70%] h-[70%] bg-emerald-200 dark:bg-emerald-600 rounded-full filter blur-[100px]"
+            className="absolute -bottom-1/4 -right-1/4 w-[70%] h-[70%] bg-amber-200/80 dark:bg-primary/40 rounded-full filter blur-[100px]"
           />
         </div>
 
@@ -110,32 +109,32 @@ const LoginPage = () => {
 
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-10 cursor-pointer group" onClick={() => navigate("/")}>
-            <div className="w-10 h-10 bg-emerald-50 dark:bg-primary/20 backdrop-blur-md rounded-xl flex items-center justify-center border border-emerald-100 dark:border-white/10 group-hover:scale-105 transition-transform">
-              <DollarSign className="w-6 h-6 text-emerald-600 dark:text-primary" />
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-sm shadow-primary/20 group-hover:scale-105 transition-transform">
+              <Coins className="w-6 h-6 text-primary-foreground" />
             </div>
-            <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{title ? title : "Meu Troco"}</span>
+            <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{t('brand.name')}</span>
           </div>
 
           <div className="max-w-md">
             <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight mb-6">
               {t('login.hero_title')}
             </h2>
-            <p className="text-slate-600 dark:text-emerald-100/70 text-lg leading-relaxed">
+            <p className="text-slate-600 dark:text-white/70 text-lg leading-relaxed">
               {t('login.hero_description')}
             </p>
           </div>
         </div>
 
         <div className="relative z-10">
-          <div className="p-6 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl max-w-sm shadow-xl shadow-slate-200/50 dark:shadow-emerald-500/5">
+          <div className="p-6 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl max-w-sm shadow-xl shadow-slate-200/50 dark:shadow-primary/5">
             <p className="text-slate-700 dark:text-white/80 italic mb-4">
               "{t(`login.quotes.${randomQuote}`)}"
             </p>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-primary/20 border border-emerald-200 dark:border-primary/30 flex items-center justify-center text-emerald-700 dark:text-primary font-bold">MT</div>
+              <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-primary/20 border border-primary/20 dark:border-primary/30 flex items-center justify-center text-primary font-bold">MT</div>
               <div>
                 <p className="text-slate-900 dark:text-white font-medium text-sm">{t('login.team')}</p>
-                <p className="text-slate-500 dark:text-emerald-400 text-xs select-none">{t('login.appDescription')}</p>
+                <p className="text-slate-500 dark:text-primary/80 text-xs select-none">{t('login.appDescription')}</p>
               </div>
             </div>
           </div>
@@ -159,8 +158,11 @@ const LoginPage = () => {
           className="w-full max-w-md space-y-8"
         >
           <div className="md:hidden flex justify-center mb-8">
-            <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/20">
-              <DollarSign className="w-8 h-8 text-primary" />
+            <div className="flex items-center gap-2">
+              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-sm shadow-primary/20">
+                <Coins className="w-6 h-6 text-primary-foreground" />
+              </div>
+              <span className="text-lg font-bold">{t('brand.name')}</span>
             </div>
           </div>
 

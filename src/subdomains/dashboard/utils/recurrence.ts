@@ -31,7 +31,7 @@ export const buildRecurrenceDateForMonth = (
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 };
 
-export const buildTransactionPrefillFromRecurrence = (
+const recurrenceTransactionBase = (
   recurrence: Recurrence,
   monthKey: string
 ): Partial<Transaction> => ({
@@ -41,6 +41,16 @@ export const buildTransactionPrefillFromRecurrence = (
   date: buildRecurrenceDateForMonth(monthKey, recurrence.dueDay),
   walletId: recurrence.walletId,
   type: recurrence.type,
+  ...(recurrence.allocations && recurrence.allocations.length >= 2
+    ? { allocations: recurrence.allocations }
+    : {}),
+});
+
+export const buildTransactionPrefillFromRecurrence = (
+  recurrence: Recurrence,
+  monthKey: string
+): Partial<Transaction> => ({
+  ...recurrenceTransactionBase(recurrence, monthKey),
   ...(recurrence.type === 'conta' ? { paid: false } : {}),
 });
 
@@ -48,16 +58,12 @@ export const buildTransactionFromRecurrence = (
   recurrence: Recurrence,
   monthKey: string,
   options?: { paid?: boolean }
-): Transaction => ({
-  description: recurrence.description,
-  category: recurrence.category,
-  value: recurrence.estimatedValue,
-  date: buildRecurrenceDateForMonth(monthKey, recurrence.dueDay),
-  walletId: recurrence.walletId,
-  type: recurrence.type,
-  recurrenceId: recurrence.id,
-  ...(recurrence.type === 'conta' ? { paid: options?.paid ?? false } : {}),
-});
+): Transaction =>
+  ({
+    ...recurrenceTransactionBase(recurrence, monthKey),
+    recurrenceId: recurrence.id,
+    ...(recurrence.type === 'conta' ? { paid: options?.paid ?? false } : {}),
+  }) as Transaction;
 
 export const formatMonthLabel = (monthKey: string, locale: string): string => {
   const date = parseMonthKey(monthKey);

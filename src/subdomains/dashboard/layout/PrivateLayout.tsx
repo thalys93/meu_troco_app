@@ -41,7 +41,7 @@ function PrivateLayoutContent({ children }: { children: React.ReactNode }) {
 
     return (
         <main className={cn(
-            "min-h-screen bg-gradient-to-br from-background via-background to-emerald-950/10 flex flex-col print:min-h-0 print:h-auto print:bg-white print:bg-none",
+            "min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col print:min-h-0 print:h-auto print:bg-white print:bg-none",
             isNotionLayout && "to-sky-950/10"
         )}>
             <header className="print:hidden sticky top-0 z-50 w-full border-b border-border/5 bg-background/80 backdrop-blur-md">

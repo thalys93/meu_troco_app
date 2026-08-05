@@ -115,15 +115,26 @@
   "lang.portuguese": "Portuguese",
   "lang.spanish": "Spanish",
   "lang.english": "English",
+  "brand.name": "Meu Troco",
+  "brand.suffix": "",
+  "brand.full": "Meu Troco",
   "navigation.home": "Home",
+  "navigation.dashboard": "Dashboard",
+  "navigation.transactions": "Transactions",
+  "navigation.reports": "Reports",
+  "navigation.forecasts": "Forecasts",
+  "navigation.profile": "Profile",
   "navigation.about": "About",
-  "navigation.funcionalities": "Funcionalities",
+  "navigation.funcionalities": "Features",
   "navigation.roadmap": "Roadmap",
   "navigation.benefits": "Benefits",
   "navigation.signIn": "Sign In",
+  "navigation.signUpFree": "Sign up free",
+  "navigation.howItWorks": "How it works",
+  "navigation.faq": "FAQ",
   "navigation.back": "Back",
   "footer.all_rights": "All rights reserved",
-  "footer.description": "Your money under control, your way.",
+  "footer.description": "Track everyday money without building a spreadsheet or database.",
   "footer.privacy_policy": "Privacy Policy",
   "footer.backoffice_access": "Operational access",
   "footer.social_groups": "Social media",
@@ -164,7 +175,7 @@
   "goalCatalog.deleted": "Rank removed successfully.",
   "goalCatalog.deleteError": "Could not remove the rank.",
   "goalCatalog.empty": "No ranks created yet.",
-  "goalCatalog.emptyHint": "Start with the entry rank (e.g. level 1 — Beginner) and define the criteria to level up.",
+  "goalCatalog.emptyHint": "Start with the entry rank (e.g. level 1, Beginner) and define the criteria to level up.",
   "goalCatalog.previewPlaceholder": "New rank",
   "goalCatalog.ptTitleRequired": "Enter the rank name in Portuguese.",
   "goalCatalog.seed": "Import default ranks",
@@ -274,8 +285,8 @@
   "roadmap.view.timeline": "Timeline",
   "roadmap.noQuarter": "No quarter",
   "roadmap.timelineEmpty": "No roadmap items to display on the timeline.",
-  "roadmap.timelinePreview": "Horizontal panoramic preview — quarter overview side by side.",
-  "roadmap.verticalPreview": "Vertical preview — quarters, phases, and items with expandable descriptions.",
+  "roadmap.timelinePreview": "Horizontal panoramic preview: quarter overview side by side.",
+  "roadmap.verticalPreview": "Vertical preview: quarters, phases, and items with expandable descriptions.",
   "roadmap.verticalPhaseEmpty": "No items in this phase yet.",
   "roadmap.timelineItems": "items",
   "roadmap.catalog.title": "Roadmap Catalog",
@@ -332,7 +343,7 @@
   "benefits.text_3": "Without unnecessary complications",
   "benefits.text_4": "Ideal for personal use",
   "benefits.why_use": "Why use o",
-  "buttons.accessThePlatform": "Access My Exchange",
+  "buttons.accessThePlatform": "Open Meu Troco",
   "buttons.start_now": "Start now",
   "callToAction.keepYour": "Keep your",
   "callToAction.money": "money",
@@ -364,8 +375,8 @@
   "login.submitLoading": "Loading...",
   "login.welcome": "Welcome!",
   "login.welcomeDescription": "Login to continue",
-  "login.hero_title": "Great to see you again!",
-  "login.hero_description": "We are ready to help you keep your finances on track today. Shall we?",
+  "login.hero_title": "Good to see you again",
+  "login.hero_description": "Sign in and pick up where you left off: your month, your entries, no spreadsheet.",
   "signIn.and": "in",
   "signIn.cardDescription": "Enter your details to create your account",
   "signIn.confirmPasswordLabel": "Confirm Your Password",
@@ -377,8 +388,8 @@
   "signIn.privacyPolicy": "privacy policy",
   "signIn.termsOfUse": "terms of use",
   "signIn.termsOfUser_2": "I accept the",
-  "signIn.hero_title": "Your financial journey starts here",
-  "signIn.hero_description": "Organize your earnings, control your spending and achieve your goals with the simplicity you've always wanted.",
+  "signIn.hero_title": "Ready for everyday money. No setup.",
+  "signIn.hero_description": "Create a free account, log the month, and see where every real went. No card required.",
   "signIn.login_call": "Already have an account?",
   "signIn.login_access": "Login",
   "signIn.title": "New User",
@@ -429,6 +440,9 @@
   "recurrence.monthlyTotal": "Your monthly budget",
   "recurrence.add": "Add recurrence",
   "recurrence.edit": "Edit recurrence",
+  "recurrence.editForm.description": "Adjust recurrence details without leaving the list.",
+  "recurrence.editForm.type": "Type",
+  "recurrence.editForm.monthlyValue": "Estimated monthly value",
   "recurrence.empty": "No recurrences yet. Add fixed expenses like rent, electricity, or pet food.",
   "recurrence.loadError": "Could not load your budget. Check your connection or try again.",
   "recurrence.repeat": "Generate entry",
@@ -506,7 +520,7 @@
   "reports.sections.expenses": "Expenses",
   "reports.actions.exportPdf": "Export PDF",
   "reports.actions.exporting": "Generating PDF...",
-  "reports.document.title": "Report — {{month}}",
+  "reports.document.title": "Report: {{month}}",
   "reports.document.issuedAt": "Issued on",
   "reports.document.summary": "Summary",
   "reports.document.balance": "Period balance",
@@ -968,16 +982,144 @@
       "button": "Start Now"
     }
   },
+  "landing_v3": {
+    "hero": {
+      "badge": "Free. No card. No spreadsheet setup.",
+      "title_line1": "Payday hit.",
+      "title_line2": "And it vanished again?",
+      "description": "Enough Notion, spreadsheets, and apps that become another project. Meu Troco is ready out of the box so you can log the month and see where every real went.",
+      "cta_primary": "Create free account",
+      "cta_demo": "See how it works",
+      "trust_line": "Free account. No card. Leave anytime.",
+      "device_desktop": "Dashboard",
+      "device_mobile": "Phone"
+    },
+    "visual": {
+      "caption": "This is the dashboard when the month stops being a mystery."
+    },
+    "problem": {
+      "title": "You do not need another abandoned spreadsheet",
+      "p1": "Same story every month: paycheck lands, bills hit, and by day 28 you cannot explain where the rest went.",
+      "p2": "Then comes the promise to organize everything in Notion or a pretty sheet. You build it. Use it for a week. And quit."
+    },
+    "turn": {
+      "title": "The problem is not discipline.",
+      "title_accent": "It is the method.",
+      "p1": "Generic tools force you to become an architect: tables, formulas, categories, views. That is work before the work.",
+      "p2": "Meu Troco is built for everyday money. You log it. The dashboard answers. No system to assemble."
+    },
+    "story": {
+      "label": "Why this exists",
+      "title": "I left Notion for this",
+      "p1": "I tried to run my money in Notion. Every month meant databases, formulas, and layouts. It felt productive. In practice I spent energy building the system instead of seeing the money clearly.",
+      "p2": "And I was locked in: if the structure broke, so did my control.",
+      "p3": "So I built Meu Troco: an app that arrives ready. No spreadsheet setup. No template lock-in."
+    },
+    "how": {
+      "title": "How it works",
+      "subtitle": "From zero to a clear month in three steps.",
+      "step1_title": "Create your account",
+      "step1_desc": "Ready in minutes, no card, no endless form.",
+      "step2_title": "Log what comes in and goes out",
+      "step2_desc": "Income, expenses, and bills in one place with ready categories.",
+      "step3_title": "See the month clearly",
+      "step3_desc": "Dashboard, reports, and forecasts so you decide before the squeeze."
+    },
+    "features": {
+      "dashboard": {
+        "title": "Your dashboard,",
+        "subtitle": "no spreadsheet needed.",
+        "description": "Balance, income, and expenses for the month at a glance.",
+        "bullet1": "Month summary instantly",
+        "bullet2": "Shortcuts to log fast",
+        "bullet3": "Clear view of what is left"
+      },
+      "transactions": {
+        "title": "Entries,",
+        "subtitle": "the way you live.",
+        "description": "Filter by month, type, and category. Find any spend without digging through bank screenshots.",
+        "bullet1": "Full searchable list",
+        "bullet2": "Income and expense side by side",
+        "bullet3": "History always on hand"
+      },
+      "reports": {
+        "title": "Reports,",
+        "subtitle": "you actually get.",
+        "description": "See where money went with simple charts, not a 20-tab sheet.",
+        "bullet1": "Spending by category",
+        "bullet2": "Month trend",
+        "bullet3": "Export when you need it"
+      },
+      "forecasts": {
+        "title": "Forecasts,",
+        "subtitle": "before the squeeze.",
+        "description": "Anticipate the next days of cash flow and act before bills surprise you.",
+        "bullet1": "Balance projection",
+        "bullet2": "Unusual spend alerts",
+        "bullet3": "Next-month scenarios"
+      },
+      "profile": {
+        "title": "Your profile,",
+        "subtitle": "your way.",
+        "description": "Adjust notifications and preferences in one place.",
+        "bullet1": "Account details",
+        "bullet2": "Notifications under control",
+        "bullet3": "Simple preferences"
+      }
+    },
+    "risk": {
+      "title": "Zero risk to try",
+      "subtitle": "The goal right now is that you use it. No hidden charge.",
+      "item1": "100% free",
+      "item2": "No card at signup",
+      "item3": "Leave whenever you want",
+      "cta": "Create free account"
+    },
+    "faq": {
+      "title": "FAQ",
+      "q1": "Is it really free?",
+      "a1": "Yes. There is no charge and no premium plan today. Create an account and use it.",
+      "q2": "Do I need a card?",
+      "a2": "No. Free account, no card.",
+      "q3": "Does this replace Notion and spreadsheets?",
+      "a3": "If your goal is everyday money control, yes. You do not build databases or formulas. The app arrives ready for that.",
+      "q4": "Do I need to understand finance?",
+      "a4": "No. If you know what came in and what went out, you can use it.",
+      "q5": "Are my data safe?",
+      "a5": "We collect what the app needs to work. We do not sell your data. You can ask to delete your account anytime."
+    },
+    "cta": {
+      "badge": "No setup. No card.",
+      "title": "Stop building systems.",
+      "subtitle": "Start seeing your money.",
+      "description": "Create a free account and organize the month in the app that arrives ready for it.",
+      "button": "Create free account"
+    },
+    "roadmap": {
+      "title": "Our roadmap",
+      "description": "Follow what we are building."
+    },
+    "security": {
+      "title": "Transparency",
+      "subtitle": "Trust is part of control.",
+      "f3_title": "No fine print games",
+      "f3_desc": "You know how your data is handled.",
+      "f4_title": "Steady improvement",
+      "f4_desc": "Updates follow what people actually use.",
+      "f5_title": "Open channel",
+      "f5_desc": "Your feedback shapes the future of Meu Troco."
+    }
+  },
   "sidebar": {
     "settings": "Settings",
     "settingsDescription": "Manage your preferences and settings"
   },
-  "login.quotes.q1": "The best tool to manage daily savings smartly.",
-  "login.quotes.q2": "Small savings today, big achievements tomorrow. Start now.",
-  "login.quotes.q3": "Organize your financial future with simplicity and security.",
+  "login.quotes.q1": "I left Notion because I only wanted to know where my money went.",
+  "login.quotes.q2": "Spreadsheets work until the day you stop updating them.",
+  "login.quotes.q3": "Money control should not feel like a second job.",
   "login.forgotPassword": "Forgot password?",
-  "login.team": "Meu Troco Team",
-  "login.appDescription": "Finance App",
+  "login.team": "Meu Troco team",
+  "login.appDescription": "Everyday money",
   "login.createAccountNow": "Create one now",
   "converter.title": "Currency Converter",
   "converter.calculatorTitle": "Currency Calculator",

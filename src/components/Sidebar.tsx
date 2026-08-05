@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, Receipt, User, LogOut, DollarSign, BarChart3 } from 'lucide-react';
+import { Home, TrendingUp, TrendingDown, Receipt, User, LogOut, Coins, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ThemeToggle from '@/components/ThemeToggle';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu } from './ui/sidebar';
@@ -31,12 +31,14 @@ const AppSidebar = () => {
 
   return (
     <Sidebar variant='floating'>
-      <div className={cn("flex flex-col h-full", theme == "dark" && "bg-gradient-to-br from-green-900/45 via-zinc-900/50 to-zinc-950/70 rounded")}>
+      <div className={cn("flex flex-col h-full", theme == "dark" && "bg-gradient-to-br from-primary/15 via-zinc-900/50 to-zinc-950/70 rounded")}>
         <SidebarHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 px-2">
-              <DollarSign className="w-6 h-6 text-primary" />
-              <span className="font-bold">Meu Troco</span>
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <Coins className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <span className="font-bold text-sm">{t('brand.name')}</span>
             </div>
             <LanguageSwitcher />
             <ThemeToggle />

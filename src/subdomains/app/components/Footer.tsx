@@ -32,10 +32,7 @@ function Footer() {
                                     alt={t('brand.full')}
                                     className="w-9 h-9 object-contain"
                                 />
-                                <div className="flex items-baseline gap-1.5">
-                                    <span className="text-lg font-bold tracking-tight">{t('brand.name')}</span>
-                                    <span className="text-sm font-semibold text-primary">{t('brand.suffix')}</span>
-                                </div>
+                                <span className="text-lg font-bold tracking-tight">{t('brand.name')}</span>
                             </div>
                             <p className="text-muted-foreground leading-relaxed">
                                 {t('footer.description')}

@@ -39,7 +39,7 @@ const LegalModals: React.FC<LegalModalsProps> = ({ isOpen, onOpenChange, type })
                 </DialogHeader>
 
                 <ScrollArea className="flex-1 p-6 pt-2">
-                    <div className="text-slate-600 dark:text-emerald-100/70 leading-relaxed text-sm space-y-4">                        
+                    <div className="text-slate-600 dark:text-white/70 leading-relaxed text-sm space-y-4">                        
                         <p>{content.text}</p>
                     </div>
                 </ScrollArea>

@@ -31,17 +31,14 @@ const AppSidebar = () => {
 
   return (
     <Sidebar variant='floating'>
-      <div className={cn("flex flex-col h-full", theme == "dark" && "bg-gradient-to-br from-green-900/45 via-zinc-900/50 to-zinc-950/70 rounded")}>
+      <div className={cn("flex flex-col h-full", theme == "dark" && "bg-gradient-to-br from-primary/15 via-zinc-900/50 to-zinc-950/70 rounded")}>
         <SidebarHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 px-2">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <Coins className="w-4 h-4 text-primary-foreground" />
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className="font-bold text-sm">{t('brand.name')}</span>
-                <span className="text-xs font-semibold text-primary">{t('brand.suffix')}</span>
-              </div>
+              <span className="font-bold text-sm">{t('brand.name')}</span>
             </div>
             <LanguageSwitcher />
             <ThemeToggle />

@@ -3,8 +3,8 @@
   "lang.spanish": "Espanhol",
   "lang.english": "Inglês",
   "brand.name": "Meu Troco",
-  "brand.suffix": "Finance",
-  "brand.full": "Meu Troco Finance",
+  "brand.suffix": "",
+  "brand.full": "Meu Troco",
   "navigation.home": "Home",
   "navigation.dashboard": "Dashboard",
   "navigation.transactions": "Transações",
@@ -12,14 +12,16 @@
   "navigation.forecasts": "Previsões",
   "navigation.profile": "Perfil",
   "navigation.about": "Sobre",
-  "navigation.funcionalities": "Funcionalidades",
+  "navigation.funcionalities": "Recursos",
   "navigation.roadmap": "Roadmap",
   "navigation.benefits": "Benefícios",
   "navigation.signIn": "Entrar",
   "navigation.signUpFree": "Criar conta grátis",
+  "navigation.howItWorks": "Como funciona",
+  "navigation.faq": "FAQ",
   "navigation.back": "Voltar",
   "footer.all_rights": "Todos os direitos reservados",
-  "footer.description": "Finanças pessoais simples e poderosas. Todo centavo no lugar certo.",
+  "footer.description": "Controle o dinheiro do dia a dia sem montar planilha nem banco de dados.",
   "footer.privacy_policy": "Política de Privacidade",
   "footer.backoffice_access": "Acesso operacional",
   "footer.social_groups": "Redes sociais",
@@ -29,7 +31,7 @@
   "benefits.text_3": "Sem complicações desnecessárias",
   "benefits.text_4": "Ideal para uso pessoal",
   "benefits.why_use": "Por que usar o",
-  "buttons.accessThePlatform": "Acessar Meu Troco Finance",
+  "buttons.accessThePlatform": "Acessar Meu Troco",
   "buttons.start_now": "Começar agora",
   "callToAction.keepYour": "Mantenha seu",
   "callToAction.money": "dinheiro",
@@ -61,8 +63,8 @@
   "login.submitLoading": "Carregando...",
   "login.welcome": "Bem-vindo!",
   "login.welcomeDescription": "Faça login para continuar",
-  "login.hero_title": "Que bom ver você de novo!",
-  "login.hero_description": "Estamos prontos para ajudar você a manter suas finanças em dia hoje. Vamos lá?",
+  "login.hero_title": "Bom te ver de novo",
+  "login.hero_description": "Entre e continue de onde parou: seu mês, seus lançamentos, sem planilha.",
   "signIn.and": "e",
   "signIn.cardDescription": "Preencha seus dados para criar sua conta",
   "signIn.confirmPasswordLabel": "Confirme sua Senha",
@@ -75,8 +77,8 @@
   "signIn.termsOfUse": "termos de uso",
   "signIn.termsOfUser_2": "Aceito os",
   "signIn.title": "Novo Usuário",
-  "signIn.hero_title": "Sua jornada financeira começa aqui",
-  "signIn.hero_description": "Organize seus ganhos, controle seus gastos e alcance seus objetivos com a simplicidade que você sempre quis.",
+  "signIn.hero_title": "Pronto pro dia a dia. Sem montar nada.",
+  "signIn.hero_description": "Crie sua conta grátis, lance o mês e veja pra onde foi cada real. Sem cartão.",
   "signIn.login_call": "Já tem uma conta?",
   "signIn.login_access": "Acessar",
   "legal.terms_title": "Termos de Uso",
@@ -205,7 +207,7 @@
   "goalCatalog.deleted": "Rank removido com sucesso.",
   "goalCatalog.deleteError": "Não foi possível remover o rank.",
   "goalCatalog.empty": "Nenhum rank cadastrado.",
-  "goalCatalog.emptyHint": "Comece pelo rank inicial (ex.: nível 1 — Iniciante) e defina os critérios para subir de nível.",
+  "goalCatalog.emptyHint": "Comece pelo rank inicial (ex.: nível 1, Iniciante) e defina os critérios para subir de nível.",
   "goalCatalog.previewPlaceholder": "Novo rank",
   "goalCatalog.ptTitleRequired": "Informe o nome do rank em português.",
   "goalCatalog.seed": "Importar ranks padrão",
@@ -315,8 +317,8 @@
   "roadmap.view.timeline": "Timeline",
   "roadmap.noQuarter": "Sem trimestre",
   "roadmap.timelineEmpty": "Nenhum item no roadmap para exibir na timeline.",
-  "roadmap.timelinePreview": "Prévia panorâmica horizontal — visão geral dos trimestres lado a lado.",
-  "roadmap.verticalPreview": "Prévia vertical — trimestres, fases e itens com descrições expansíveis.",
+  "roadmap.timelinePreview": "Prévia panorâmica horizontal: visão geral dos trimestres lado a lado.",
+  "roadmap.verticalPreview": "Prévia vertical: trimestres, fases e itens com descrições expansíveis.",
   "roadmap.verticalPhaseEmpty": "Nenhum item nesta fase ainda.",
   "roadmap.timelineItems": "itens",
   "roadmap.catalog.title": "Catálogo do Roadmap",
@@ -405,7 +407,7 @@
   "reports.sections.expenses": "Despesas",
   "reports.actions.exportPdf": "Exportar PDF",
   "reports.actions.exporting": "Gerando PDF...",
-  "reports.document.title": "Relatório — {{month}}",
+  "reports.document.title": "Relatório: {{month}}",
   "reports.document.issuedAt": "Emitido em",
   "reports.document.summary": "Resumo",
   "reports.document.balance": "Saldo do período",
@@ -443,7 +445,7 @@
   "dashboard.cardTotalMonthHint": "Receitas − despesas no mês selecionado",
   "dashboard.insightTextMonth": "Resumo do fluxo do mês selecionado.",
   "dashboard.welcomeGreeting": "Bem-vindo,",
-  "dashboard.welcomeTitle": "Bem-vindo ao Meu Troco Finance",
+  "dashboard.welcomeTitle": "Bem-vindo ao Meu Troco",
   "dashboard.welcomeDescription": "o meu troco é uma ferramenta simples para te ajudar a gerenciar suas finanças pessoais.",
   "dashboard.welcomeUnderstand": "Entendido",
   "categories": {
@@ -865,78 +867,130 @@
   },
   "landing_v3": {
     "hero": {
-      "badge": "Todo centavo no lugar certo.",
-      "title_line1": "Finanças pessoais que cabem",
-      "title_line2": "na sua vida real.",
-      "description": "Organize receitas, despesas e metas sem planilha, sem jargão e sem surpresa no fim do mês. Seu dinheiro sob controle, do seu jeito.",
-      "cta_primary": "Começar grátis",
-      "cta_demo": "Ver demonstração",
-      "social_proof": "Milhares de pessoas já organizam suas finanças com tranquilidade",
+      "badge": "Grátis. Sem cartão. Sem montar planilha.",
+      "title_line1": "O salário entrou.",
+      "title_line2": "E sumiu de novo?",
+      "description": "Chega de Notion, planilha e app que vira outro projeto. O Meu Troco já nasce pronto pra você lançar o mês e ver pra onde foi cada real.",
+      "cta_primary": "Criar conta grátis",
+      "cta_demo": "Ver como funciona",
+      "trust_line": "Conta gratuita. Sem cartão. Cancele quando quiser.",
       "device_desktop": "Painel",
       "device_mobile": "Celular"
+    },
+    "visual": {
+      "caption": "Assim fica o painel quando o mês deixa de ser mistério."
+    },
+    "problem": {
+      "title": "Você não precisa de mais uma planilha abandonada",
+      "p1": "Todo mês a mesma história: o salário cai, as contas passam, e no dia 28 você não sabe explicar pra onde foi o restante.",
+      "p2": "Aí vem a promessa de organizar tudo no Notion ou numa planilha linda. Você monta. Usa por uma semana. E some."
+    },
+    "turn": {
+      "title": "O problema não é disciplina.",
+      "title_accent": "É o método.",
+      "p1": "Ferramenta genérica exige que você vire arquiteto: criar tabelas, fórmulas, categorias, views. Isso é trabalho antes do trabalho.",
+      "p2": "O Meu Troco nasce pronto pra dinheiro do dia a dia. Você lança. O painel responde. Sem montar sistema."
+    },
+    "story": {
+      "label": "Por que isso existe",
+      "title": "Eu abandonei o Notion por isso",
+      "p1": "Eu tentava controlar as contas no Notion. Cada mês era configurar database, fórmula e layout. Parecia produtivo. Na prática, eu gastava energia montando o sistema em vez de usar o dinheiro com clareza.",
+      "p2": "E ainda ficava preso: se a estrutura quebrava, o controle quebrava junto.",
+      "p3": "Então construí o Meu Troco: um app que já chega pronto. Sem setup de planilha. Sem lock-in de template."
+    },
+    "how": {
+      "title": "Como funciona",
+      "subtitle": "Do zero ao mês organizado em três passos.",
+      "step1_title": "Crie sua conta",
+      "step1_desc": "Em poucos minutos, sem cartão e sem formulário eterno.",
+      "step2_title": "Lance o que entra e o que sai",
+      "step2_desc": "Receitas, despesas e contas no mesmo lugar, com categorias prontas.",
+      "step3_title": "Veja o mês com clareza",
+      "step3_desc": "Painel, relatórios e previsões pra decidir antes do aperto."
     },
     "features": {
       "dashboard": {
         "title": "Seu painel,",
-        "subtitle": "tudo em um olhar.",
-        "description": "Veja saldo, receitas e despesas do mês em um só lugar. Sem abrir planilha, sem perder tempo.",
-        "bullet1": "Saldo e resumo do mês",
-        "bullet2": "Ações rápidas para lançar",
-        "bullet3": "Insights que orientam seu dia"
+        "subtitle": "sem abrir planilha.",
+        "description": "Saldo, receitas e despesas do mês num olhar. Chega de caçar número em célula.",
+        "bullet1": "Resumo do mês na hora",
+        "bullet2": "Atalhos pra lançar rápido",
+        "bullet3": "Visão clara do que sobrou"
       },
       "transactions": {
-        "title": "Transações,",
-        "subtitle": "organizadas do seu jeito.",
-        "description": "Filtre por mês, tipo e categoria. Encontre qualquer lançamento em segundos.",
+        "title": "Lançamentos,",
+        "subtitle": "do jeito que você vive.",
+        "description": "Filtre por mês, tipo e categoria. Ache qualquer gasto sem vasculhar print de banco.",
         "bullet1": "Lista completa e pesquisável",
-        "bullet2": "Resumo por receita e despesa",
+        "bullet2": "Receita e despesa lado a lado",
         "bullet3": "Histórico sempre à mão"
       },
       "reports": {
         "title": "Relatórios,",
-        "subtitle": "claros e visuais.",
-        "description": "Entenda para onde seu dinheiro vai com gráficos simples que você realmente entende.",
+        "subtitle": "que você entende.",
+        "description": "Veja pra onde o dinheiro foi com gráficos simples, sem planilha de 20 abas.",
         "bullet1": "Gastos por categoria",
-        "bullet2": "Tendência mensal",
-        "bullet3": "Exportação em um clique"
+        "bullet2": "Tendência do mês",
+        "bullet3": "Exportação quando precisar"
       },
       "forecasts": {
         "title": "Previsões,",
-        "subtitle": "antes de surpreender.",
-        "description": "Projeções inteligentes do seu fluxo de caixa e alertas para você agir antes do problema.",
-        "bullet1": "Projeção de saldo futuro",
-        "bullet2": "Alertas de gastos fora do padrão",
-        "bullet3": "Cenários para os próximos meses"
+        "subtitle": "antes do aperto.",
+        "description": "Antecipe o fluxo dos próximos dias e aja antes da conta chegar sem aviso.",
+        "bullet1": "Projeção de saldo",
+        "bullet2": "Alertas de gasto fora do padrão",
+        "bullet3": "Cenários do mês seguinte"
       },
       "profile": {
         "title": "Seu perfil,",
         "subtitle": "do seu jeito.",
-        "description": "Ajuste notificações, preferências e relatórios mensais num lugar só.",
-        "bullet1": "Dados e segurança da conta",
-        "bullet2": "Notificações personalizáveis",
-        "bullet3": "Relatório mensal por e-mail"
+        "description": "Ajuste notificações e preferências num lugar só.",
+        "bullet1": "Dados da conta",
+        "bullet2": "Notificações sob controle",
+        "bullet3": "Preferências simples"
       }
+    },
+    "risk": {
+      "title": "Risco zero pra experimentar",
+      "subtitle": "A meta agora é você usar. Não tem cobrança escondida.",
+      "item1": "100% grátis",
+      "item2": "Sem cartão no cadastro",
+      "item3": "Sai quando quiser",
+      "cta": "Criar conta grátis"
+    },
+    "faq": {
+      "title": "Perguntas frequentes",
+      "q1": "É de graça mesmo?",
+      "a1": "Sim. Hoje não há cobrança nem plano premium. Você cria a conta e usa.",
+      "q2": "Preciso cadastrar cartão?",
+      "a2": "Não. Conta grátis, sem cartão.",
+      "q3": "Isso substitui Notion e planilha?",
+      "a3": "Se o seu objetivo é controlar o dinheiro do dia a dia, sim. Você não monta database nem fórmula. O app já vem pronto pra isso.",
+      "q4": "Preciso entender de finanças?",
+      "a4": "Não. Se você sabe o que entrou e o que saiu, já consegue usar.",
+      "q5": "Meus dados ficam seguros?",
+      "a5": "Coletamos o necessário pro app funcionar. Não vendemos seus dados. Você pode pedir exclusão da conta quando quiser."
+    },
+    "cta": {
+      "badge": "Sem setup. Sem cartão.",
+      "title": "Pare de montar sistema.",
+      "subtitle": "Comece a ver o troco.",
+      "description": "Crie sua conta grátis e organize o mês no app que já nasce pronto pra isso.",
+      "button": "Criar conta grátis"
     },
     "roadmap": {
       "title": "Nosso roadmap",
-      "description": "Finanças pessoais simples e poderosas. Acompanhe o que estamos construindo, trimestre a trimestre."
+      "description": "Acompanhe o que estamos construindo."
     },
     "security": {
-      "title": "Segurança e transparência",
-      "subtitle": "Porque confiança também faz parte do seu controle financeiro.",
-      "f3_title": "Transparência total",
-      "f3_desc": "Você sabe exatamente como seus dados são tratados — sem letras miúdas escondidas.",
+      "title": "Transparência",
+      "subtitle": "Confiança também faz parte do controle.",
+      "f3_title": "Sem letras miúdas",
+      "f3_desc": "Você sabe como seus dados são tratados.",
       "f4_title": "Evolução constante",
-      "f4_desc": "Novas funcionalidades e melhorias chegam com frequência, baseadas no que você realmente precisa.",
-      "f5_title": "Suporte que escuta",
-      "f5_desc": "Sua opinião molda o futuro do Meu Troco Finance. Fale com a gente quando quiser."
-    },
-    "cta": {
-      "badge": "Pare de adivinhar",
-      "title": "Transforme seu talvez,",
-      "subtitle": "em uma certeza.",
-      "description": "Insights inteligentes sobre seus gastos e previsões que ajudam você a tomar decisões com tranquilidade.",
-      "button": "Começar grátis"
+      "f4_desc": "Melhorias chegam com base no que as pessoas realmente usam.",
+      "f5_title": "Canal aberto",
+      "f5_desc": "Sua opinião molda o futuro do Meu Troco."
     }
   },
   "sidebar": {
@@ -947,12 +1001,12 @@
   "navigation": {
     "back": "Voltar"
   },
-  "login.quotes.q1": "A melhor ferramenta para gerenciar economias do dia a dia de forma inteligente.",
-  "login.quotes.q2": "Pequenas economias hoje, grandes conquistas amanhã. Comece agora.",
-  "login.quotes.q3": "Organize seu futuro financeiro com simplicidade e segurança.",
+  "login.quotes.q1": "Abandonei o Notion porque eu só queria saber pra onde foi o dinheiro.",
+  "login.quotes.q2": "Planilha funciona até o dia em que você para de atualizar.",
+  "login.quotes.q3": "Controle financeiro não precisa virar um segundo emprego.",
   "login.forgotPassword": "Esqueceu a senha?",
-  "login.team": "Equipe Meu Troco Finance",
-  "login.appDescription": "Finanças pessoais",
+  "login.team": "Equipe Meu Troco",
+  "login.appDescription": "Dinheiro do dia a dia",
   "login.createAccountNow": "Crie uma agora",
   "converter.title": "Conversor de Moedas",
   "converter.calculatorTitle": "Calculadora de Câmbio",

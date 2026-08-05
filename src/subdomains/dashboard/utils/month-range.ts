@@ -36,7 +36,8 @@ export const getMonthRangeByKey = (monthKey: string) => {
   return { startDate, endDate };
 };
 
-export const isCurrentMonthKey = (monthKey: string) => monthKey === getCurrentMonthKey();
+export const isCurrentMonthKey = (monthKey: string, baseDate = new Date()) =>
+  monthKey === getCurrentMonthKey(baseDate);
 
 const formatDatePart = (value: number) => String(value).padStart(2, "0");
 
@@ -44,6 +45,41 @@ const formatDateToYmd = (date: Date) =>
   `${date.getFullYear()}-${formatDatePart(date.getMonth() + 1)}-${formatDatePart(
     date.getDate()
   )}`;
+
+export const getLocalTodayYmd = (baseDate = new Date()) => formatDateToYmd(baseDate);
+
+export const clampYmdToToday = (ymd: string, baseDate = new Date()) => {
+  const today = formatDateToYmd(baseDate);
+  return ymd > today ? today : ymd;
+};
+
+export const getBalancePeriodRange = (
+  selectedMonth: string,
+  filters: { startDate: string; endDate: string; dateRangeLockedToMonth: boolean },
+  baseDate = new Date()
+) => {
+  const today = formatDateToYmd(baseDate);
+
+  if (!filters.dateRangeLockedToMonth) {
+    return {
+      startDate: filters.startDate,
+      endDate: clampYmdToToday(filters.endDate || today, baseDate),
+    };
+  }
+
+  const previousMonthStart = getMonthRangeByKey(
+    shiftMonthKey(selectedMonth, -1)
+  ).startDate;
+  const selectedMonthEnd = getMonthRangeByKey(selectedMonth).endDate;
+  const endDate = isCurrentMonthKey(selectedMonth, baseDate)
+    ? today
+    : clampYmdToToday(selectedMonthEnd, baseDate);
+
+  return {
+    startDate: previousMonthStart,
+    endDate,
+  };
+};
 
 const isValidDateParts = (year: number, month: number, day: number) => {
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) {

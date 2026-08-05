@@ -10,22 +10,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
   DatePicker,
-  formatDateToYmd,
   formatYmdDisplay,
-  parseYmdToLocalDate,
 } from "@/components/ui/date-picker";
-import { ChevronLeft, ChevronRight, FileDown, CalendarRange } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, FileDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { DateRange } from "react-day-picker";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { isCurrentMonthKey } from "../../utils/month-range";
 import type { ReportBillStatus, ReportSections } from "./report-data";
 import type { ReportTextSize } from "./report-text-size";
@@ -105,16 +94,6 @@ export default function ReportFilters({
   labels,
 }: ReportFiltersProps) {
   const { i18n } = useTranslation();
-  const isMobile = useIsMobile();
-  const [periodOpen, setPeriodOpen] = useState(false);
-  const [calendarMonth, setCalendarMonth] = useState<Date>(
-    () => parseYmdToLocalDate(startDate) ?? new Date()
-  );
-
-  useEffect(() => {
-    const nextMonth = parseYmdToLocalDate(startDate);
-    if (nextMonth) setCalendarMonth(nextMonth);
-  }, [startDate]);
 
   const toggleSection = (key: keyof ReportSections) => {
     onSectionsChange({ ...sections, [key]: !sections[key] });
@@ -122,21 +101,6 @@ export default function ReportFilters({
 
   const isFullMonth =
     startDate === monthMinDate && endDate === monthMaxDate;
-  const rangeSelected: DateRange | undefined = {
-    from: parseYmdToLocalDate(startDate),
-    to: parseYmdToLocalDate(endDate),
-  };
-
-  const periodButtonLabel = isFullMonth
-    ? labels.selectDays
-    : `${formatYmdDisplay(startDate, i18n.language)} — ${formatYmdDisplay(endDate, i18n.language)}`;
-
-  const applyRange = (range: DateRange | undefined) => {
-    if (!range?.from) return;
-    const nextStart = formatDateToYmd(range.from);
-    const nextEnd = range.to ? formatDateToYmd(range.to) : nextStart;
-    onPeriodChange(nextStart, nextEnd);
-  };
 
   return (
     <div className="print:hidden space-y-4 rounded-xl border border-border/60 bg-card/60 backdrop-blur-sm p-4 md:p-5">
@@ -147,7 +111,7 @@ export default function ReportFilters({
             <span className="font-medium capitalize">{monthLabel}</span>
           </Badge>
         </span>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             type="button"
             variant="outline"
@@ -159,80 +123,16 @@ export default function ReportFilters({
             <ChevronLeft className="h-4 w-4" />
           </Button>
 
-          <Popover open={periodOpen} onOpenChange={setPeriodOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-8 gap-2 max-w-[220px]"
-              >
-                <CalendarRange className="h-4 w-4 shrink-0" />
-                <span className="truncate">{periodButtonLabel}</span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-3 space-y-3" align="center">
-              {isMobile ? (
-                <div className="grid grid-cols-1 gap-3 min-w-[240px]">
-                  <div className="space-y-2">
-                    <Label htmlFor="report-start-date">{labels.from}</Label>
-                    <DatePicker
-                      id="report-start-date"
-                      value={startDate}
-                      onChange={onStartDateChange}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="report-end-date">{labels.till}</Label>
-                    <DatePicker
-                      id="report-end-date"
-                      value={endDate}
-                      onChange={onEndDateChange}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <Calendar
-                  mode="range"
-                  numberOfMonths={1}
-                  month={calendarMonth}
-                  onMonthChange={setCalendarMonth}
-                  selected={rangeSelected}
-                  onSelect={applyRange}
-                />
-              )}
-
-              <div className="flex flex-col gap-2 border-t border-border/60 pt-3">
-                {!isFullMonth && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="justify-start h-8 px-2"
-                    onClick={() => {
-                      onResetDateRange();
-                      setPeriodOpen(false);
-                    }}
-                  >
-                    {labels.resetDates}
-                  </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="justify-start h-8"
-                  disabled={isCurrentMonthKey(selectedMonth) && isFullMonth}
-                  onClick={() => {
-                    onResetMonth();
-                    setPeriodOpen(false);
-                  }}
-                >
-                  {labels.current}
-                </Button>
-              </div>
-            </PopoverContent>
-          </Popover>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="h-8"
+            disabled={isCurrentMonthKey(selectedMonth) && isFullMonth}
+            onClick={onResetMonth}
+          >
+            {labels.current}
+          </Button>
 
           <Button
             type="button"
@@ -247,12 +147,44 @@ export default function ReportFilters({
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:items-end">
+        <div className="space-y-2">
+          <Label htmlFor="report-start-date">{labels.from}</Label>
+          <DatePicker
+            id="report-start-date"
+            value={startDate}
+            max={endDate || undefined}
+            onChange={onStartDateChange}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="report-end-date">{labels.till}</Label>
+          <DatePicker
+            id="report-end-date"
+            value={endDate}
+            min={startDate || undefined}
+            onChange={onEndDateChange}
+          />
+        </div>
+      </div>
+
       {!isFullMonth && (
-        <p className="text-xs text-muted-foreground">
-          {labels.fullMonth}:{" "}
-          {formatYmdDisplay(startDate, i18n.language)} —{" "}
-          {formatYmdDisplay(endDate, i18n.language)}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {labels.fullMonth}:{" "}
+            {formatYmdDisplay(startDate, i18n.language)} —{" "}
+            {formatYmdDisplay(endDate, i18n.language)}
+          </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2"
+            onClick={onResetDateRange}
+          >
+            {labels.resetDates}
+          </Button>
+        </div>
       )}
 
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">

@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 import { useDefaultCard } from '@/hooks/useDefaultCard';
 import { useDashboardPreferences } from '../../context/dashboard-preferences';
 import {
+  getBalancePeriodRange,
+  getLocalTodayYmd,
   getMonthRangeByKey,
 } from '../../utils/month-range';
 import ExpenseByCategoryChart from './components/ExpenseByCategoryChart';
@@ -46,6 +48,7 @@ function DashboardHomeBody() {
   const { categoryLookup } = useCategories();
   const isNotionDesktop = layoutMode === 'notion' && !isMobile;
   const monthRange = useMemo(() => getMonthRangeByKey(selectedMonth), [selectedMonth]);
+  const todayYmd = getLocalTodayYmd();
 
   const effectiveFilters = useMemo(() => {
     if (!transactionListFilters.dateRangeLockedToMonth) {
@@ -64,6 +67,25 @@ function DashboardHomeBody() {
       }),
     [categoryLookup, effectiveFilters, transactions]
   );
+  const balancePeriod = useMemo(
+    () => getBalancePeriodRange(selectedMonth, transactionListFilters),
+    [selectedMonth, transactionListFilters]
+  );
+  const balanceTransactions = useMemo(
+    () =>
+      filterTransactionsByPreferences(
+        transactions,
+        {
+          ...transactionListFilters,
+          dateRangeLockedToMonth: false,
+          startDate: balancePeriod.startDate,
+          endDate: balancePeriod.endDate,
+        },
+        { categoryLookup }
+      ),
+    [balancePeriod.endDate, balancePeriod.startDate, categoryLookup, transactionListFilters, transactions]
+  );
+  const balancePeriodHintUntilToday = balancePeriod.endDate >= todayYmd;
   const trendFilters = useMemo(
     () => ({
       ...effectiveFilters,
@@ -190,7 +212,8 @@ function DashboardHomeBody() {
                 balance={totalBalance}
                 formatCurrency={formatCurrency}
                 scope="month"
-                monthTransactions={filteredTransactions}
+                monthTransactions={balanceTransactions}
+                periodHintUntilToday={balancePeriodHintUntilToday}
               />
               <div className={cn(
                 "hidden md:flex items-center justify-between p-4 md:p-6 rounded-3xl border transition-colors duration-500",
@@ -223,7 +246,8 @@ function DashboardHomeBody() {
                     balance={totalBalance}
                     formatCurrency={formatCurrency}
                     scope="month"
-                    monthTransactions={filteredTransactions}
+                    monthTransactions={balanceTransactions}
+                    periodHintUntilToday={balancePeriodHintUntilToday}
                   />
               </motion.div>
 

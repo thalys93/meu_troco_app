@@ -18,12 +18,11 @@ import { getCurrentMonthKey } from '@/subdomains/dashboard/utils/month-range';
 const POCKET_COLOR = '#6b7280';
 
 interface BalanceCardProps {
-    /** Saldo global (cartões + bolso) quando `scope === 'global'`. */
     balance: number;
     formatCurrency: (value: number) => string;
-    /** `global`: limite/saldo cadastrado. `month`: fluxo líquido do mês nas transações passadas. */
     scope?: 'global' | 'month';
     monthTransactions?: Transaction[];
+    periodHintUntilToday?: boolean;
 }
 
 const BalanceCard = ({
@@ -31,6 +30,7 @@ const BalanceCard = ({
     formatCurrency,
     scope = 'global',
     monthTransactions = [],
+    periodHintUntilToday = false,
 }: BalanceCardProps) => {
     const [isVisible, setIsVisible] = React.useState(true);
     const { t } = useTranslation();
@@ -77,8 +77,16 @@ const BalanceCard = ({
         : balance;
 
     const titleKey = isMonthScope
-        ? 'dashboard.cardTotalTitleMonth'
+        ? 'dashboard.cardTotalTitlePeriod'
         : 'dashboard.cardTotalTitle';
+
+    const monthHintKey = periodHintUntilToday
+        ? 'dashboard.cardTotalPeriodHintUntilToday'
+        : 'dashboard.cardTotalPeriodHint';
+
+    const monthFlowCaptionKey = periodHintUntilToday
+        ? 'wallets.periodFlowCaptionUntilToday'
+        : 'wallets.periodFlowCaption';
 
     const styles = useMemo(() => {
         if (primaryBalance < 0) {
@@ -118,7 +126,7 @@ const BalanceCard = ({
                         </h2>
                         {isMonthScope && (
                             <span className={cn("text-xs opacity-80", styles.label)}>
-                                {t('dashboard.cardTotalMonthHint')}
+                                {t(monthHintKey)}
                             </span>
                         )}
                     </div>
@@ -178,7 +186,7 @@ const BalanceCard = ({
                                         <p className="text-muted-foreground">{formatCurrency(pocketDisplay)}</p>
                                         {isMonthScope && (
                                             <p className="text-[10px] text-muted-foreground mt-1">
-                                                {t('wallets.monthFlowCaption')}
+                                                {t(monthFlowCaptionKey)}
                                             </p>
                                         )}
                                     </div>
@@ -198,7 +206,7 @@ const BalanceCard = ({
                                             <p className="text-muted-foreground">{formatCurrency(card.amount)}</p>
                                             {isMonthScope && (
                                                 <p className="text-[10px] text-muted-foreground mt-1">
-                                                    {t('wallets.monthFlowCaption')}
+                                                    {t(monthFlowCaptionKey)}
                                                 </p>
                                             )}
                                         </div>

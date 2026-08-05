@@ -62,10 +62,10 @@ const QuickActions = () => {
         {
             icon: BarChart3,
             label: t('dashboard.actions.reports'),
-            href: '#',
+            href: '/dashboard/relatorios',
             color: 'text-purple-500',
             bg: 'bg-purple-500/10',
-            disabled: true,
+            disabled: false,
         },
     ], [isReadOnly, t]);
 

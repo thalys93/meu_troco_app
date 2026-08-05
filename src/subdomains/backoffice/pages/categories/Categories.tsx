@@ -4,7 +4,7 @@ import PageShell from '@/subdomains/backoffice/components/PageShell';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash, Download, ArrowDownLeft, ArrowUpRight, Receipt, Pen } from 'lucide-react';
+import { Plus, Trash, Download, ArrowDownLeft, ArrowUpRight, Receipt, Pen, GripVertical } from 'lucide-react';
 import {
     useGetAllCategoriesAdmin,
     useDeleteCategory,
@@ -29,13 +29,17 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
+    closestCorners,
     DndContext,
     DragEndEvent,
+    DragOverlay,
+    DragStartEvent,
     PointerSensor,
+    useDroppable,
     useSensor,
     useSensors
 } from '@dnd-kit/core';
-import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { Category, CategoryTransactionType } from '@/types/Category';
 import { getCategoryLocalized } from '@/types/Category';
 import { resolveCategoryIcon } from '@/utils/category-icons';
@@ -43,9 +47,11 @@ import CategoryInlineEditRow from './CategoryInlineEditRow';
 import SortableCategoryRow from './SortableCategoryRow';
 import { CategoryInlineDraft, draftFromCategory } from './category-inline-utils';
 import {
+    applyCategoryDrag,
+    findCategoryContainer,
     groupCategoriesByType,
+    toOrderAndTypeUpdates,
     toOrderUpdates,
-    withListOrderIndices
 } from './category-list-utils';
 import { EntityActionsMenu, type ActionMenuItem } from '@/components/EntityActionsMenu';
 
@@ -68,20 +74,20 @@ const SECTIONS: CategorySectionConfig[] = [
         icon: ArrowDownLeft
     },
     {
-        type: 'receita',
-        titleKey: 'categories.backoffice.sectionIncome',
-        countKey: 'categories.backoffice.sectionCountIncome',
-        accent: 'border-emerald-500/40',
-        headerBg: 'bg-gradient-to-r from-emerald-500/8 via-emerald-500/4 to-transparent',
-        icon: ArrowUpRight
-    },
-    {
         type: 'conta',
         titleKey: 'categories.backoffice.sectionBills',
         countKey: 'categories.backoffice.sectionCountBill',
         accent: 'border-amber-500/40',
         headerBg: 'bg-gradient-to-r from-amber-500/8 via-amber-500/4 to-transparent',
         icon: Receipt
+    },
+    {
+        type: 'receita',
+        titleKey: 'categories.backoffice.sectionIncome',
+        countKey: 'categories.backoffice.sectionCountIncome',
+        accent: 'border-emerald-500/40',
+        headerBg: 'bg-gradient-to-r from-emerald-500/8 via-emerald-500/4 to-transparent',
+        icon: ArrowUpRight
     }
 ];
 
@@ -90,6 +96,43 @@ type InlineSession = {
     listIndex: number;
     draft: CategoryInlineDraft;
 };
+
+function CategoryDragPreview({ category }: { category: Category }) {
+    const { t, i18n } = useTranslation();
+    const label = getCategoryLocalized(category, i18n.language);
+    const Icon = resolveCategoryIcon(category.icon);
+
+    return (
+        <div className="flex items-stretch rounded-lg border border-border/60 bg-card shadow-2xl ring-2 ring-primary/40 cursor-grabbing">
+            <div className="flex w-9 shrink-0 items-center justify-center text-muted-foreground">
+                <GripVertical className="h-4 w-4" />
+            </div>
+            <div className="flex min-w-0 flex-1 items-center gap-3 px-3 py-3">
+                {Icon && (
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background border border-border/60 shadow-sm">
+                        <Icon className="h-4 w-4 text-muted-foreground" />
+                    </span>
+                )}
+                <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-medium truncate">{label}</span>
+                        {!category.active && (
+                            <Badge
+                                variant="outline"
+                                className="rounded-md font-normal bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30"
+                            >
+                                {t('categories.backoffice.inactive')}
+                            </Badge>
+                        )}
+                    </div>
+                    <p className="text-xs text-muted-foreground font-mono truncate mt-0.5">
+                        {category.id}
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 type CategoryRowProps = {
     category: Category;
@@ -217,7 +260,7 @@ type CategorySectionProps = {
     config: CategorySectionConfig;
     categories: Category[];
     inlineSession: InlineSession | null;
-    sortDisabled: boolean;
+    dragDisabled: boolean;
     missingSeedCount?: number;
     onSeed?: () => void;
     seedPending?: boolean;
@@ -226,14 +269,13 @@ type CategorySectionProps = {
     onCancelEdit: () => void;
     onSaved: () => void;
     onDelete: (id: string) => void;
-    onReorder: (type: CategoryTransactionType, reordered: Category[]) => void;
 };
 
 function CategorySection({
     config,
     categories,
     inlineSession,
-    sortDisabled,
+    dragDisabled,
     missingSeedCount = 0,
     onSeed,
     seedPending = false,
@@ -242,42 +284,21 @@ function CategorySection({
     onCancelEdit,
     onSaved,
     onDelete,
-    onReorder
 }: CategorySectionProps) {
     const { t } = useTranslation();
     const SectionIcon = config.icon;
     const hasInlineSession = !!inlineSession;
-    const dragDisabled = sortDisabled || hasInlineSession;
-
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: { distance: 8 }
-        })
-    );
-
-    const handleDragEnd = useCallback(
-        (event: DragEndEvent) => {
-            const { active, over } = event;
-            if (!over || active.id === over.id || dragDisabled) return;
-
-            const oldIndex = categories.findIndex((c) => c.id === active.id);
-            const newIndex = categories.findIndex((c) => c.id === over.id);
-            if (oldIndex === -1 || newIndex === -1) return;
-
-            const reordered = withListOrderIndices(arrayMove(categories, oldIndex, newIndex));
-            onReorder(config.type, reordered);
-        },
-        [categories, config.type, dragDisabled, onReorder]
-    );
-
+    const { setNodeRef, isOver } = useDroppable({ id: config.type });
     const sortableIds = useMemo(() => categories.map((c) => c.id), [categories]);
 
     return (
         <section
+            ref={setNodeRef}
             className={cn(
-                'flex flex-col min-h-0 bo-surface border-l-4',
+                'flex flex-col min-h-0 bo-surface border-l-4 transition-all',
                 config.accent,
-                categories.length === 0 && 'border-dashed'
+                categories.length === 0 && 'border-dashed',
+                isOver && 'ring-2 ring-primary/40 bg-primary/[0.02]'
             )}
         >
             <div className={cn('bo-section-header', config.headerBg)}>
@@ -293,8 +314,9 @@ function CategorySection({
             </div>
 
             {categories.length === 0 ? (
-                <div className="px-4 py-6 text-sm text-muted-foreground text-center space-y-3">
+                <div className="px-4 py-6 text-sm text-muted-foreground text-center space-y-3 flex-1 min-h-[120px] flex flex-col items-center justify-center">
                     <p>{t('categories.backoffice.sectionEmpty')}</p>
+                    <p className="text-xs">{t('categories.backoffice.dropHere')}</p>
                     {missingSeedCount > 0 && onSeed && (
                         <Button
                             type="button"
@@ -312,50 +334,48 @@ function CategorySection({
                 </div>
             ) : (
                 <ScrollArea className="h-[min(530px,calc(100vh-14rem))]">
-                    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-                        <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
-                            <div>
-                                {categories.map((category, listIndex) => {
-                                    const isEditing =
-                                        inlineSession?.categoryId === category.id;
+                    <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+                        <div>
+                            {categories.map((category, listIndex) => {
+                                const isEditing =
+                                    inlineSession?.categoryId === category.id;
 
-                                    if (isEditing && inlineSession) {
-                                        return (
-                                            <div
-                                                key={category.id}
-                                                className="border-b border-border/60 last:border-b-0"
-                                            >
-                                                <CategoryInlineEditRow
-                                                    category={category}
-                                                    listIndex={listIndex}
-                                                    draft={inlineSession.draft}
-                                                    onDraftChange={onDraftChange}
-                                                    onCancel={onCancelEdit}
-                                                    onSaved={onSaved}
-                                                />
-                                            </div>
-                                        );
-                                    }
-
+                                if (isEditing && inlineSession) {
                                     return (
-                                        <SortableCategoryRow
+                                        <div
                                             key={category.id}
-                                            id={category.id}
-                                            disabled={dragDisabled}
+                                            className="border-b border-border/60 last:border-b-0"
                                         >
-                                            <CategoryRow
+                                            <CategoryInlineEditRow
                                                 category={category}
                                                 listIndex={listIndex}
-                                                isDimmed={hasInlineSession}
-                                                onOpenEdit={onOpenEdit}
-                                                onDelete={onDelete}
+                                                draft={inlineSession.draft}
+                                                onDraftChange={onDraftChange}
+                                                onCancel={onCancelEdit}
+                                                onSaved={onSaved}
                                             />
-                                        </SortableCategoryRow>
+                                        </div>
                                     );
-                                })}
-                            </div>
-                        </SortableContext>
-                    </DndContext>
+                                }
+
+                                return (
+                                    <SortableCategoryRow
+                                        key={category.id}
+                                        id={category.id}
+                                        disabled={dragDisabled}
+                                    >
+                                        <CategoryRow
+                                            category={category}
+                                            listIndex={listIndex}
+                                            isDimmed={hasInlineSession}
+                                            onOpenEdit={onOpenEdit}
+                                            onDelete={onDelete}
+                                        />
+                                    </SortableCategoryRow>
+                                );
+                            })}
+                        </div>
+                    </SortableContext>
                 </ScrollArea>
             )}
         </section>
@@ -370,6 +390,7 @@ function CategoriesPage() {
     const seedCategories = useSeedDefaultCategories();
     const reorderCategories = useReorderCategories();
     const [inlineSession, setInlineSession] = useState<InlineSession | null>(null);
+    const [activeCategory, setActiveCategory] = useState<Category | null>(null);
     const [orderedSections, setOrderedSections] = useState<
         Record<CategoryTransactionType, Category[]>
     >({
@@ -378,12 +399,29 @@ function CategoriesPage() {
         conta: [],
     });
 
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: { distance: 8 }
+        })
+    );
+
     useEffect(() => {
         if (!categories) return;
         setOrderedSections(groupCategoriesByType(categories));
     }, [categories]);
 
     const clearInlineSession = useCallback(() => setInlineSession(null), []);
+
+    const findCategoryById = useCallback(
+        (id: string): Category | null => {
+            for (const type of ['despesa', 'conta', 'receita'] as const) {
+                const found = orderedSections[type].find((category) => category.id === id);
+                if (found) return found;
+            }
+            return null;
+        },
+        [orderedSections]
+    );
 
     const openInlineEdit = useCallback(
         (category: Category, listIndex: number) => {
@@ -406,11 +444,19 @@ function CategoriesPage() {
         refetch();
     }, [clearInlineSession, refetch]);
 
-    const handleReorder = useCallback(
-        (type: CategoryTransactionType, reordered: Category[]) => {
-            setOrderedSections((prev) => ({ ...prev, [type]: reordered }));
+    const persistSections = useCallback(
+        (
+            next: Record<CategoryTransactionType, Category[]>,
+            affectedTypes: CategoryTransactionType[]
+        ) => {
+            setOrderedSections(next);
 
-            reorderCategories.mutate(toOrderUpdates(reordered), {
+            const updates =
+                affectedTypes.length === 1
+                    ? toOrderUpdates(next[affectedTypes[0]])
+                    : toOrderAndTypeUpdates(next, affectedTypes);
+
+            reorderCategories.mutate(updates, {
                 onError: () => {
                     toast({
                         title: t('toast.error'),
@@ -424,6 +470,42 @@ function CategoriesPage() {
             });
         },
         [categories, reorderCategories, t]
+    );
+
+    const handleDragStart = useCallback(
+        (event: DragStartEvent) => {
+            setActiveCategory(findCategoryById(String(event.active.id)));
+        },
+        [findCategoryById]
+    );
+
+    const clearActiveDrag = useCallback(() => setActiveCategory(null), []);
+
+    const handleDragEnd = useCallback(
+        (event: DragEndEvent) => {
+            clearActiveDrag();
+            const { active, over } = event;
+            if (!over || inlineSession || reorderCategories.isPending) return;
+
+            const next = applyCategoryDrag(orderedSections, String(active.id), String(over.id));
+            if (!next) return;
+
+            const fromType = findCategoryContainer(String(active.id), orderedSections);
+            const toType = findCategoryContainer(String(over.id), orderedSections);
+            if (!fromType || !toType) return;
+
+            const affectedTypes =
+                fromType === toType ? [fromType] : ([fromType, toType] as CategoryTransactionType[]);
+
+            persistSections(next, affectedTypes);
+        },
+        [
+            clearActiveDrag,
+            inlineSession,
+            orderedSections,
+            persistSections,
+            reorderCategories.isPending,
+        ]
     );
 
     const handleDelete = (id: string) => {
@@ -475,7 +557,7 @@ function CategoriesPage() {
     };
 
     const isEmpty = !categories?.length && !isLoading;
-    const sortDisabled = reorderCategories.isPending;
+    const dragDisabled = reorderCategories.isPending || !!inlineSession;
 
     return (
         <PrivateLayout>
@@ -507,53 +589,64 @@ function CategoriesPage() {
                     </div>
                 }
             >
-                <div
-                    className={cn(
-                        'grid flex-1 min-h-0 grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 lg:gap-5',
-                        isLoading && 'animate-pulse'
-                    )}
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCorners}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    onDragCancel={clearActiveDrag}
                 >
-                    {!isEmpty &&
-                        SECTIONS.map((config) => (
-                            <CategorySection
-                                key={config.type}
-                                config={config}
-                                categories={orderedSections[config.type]}
-                                inlineSession={inlineSession}
-                                sortDisabled={sortDisabled}
-                                missingSeedCount={
-                                    getMissingDefaultCategorySeeds(categories ?? []).filter(
-                                        (item) => item.type === config.type
-                                    ).length
-                                }
-                                onSeed={handleSeed}
-                                seedPending={seedCategories.isPending}
-                                onOpenEdit={openInlineEdit}
-                                onDraftChange={handleDraftChange}
-                                onCancelEdit={clearInlineSession}
-                                onSaved={handleInlineSaved}
-                                onDelete={handleDelete}
-                                onReorder={handleReorder}
-                            />
-                        ))}
+                    <div
+                        className={cn(
+                            'grid flex-1 min-h-0 grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3 lg:gap-5',
+                            isLoading && 'animate-pulse'
+                        )}
+                    >
+                        {!isEmpty &&
+                            SECTIONS.map((config) => (
+                                <CategorySection
+                                    key={config.type}
+                                    config={config}
+                                    categories={orderedSections[config.type]}
+                                    inlineSession={inlineSession}
+                                    dragDisabled={dragDisabled}
+                                    missingSeedCount={
+                                        getMissingDefaultCategorySeeds(categories ?? []).filter(
+                                            (item) => item.type === config.type
+                                        ).length
+                                    }
+                                    onSeed={handleSeed}
+                                    seedPending={seedCategories.isPending}
+                                    onOpenEdit={openInlineEdit}
+                                    onDraftChange={handleDraftChange}
+                                    onCancelEdit={clearInlineSession}
+                                    onSaved={handleInlineSaved}
+                                    onDelete={handleDelete}
+                                />
+                            ))}
 
-                    {isEmpty && (
-                        <div className="col-span-full flex flex-col items-center gap-4 text-muted-foreground py-12 rounded-xl border border-dashed border-border/80">
-                            <div className="flex items-center gap-2">
-                                <EmptyIcon className="w-6 h-6" />
-                                {t('categories.backoffice.empty')}
+                        {isEmpty && (
+                            <div className="col-span-full flex flex-col items-center gap-4 text-muted-foreground py-12 rounded-xl border border-dashed border-border/80">
+                                <div className="flex items-center gap-2">
+                                    <EmptyIcon className="w-6 h-6" />
+                                    {t('categories.backoffice.empty')}
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    onClick={handleSeed}
+                                    disabled={seedCategories.isPending}
+                                >
+                                    <Download className="w-4 h-4 mr-2" />
+                                    {t('categories.backoffice.seed')}
+                                </Button>
                             </div>
-                            <Button
-                                variant="outline"
-                                onClick={handleSeed}
-                                disabled={seedCategories.isPending}
-                            >
-                                <Download className="w-4 h-4 mr-2" />
-                                {t('categories.backoffice.seed')}
-                            </Button>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+
+                    <DragOverlay dropAnimation={null} className="z-[100]">
+                        {activeCategory ? <CategoryDragPreview category={activeCategory} /> : null}
+                    </DragOverlay>
+                </DndContext>
             </PageShell>
         </PrivateLayout>
     );

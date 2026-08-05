@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Filter, TrendingUp, TrendingDown, Receipt, CreditCard, Tag, RotateCcw, List, CircleDollarSign, ArrowDown, ArrowUp } from 'lucide-react';
 import { Label } from './ui/label';
 import { Input } from './ui/input';
+import { DatePicker } from './ui/date-picker';
 import { useTranslation } from 'react-i18next';
 import useUserStore from '@/store/UserStore';
 import { useCategories, type CategoryWithIcon } from '@/hooks/use-categories';
@@ -224,21 +225,17 @@ export default function TransactionFiltersDialog({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label>{t('filters.from', 'De')}</Label>
-              <Input
-                name="startDate"
-                type="date"
+              <DatePicker
                 value={filters.startDate}
-                onChange={(e) => onChange('startDate', e.target.value)}
+                onChange={(value) => onChange('startDate', value)}
                 className="bg-background/50 h-10 border-input"
               />
             </div>
             <div className="space-y-2">
               <Label>{t('filters.till', 'Até')}</Label>
-              <Input
-                name="endDate"
-                type="date"
+              <DatePicker
                 value={filters.endDate}
-                onChange={(e) => onChange('endDate', e.target.value)}
+                onChange={(value) => onChange('endDate', value)}
                 className="bg-background/50 h-10 border-input"
               />
             </div>

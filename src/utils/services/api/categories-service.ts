@@ -127,11 +127,17 @@ export const deleteCategory = async (id: string): Promise<void> => {
     await deleteDoc(ref);
 };
 
-export type CategoryOrderUpdate = { id: string; order: number };
+export type CategoryOrderUpdate = {
+    id: string;
+    order: number;
+    type?: Category['type'];
+};
 
 export const reorderCategories = async (updates: CategoryOrderUpdate[]): Promise<void> => {
     await Promise.all(
-        updates.map(({ id, order }) => updateCategory(id, { order }))
+        updates.map(({ id, order, type }) =>
+            updateCategory(id, type !== undefined ? { order, type } : { order })
+        )
     );
 };
 

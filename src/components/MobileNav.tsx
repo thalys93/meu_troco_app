@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, Receipt, Wallet } from 'lucide-react';
+import { Home, TrendingUp, TrendingDown, Receipt, Wallet, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { Bank } from '@phosphor-icons/react';
@@ -27,6 +27,7 @@ const MobileNav = () => {
       { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
       { name: t('sidebar.bills'), href: '/dashboard/contas', icon: Receipt },
       { name: t('dashboard.actions.wallets'), href: '/dashboard/wallets', icon: Wallet },
+      { name: t('sidebar.reports'), href: '/dashboard/relatorios', icon: BarChart3 },
       isMobile ? { name: t('sidebar.transactions'), href: '/dashboard/transactions', icon: Bank } : null,
     ];
     return items.filter((item): item is NavItem => item !== null);

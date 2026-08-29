@@ -10,6 +10,7 @@ import { Transaction } from "@/utils/services/api/transation";
 import {
   isBillPaid,
   isBillPending,
+  isBillSkipped,
 } from "@/subdomains/dashboard/utils/transaction-filters";
 import { useTranslation } from "react-i18next";
 
@@ -51,6 +52,11 @@ export default function BillsStatusChart({ transactions }: BillsStatusChartProps
     [bills]
   );
 
+  const skippedBills = React.useMemo(
+    () => bills.filter(isBillSkipped),
+    [bills]
+  );
+
   const paidTotal = React.useMemo(
     () => paidBills.reduce((acc, item) => acc + item.value, 0),
     [paidBills]
@@ -61,8 +67,14 @@ export default function BillsStatusChart({ transactions }: BillsStatusChartProps
     [pendingBills]
   );
 
+  const skippedTotal = React.useMemo(
+    () => skippedBills.reduce((acc, item) => acc + item.value, 0),
+    [skippedBills]
+  );
+
   const paidCount = paidBills.length;
   const pendingCount = pendingBills.length;
+  const skippedCount = skippedBills.length;
 
   const data = React.useMemo(() => {
     const slices = [];
@@ -84,13 +96,31 @@ export default function BillsStatusChart({ transactions }: BillsStatusChartProps
         stroke: "hsl(var(--background))",
       });
     }
+    if (skippedCount > 0) {
+      slices.push({
+        status: "skipped",
+        label: t("transactionList.skip"),
+        total: Number(skippedTotal.toFixed(2)),
+        fill: "#ef4444",
+        stroke: "hsl(var(--background))",
+      });
+    }
     return slices;
-  }, [paidCount, paidTotal, pendingCount, pendingTotal, t]);
+  }, [
+    paidCount,
+    paidTotal,
+    pendingCount,
+    pendingTotal,
+    skippedCount,
+    skippedTotal,
+    t,
+  ]);
 
   const chartConfig = React.useMemo(
     () => ({
       paid: { label: t("dashboard.billsChart.paid"), color: "#22c55e" },
       pending: { label: t("dashboard.billsChart.pending"), color: "#f59e0b" },
+      skipped: { label: t("transactionList.skip"), color: "#ef4444" },
     }),
     [t]
   );
@@ -103,11 +133,14 @@ export default function BillsStatusChart({ transactions }: BillsStatusChartProps
         </CardTitle>
         <p className="text-xs text-muted-foreground">
           {bills.length > 0
-            ? t("dashboard.billsChart.summary", {
+            ? t("dashboard.billsChart.summaryWithSkipped", {
                 paidCount,
                 total: bills.length,
                 pendingCount,
                 pendingAmount: formatCurrency(pendingTotal),
+                skippedCount,
+                defaultValue:
+                  "{{paidCount}}/{{total}} pagas · {{pendingCount}} pendente · {{skippedCount}} não vou pagar · {{pendingAmount}}",
               })
             : t("dashboard.billsChart.noData")}
         </p>

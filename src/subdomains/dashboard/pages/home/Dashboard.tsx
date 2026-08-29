@@ -25,6 +25,7 @@ import { useCategories } from '@/hooks/use-categories';
 import {
   filterTransactionsByPreferences,
   summarizeIncomeExpense,
+  withoutSkippedTransactions,
 } from '../../utils/transaction-filters';
 
 function DashboardHomeBody() {
@@ -73,15 +74,17 @@ function DashboardHomeBody() {
   );
   const balanceTransactions = useMemo(
     () =>
-      filterTransactionsByPreferences(
-        transactions,
-        {
-          ...transactionListFilters,
-          dateRangeLockedToMonth: false,
-          startDate: balancePeriod.startDate,
-          endDate: balancePeriod.endDate,
-        },
-        { categoryLookup }
+      withoutSkippedTransactions(
+        filterTransactionsByPreferences(
+          transactions,
+          {
+            ...transactionListFilters,
+            dateRangeLockedToMonth: false,
+            startDate: balancePeriod.startDate,
+            endDate: balancePeriod.endDate,
+          },
+          { categoryLookup }
+        )
       ),
     [balancePeriod.endDate, balancePeriod.startDate, categoryLookup, transactionListFilters, transactions]
   );

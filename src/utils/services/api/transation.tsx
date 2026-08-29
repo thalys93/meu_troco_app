@@ -24,11 +24,15 @@ export interface Transaction {
     category: string;
     type: TransactionType;
     paid?: boolean;
+    skipped?: boolean;
     walletId: string;
     cardId?: string;
     allocations?: WalletAllocation[];
     recurrenceId?: string;
 }
+
+const canSkipTransactionType = (type: TransactionType) =>
+    type === 'conta' || type === 'despesa';
 
 const formatDateToYmd = (value: Date) =>
     `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(
@@ -64,6 +68,13 @@ const normalizePaidField = (type: TransactionType, paid: unknown): boolean | und
     return false;
 };
 
+const normalizeSkippedField = (type: TransactionType, skipped: unknown): boolean | undefined => {
+    if (!canSkipTransactionType(type)) return undefined;
+    if (skipped === true || skipped === 1 || skipped === 'true') return true;
+    if (skipped === false || skipped === 0 || skipped === 'false') return false;
+    return false;
+};
+
 const normalizeTransactionValue = (value: unknown): number => {
     if (typeof value === 'number' && Number.isFinite(value)) return value;
     if (typeof value === 'string') {
@@ -75,7 +86,7 @@ const normalizeTransactionValue = (value: unknown): number => {
 
 const mapFirestoreTransaction = (
     id: string,
-    raw: Transaction & { date?: unknown; value?: unknown; paid?: unknown }
+    raw: Transaction & { date?: unknown; value?: unknown; paid?: unknown; skipped?: unknown }
 ): Transaction => {
     const type = raw.type;
     return {
@@ -84,6 +95,7 @@ const mapFirestoreTransaction = (
         date: normalizeTransactionDate(raw.date),
         value: normalizeTransactionValue(raw.value),
         paid: normalizePaidField(type, raw.paid),
+        skipped: normalizeSkippedField(type, raw.skipped),
         id,
     };
 };
@@ -132,6 +144,10 @@ const createTransaction = async (data: Transaction, uid: string) => {
         Object.assign(firestorePayload, { paid: payload.paid ?? false });
     }
 
+    if (canSkipTransactionType(payload.type)) {
+        Object.assign(firestorePayload, { skipped: payload.skipped ?? false });
+    }
+
     const ref = collection(FireStore, 'transactions', uid, 'userTransactions');
     const docRef = await addDoc(ref, firestorePayload);
     return docRef.id;
@@ -139,7 +155,12 @@ const createTransaction = async (data: Transaction, uid: string) => {
 
 const toggleBillPaid = async (uid: string, id: string, paid: boolean) => {
     const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
-    await updateDoc(ref, { paid });
+    await updateDoc(ref, paid ? { paid, skipped: false } : { paid });
+}
+
+const toggleTransactionSkipped = async (uid: string, id: string, skipped: boolean) => {
+    const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
+    await updateDoc(ref, skipped ? { skipped, paid: false } : { skipped });
 }
 
 const deleteTransaction = async (uid: string, id: string) => {
@@ -175,7 +196,12 @@ export const getUserTransaction = async (uid: string, id: string): Promise<Trans
     const ref = doc(FireStore, 'transactions', uid, 'userTransactions', id);
     const docSnap = await getDoc(ref);
     if (docSnap.exists()) {
-        const raw = docSnap.data() as Transaction & { date?: unknown; value?: unknown; paid?: unknown };
+        const raw = docSnap.data() as Transaction & {
+            date?: unknown;
+            value?: unknown;
+            paid?: unknown;
+            skipped?: unknown;
+        };
         return mapFirestoreTransaction(docSnap.id, raw);
     }
     return null;
@@ -195,7 +221,12 @@ export const getUserTransactions = async (uid: string): Promise<Transaction[]> =
     const snapshot = await getDocs(ref);
 
     return snapshot.docs.map((doc) => {
-        const raw = doc.data() as Transaction & { date?: unknown; value?: unknown; paid?: unknown };
+        const raw = doc.data() as Transaction & {
+            date?: unknown;
+            value?: unknown;
+            paid?: unknown;
+            skipped?: unknown;
+        };
         return mapFirestoreTransaction(doc.id, raw);
     });
 };
@@ -225,6 +256,16 @@ export const useToggleBillPaid = () => {
     return useMutation({
         mutationFn: ({ id, paid }: { id: string; paid: boolean }) =>
             toggleBillPaid(uid, id, paid),
+        retry: false,
+    });
+};
+
+export const useToggleTransactionSkipped = () => {
+    const { uid } = useUserStore();
+
+    return useMutation({
+        mutationFn: ({ id, skipped }: { id: string; skipped: boolean }) =>
+            toggleTransactionSkipped(uid, id, skipped),
         retry: false,
     });
 };

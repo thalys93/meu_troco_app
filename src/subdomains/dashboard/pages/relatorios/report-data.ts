@@ -2,7 +2,10 @@ import { Transaction } from "@/utils/services/api/transation";
 import {
   isBillPaid,
   isBillPending,
+  isBillSkipped,
+  isTransactionSkipped,
   summarizeTransactionTypes,
+  withoutSkippedTransactions,
 } from "../../utils/transaction-filters";
 import {
   parseLocalDateInput,
@@ -10,7 +13,7 @@ import {
   parseLocalDateInputAtStartOfDay,
 } from "../../utils/month-range";
 
-export type ReportBillStatus = "all" | "paid" | "pending";
+export type ReportBillStatus = "all" | "paid" | "pending" | "skipped";
 
 export type ReportSections = {
   conta: boolean;
@@ -68,6 +71,7 @@ export function buildReportData(
     if (tr.type !== "conta") return true;
     if (billStatus === "paid") return isBillPaid(tr);
     if (billStatus === "pending") return isBillPending(tr);
+    if (billStatus === "skipped") return isBillSkipped(tr);
     return true;
   };
 
@@ -83,15 +87,16 @@ export function buildReportData(
     const items = inMonth
       .filter((tr) => tr.type === type && matchBillStatus(tr))
       .sort(sortByDateAsc);
+    const countableItems = withoutSkippedTransactions(items);
     resultSections.push({
       type,
       items,
-      total: items.reduce((acc, tr) => acc + tr.value, 0),
+      total: countableItems.reduce((acc, tr) => acc + tr.value, 0),
     });
   }
 
   const flat = resultSections.flatMap((section) => section.items);
-  const summary = summarizeTransactionTypes(flat);
+  const summary = summarizeTransactionTypes(withoutSkippedTransactions(flat));
   const billsTotal = sections.conta ? summary.billsTotal : 0;
   const incomeTotal = sections.receita ? summary.incomeTotal : 0;
   const expenseTotal = sections.despesa ? summary.expenseTotal : 0;
@@ -130,6 +135,16 @@ if (import.meta.env.DEV) {
       walletId: "w1",
     },
     {
+      value: 80,
+      date: "2026-07-12",
+      description: "Assinatura",
+      category: "lazer",
+      type: "conta",
+      paid: false,
+      skipped: true,
+      walletId: "w1",
+    },
+    {
       value: 3000,
       date: "2026-07-01",
       description: "Salário",
@@ -143,6 +158,15 @@ if (import.meta.env.DEV) {
       description: "Mercado",
       category: "food",
       type: "despesa",
+      walletId: "w1",
+    },
+    {
+      value: 40,
+      date: "2026-07-16",
+      description: "Delivery",
+      category: "food",
+      type: "despesa",
+      skipped: true,
       walletId: "w1",
     },
     {
@@ -161,9 +185,13 @@ if (import.meta.env.DEV) {
     { conta: true, receita: true, despesa: true },
     "all"
   );
-  assert(all.itemCount === 4, "month filter");
+  assert(all.itemCount === 6, "month filter includes skipped");
   assert(all.sections[0]?.type === "conta", "contas first");
-  assert(all.balance === 3000 - 200 - 150, "balance");
+  assert(all.balance === 3000 - 200 - 150, "balance excludes skipped");
+  assert(
+    all.sections[0]?.total === 150,
+    "conta section total excludes skipped"
+  );
   const pending = buildReportData(
     sample,
     "2026-07-01",
@@ -172,4 +200,17 @@ if (import.meta.env.DEV) {
     "pending"
   );
   assert(pending.itemCount === 1 && pending.billsTotal === 50, "pending bills");
+  const skipped = buildReportData(
+    sample,
+    "2026-07-01",
+    "2026-07-31",
+    { conta: true, receita: false, despesa: false },
+    "skipped"
+  );
+  assert(
+    skipped.itemCount === 1 &&
+      isTransactionSkipped(skipped.sections[0]?.items[0]!) &&
+      skipped.billsTotal === 0,
+    "skipped bills listed without balance impact"
+  );
 }

@@ -1,7 +1,11 @@
 import { forwardRef } from "react";
 import { Transaction } from "@/utils/services/api/transation";
 import { cn } from "@/lib/utils";
-import { isBillPaid } from "../../utils/transaction-filters";
+import {
+  isBillPaid,
+  isBillSkipped,
+  isTransactionSkipped,
+} from "../../utils/transaction-filters";
 import { parseLocalDateInput } from "../../utils/month-range";
 import type { ReportData, ReportSectionData } from "./report-data";
 import {
@@ -32,10 +36,20 @@ type ReportDocumentProps = {
     status: string;
     paid: string;
     pending: string;
+    skipped: string;
     sectionTotal: string;
     empty: string;
   };
 };
+
+function billStatusLabel(
+  item: Transaction,
+  labels: ReportDocumentProps["labels"]
+) {
+  if (isBillSkipped(item)) return labels.skipped;
+  if (isBillPaid(item)) return labels.paid;
+  return labels.pending;
+}
 
 const SECTION_THEME = {
   conta: {
@@ -119,31 +133,50 @@ function ReportTable({
             </tr>
           </thead>
           <tbody>
-            {section.items.map((item: Transaction, index) => (
-              <tr
-                key={item.id ?? `${item.description}-${item.date}-${index}`}
-                className="border-b border-neutral-100 text-neutral-900"
-              >
-                <td className="py-4 pr-4 whitespace-nowrap align-top">
-                  {formatDate(item.date)}
-                </td>
-                <td className="py-4 pr-4 align-top">{item.description}</td>
-                <td className="py-4 pr-4 align-top">{getCategoryLabel(item.category)}</td>
-                {showStatus && (
-                  <td className="py-4 pr-4 align-top">
-                    {isBillPaid(item) ? labels.paid : labels.pending}
-                  </td>
-                )}
-                <td
-                  className={cn(
-                    "py-4 text-right whitespace-nowrap tabular-nums align-top font-semibold",
-                    theme.value
-                  )}
+            {section.items.map((item: Transaction, index) => {
+              const skipped = isTransactionSkipped(item);
+              return (
+                <tr
+                  key={item.id ?? `${item.description}-${item.date}-${index}`}
+                  className="border-b border-neutral-100 text-neutral-900"
                 >
-                  {formatCurrency(item.value)}
-                </td>
-              </tr>
-            ))}
+                  <td className="py-4 pr-4 whitespace-nowrap align-top">
+                    {formatDate(item.date)}
+                  </td>
+                  <td
+                    className={cn(
+                      "py-4 pr-4 align-top",
+                      skipped && "text-red-700"
+                    )}
+                  >
+                    {item.description}
+                  </td>
+                  <td className="py-4 pr-4 align-top">
+                    {getCategoryLabel(item.category)}
+                  </td>
+                  {showStatus && (
+                    <td
+                      className={cn(
+                        "py-4 pr-4 align-top font-semibold whitespace-nowrap",
+                        skipped && "text-red-700",
+                        !skipped && isBillPaid(item) && "text-emerald-700",
+                        !skipped && !isBillPaid(item) && "text-amber-700"
+                      )}
+                    >
+                      {billStatusLabel(item, labels)}
+                    </td>
+                  )}
+                  <td
+                    className={cn(
+                      "py-4 text-right whitespace-nowrap tabular-nums align-top font-semibold",
+                      skipped ? "text-red-700" : theme.value
+                    )}
+                  >
+                    {formatCurrency(item.value)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
           <tfoot>
             <tr

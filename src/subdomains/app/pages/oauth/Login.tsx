@@ -1,10 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Coins, Lock, Mail, ArrowLeft } from 'lucide-react';
+import { AlertCircle, Lock, Mail, ArrowUpRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import ThemeToggle from '@/components/ThemeToggle';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
 import SocialAuthGroup from '../../components/SocialAuthGroup';
+import AuthSplitLayout from '../../components/AuthSplitLayout';
 import { Link, useNavigate } from 'react-router-dom';
 import { Input, PasswordInput } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,9 +17,9 @@ import { motion } from 'framer-motion';
 import { usePublicAuthGuard } from '@/hooks/use-public-auth-guard';
 
 const initialValues: LoginForm = {
-  email: "",
-  password: ""
-}
+  email: '',
+  password: '',
+};
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -30,17 +29,11 @@ const LoginPage = () => {
     minLoadingMs: 1800,
   });
 
-  const randomQuote = React.useMemo(() => {
-    const quotes = ['q1', 'q2', 'q3'];
-    const randomIndex = Math.floor(Math.random() * quotes.length);
-    return quotes[randomIndex];
-  }, []);
-
   const loginForm = useForm<LoginForm>({
     defaultValues: initialValues,
-  })
+  });
   const login = useLoginWithEmail();
-  const { setUid } = useUserStore()
+  const { setUid } = useUserStore();
 
   const handleSubmit = (data: LoginForm) => {
     login.mutate(data, {
@@ -48,210 +41,114 @@ const LoginPage = () => {
         toast({
           title: t('toast.welcomeBack'),
           description: t('toast.loginSuccess'),
-        })
-        setUid(uid)
-        navigate("/dashboard", { replace: true });
+        });
+        setUid(uid);
+        navigate('/dashboard', { replace: true });
       },
       onError: () => {
         toast({
           title: t('toast.errorLogin'),
           description: t('toast.errorLogin2'),
-          variant: "destructive"
-        })
-      }
-    })
-  }
+          variant: 'destructive',
+        });
+      },
+    });
+  };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row overflow-hidden bg-background relative">
+    <>
       {isAuthChecking && (
-        <div className="absolute top-0 left-0 h-1 w-full bg-primary/15 z-50 overflow-hidden">
+        <div className="fixed left-0 top-0 z-50 h-1 w-full overflow-hidden bg-primary/15">
           <motion.div
             className="h-full bg-primary"
-            initial={{ x: "-100%" }}
-            animate={{ x: "100%" }}
-            transition={{ duration: 1.1, repeat: Infinity, ease: "linear" }}
+            initial={{ x: '-100%' }}
+            animate={{ x: '100%' }}
+            transition={{ duration: 1.1, repeat: Infinity, ease: 'linear' }}
           />
         </div>
       )}
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8 }}
-        className="hidden md:flex md:w-1/2 lg:w-[50%] relative p-12 flex-col justify-between overflow-hidden"
-      >
-        <div className="absolute inset-0 bg-white dark:bg-primary/5 transition-colors duration-500" />
-
-        <div className="absolute inset-0 overflow-hidden">
-          <motion.div
-            animate={{
-              scale: [1, 1.2, 1],
-              opacity: [0.1, 0.2, 0.1],
-              x: [0, 50, 0],
-              y: [0, -30, 0]
-            }}
-            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-            className="absolute -top-1/4 -left-1/4 w-[80%] h-[80%] bg-primary rounded-full filter blur-[120px]"
-          />
-          <motion.div
-            animate={{
-              scale: [1.2, 1, 1.2],
-              opacity: [0.05, 0.15, 0.05],
-              x: [0, -50, 0],
-              y: [0, 50, 0]
-            }}
-            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            className="absolute -bottom-1/4 -right-1/4 w-[70%] h-[70%] bg-amber-200/80 dark:bg-primary/40 rounded-full filter blur-[100px]"
-          />
+      <AuthSplitLayout footer={t('login.hero_description')}>
+      <div className="space-y-6">
+        <div className="space-y-1.5">
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{t('login.welcome')}</h1>
+          <p className="text-sm text-muted-foreground">{t('login.card_description')}</p>
         </div>
 
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+        <SocialAuthGroup />
 
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-10 cursor-pointer group" onClick={() => navigate("/")}>
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-sm shadow-primary/20 group-hover:scale-105 transition-transform">
-              <Coins className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{t('brand.name')}</span>
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-border" />
           </div>
-
-          <div className="max-w-md">
-            <h2 className="text-4xl lg:text-5xl font-extrabold text-slate-900 dark:text-white leading-tight mb-6">
-              {t('login.hero_title')}
-            </h2>
-            <p className="text-slate-600 dark:text-white/70 text-lg leading-relaxed">
-              {t('login.hero_description')}
-            </p>
+          <div className="relative flex justify-center text-[11px] uppercase tracking-[0.14em]">
+            <span className="bg-card px-3 text-muted-foreground">{t('login.or')}</span>
           </div>
         </div>
 
-        <div className="relative z-10">
-          <div className="p-6 bg-white/60 dark:bg-white/5 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl max-w-sm shadow-xl shadow-slate-200/50 dark:shadow-primary/5">
-            <p className="text-slate-700 dark:text-white/80 italic mb-4">
-              "{t(`login.quotes.${randomQuote}`)}"
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 dark:bg-primary/20 border border-primary/20 dark:border-primary/30 flex items-center justify-center text-primary font-bold">MT</div>
-              <div>
-                <p className="text-slate-900 dark:text-white font-medium text-sm">{t('login.team')}</p>
-                <p className="text-slate-500 dark:text-primary/80 text-xs select-none">{t('login.appDescription')}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      <div className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 bg-background relative overflow-y-auto">
-        <div className="w-full flex items-center justify-end gap-4 mb-4 md:absolute md:top-6 md:right-6 md:mb-0">
-          <LanguageSwitcher />
-          <ThemeToggle />
-          <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            {t('navigation.back')}
-          </Button>
-        </div>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="w-full max-w-md space-y-8"
-        >
-          <div className="md:hidden flex justify-center mb-8">
-            <div className="flex items-center gap-2">
-              <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center shadow-sm shadow-primary/20">
-                <Coins className="w-6 h-6 text-primary-foreground" />
-              </div>
-              <span className="text-lg font-bold">{t('brand.name')}</span>
-            </div>
+        <Form form={loginForm} onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">{t('login.emailInput')}</Label>
+            <Input
+              leftIcon={<Mail className="h-5 w-5 text-muted-foreground/60" />}
+              type="email"
+              name="email"
+              placeholder={t('login.emailPlaceholder')}
+              control={loginForm.control}
+              className="h-12 border-border/80 bg-background transition-colors focus:bg-background"
+            />
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Login</h1>
-            <p className="text-muted-foreground">
-              {t('login.card_description')}
-            </p>
+            <Label htmlFor="password">{t('login.passwordInput')}</Label>
+            <PasswordInput
+              leftIcon={<Lock className="h-5 w-5 text-muted-foreground/60" />}
+              type="password"
+              name="password"
+              placeholder={t('login.passwordPlaceholder')}
+              control={loginForm.control}
+              className="h-12 border-border/80 bg-background transition-colors focus:bg-background"
+            />
           </div>
 
-          <div className="space-y-6">
-            <Form form={loginForm} onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">{t('login.emailInput')}</Label>
-                <Input
-                  leftIcon={<Mail className='w-5 h-5 text-muted-foreground/60' />}
-                  type="email"
-                  name="email"
-                  placeholder={t('login.emailPlaceholder')}
-                  control={loginForm.control}
-                  className="h-12 bg-muted/30 focus:bg-background transition-all border-muted-foreground/10"
-                />
+          {login.error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center space-x-2 rounded-lg border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive"
+            >
+              <AlertCircle className="h-4 w-4" />
+              <span>{login.error.message}</span>
+            </motion.div>
+          )}
+
+          <Button
+            type="submit"
+            className="h-12 w-full rounded-full text-base font-semibold shadow-md shadow-primary/20"
+            disabled={login.isPending || isAuthChecking}
+          >
+            {login.isPending ? (
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                {t('login.submitLoading')}
               </div>
+            ) : (
+              <span className="inline-flex items-center gap-2">
+                {t('login.access')}
+                <ArrowUpRight className="h-4 w-4" />
+              </span>
+            )}
+          </Button>
+        </Form>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">{t('login.passwordInput')}</Label>
-                  <Link to="/oauth/forgot-password" className="text-xs text-primary hover:underline">
-                    {t('login.forgotPassword')}
-                  </Link>
-                </div>
-                <PasswordInput
-                  leftIcon={<Lock className='w-5 h-5 text-muted-foreground/60' />}
-                  type="password"
-                  name="password"
-                  placeholder={t('login.passwordPlaceholder')}
-                  control={loginForm.control}
-                  className="h-12 bg-muted/30 focus:bg-background transition-all border-muted-foreground/10"
-                />
-              </div>
-
-              {login.error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="flex items-center space-x-2 p-3 rounded-lg bg-destructive/10 text-destructive text-sm border border-destructive/20"
-                >
-                  <AlertCircle className="w-4 h-4" />
-                  <span>{login.error.message}</span>
-                </motion.div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full h-12 text-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-[1.01]"
-                disabled={login.isPending || isAuthChecking}
-              >
-                {login.isPending ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                    {t('login.submitLoading')}
-                  </div>
-                ) : t('login.access')}
-              </Button>
-            </Form>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-muted" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  {t('login.or')}
-                </span>
-              </div>
-            </div>
-
-            <SocialAuthGroup />
-
-            <p className="text-center text-sm text-muted-foreground">
-              {t('login.accountCall')}{' '}
-              <Link to="/oauth/register" className="font-semibold text-primary hover:underline">
-                {t('login.createAccountNow')}
-              </Link>
-            </p>
-          </div>
-        </motion.div>
+        <p className="text-center text-sm text-muted-foreground">
+          {t('login.accountCall')}{' '}
+          <Link to="/oauth/register" className="font-semibold text-primary hover:underline">
+            {t('login.createAccountNow')}
+          </Link>
+        </p>
       </div>
-    </div>
+    </AuthSplitLayout>
+    </>
   );
 };
 

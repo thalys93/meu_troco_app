@@ -14,8 +14,8 @@ import { useCategories } from '@/hooks/use-categories';
 import QuickAmountButtons from '@/components/QuickAmountButtons';
 import { cn } from '@/lib/utils';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { ChevronLeft, ChevronRight, Loader2, Receipt, Tag, TrendingDown } from 'lucide-react';
-import type { Recurrence, RecurrenceType } from '@/types/Recurrence';
+import { ChevronLeft, ChevronRight, Loader2, Tag } from 'lucide-react';
+import type { Recurrence } from '@/types/Recurrence';
 import {
   toMonthlyEstimatedValue,
   type RecurrenceAmountPeriod,
@@ -30,7 +30,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { useAccountStatus } from '@/hooks/use-account-status';
 
-type WizardStep = 0 | 1 | 2 | 3 | 4;
+type WizardStep = 0 | 1 | 2 | 3;
 
 type RecurrenceWizardProps = {
   recurrenceId?: string;
@@ -39,7 +39,7 @@ type RecurrenceWizardProps = {
   onCancel: () => void;
 };
 
-const STEPS: WizardStep[] = [0, 1, 2, 3, 4];
+const STEPS: WizardStep[] = [0, 1, 2, 3];
 
 const RecurrenceWizard = ({
   recurrenceId,
@@ -50,8 +50,7 @@ const RecurrenceWizard = ({
   const { t, i18n } = useTranslation();
   const { uid } = useUserStore();
   const { isReadOnly } = useAccountStatus();
-  const { expenseCategories, billCategories, getCategoryIcon, getCategoryLabel } =
-    useCategories();
+  const { expenseCategories, getCategoryIcon, getCategoryLabel } = useCategories();
   const { wallets, fetchWallets } = useWalletsStore();
   const { mutate: create, isPending: isCreating } = useCreateRecurrence();
   const { mutate: edit, isPending: isEditing } = useEditRecurrence(
@@ -60,11 +59,9 @@ const RecurrenceWizard = ({
 
   const [step, setStep] = useState<WizardStep>(0);
   const [description, setDescription] = useState('');
-  const [type, setType] = useState<RecurrenceType>('despesa');
   const [category, setCategory] = useState('');
   const [displayValue, setDisplayValue] = useState('');
   const [amountPeriod, setAmountPeriod] = useState<RecurrenceAmountPeriod>('month');
-  const [dueDay, setDueDay] = useState('');
   const [walletId, setWalletId] = useState(NO_WALLET_ID);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
 
@@ -75,8 +72,6 @@ const RecurrenceWizard = ({
     () => wallets.filter((w) => w.name !== LEGACY_POCKET_CARD_NAME),
     [wallets]
   );
-
-  const categories = type === 'conta' ? billCategories : expenseCategories;
 
   const currencySymbol = useMemo(() => {
     try {
@@ -101,13 +96,11 @@ const RecurrenceWizard = ({
   useEffect(() => {
     if (!initialData) return;
     setDescription(initialData.description);
-    setType(initialData.type);
     setCategory(initialData.category);
     setDisplayValue(
       initialData.estimatedValue.toFixed(2).replace('.', i18n.language === 'pt-BR' ? ',' : '.')
     );
     setAmountPeriod('month');
-    setDueDay(initialData.dueDay ? String(initialData.dueDay) : '');
     setWalletId(initialData.walletId || NO_WALLET_ID);
   }, [initialData, i18n.language]);
 
@@ -116,9 +109,6 @@ const RecurrenceWizard = ({
 
   const inputAmount = parseDisplayValue(displayValue);
   const monthlyEstimatedValue = toMonthlyEstimatedValue(inputAmount, amountPeriod);
-  const dueDayNumber = Number(dueDay);
-  const hasValidDueDay =
-    Number.isInteger(dueDayNumber) && dueDayNumber >= 1 && dueDayNumber <= 31;
 
   const formatCurrency = (value: number) =>
     value.toLocaleString(i18n.language, {
@@ -131,13 +121,11 @@ const RecurrenceWizard = ({
       case 0:
         return description.trim().length > 0;
       case 1:
-        return type === 'conta' || type === 'despesa';
-      case 2:
         return Boolean(category);
-      case 3:
+      case 2:
         return inputAmount > 0;
-      case 4:
-        return Boolean(walletId) && (type !== 'conta' || hasValidDueDay);
+      case 3:
+        return Boolean(walletId);
       default:
         return false;
     }
@@ -146,7 +134,7 @@ const RecurrenceWizard = ({
   const goNext = () => {
     if (!canAdvance()) return;
     setDirection('forward');
-    setStep((prev) => Math.min(4, prev + 1) as WizardStep);
+    setStep((prev) => Math.min(3, prev + 1) as WizardStep);
   };
 
   const goBack = () => {
@@ -186,10 +174,9 @@ const RecurrenceWizard = ({
     const payload: Recurrence = {
       description: description.trim(),
       category,
-      type,
+      type: 'despesa',
       estimatedValue: Math.round(monthlyEstimatedValue * 100) / 100,
       walletId,
-      ...(hasValidDueDay ? { dueDay: dueDayNumber } : {}),
     };
 
     const onSuccess = () => {
@@ -217,13 +204,12 @@ const RecurrenceWizard = ({
 
   const stepQuestions: Record<WizardStep, string> = {
     0: t('recurrence.wizard.stepDescription'),
-    1: t('recurrence.wizard.stepType'),
-    2: t('recurrence.wizard.stepCategory'),
-    3:
+    1: t('recurrence.wizard.stepCategory'),
+    2:
       amountPeriod === 'week'
         ? t('recurrence.wizard.stepAmountWeek')
         : t('recurrence.wizard.stepAmountMonth'),
-    4: t('recurrence.wizard.stepConfirm'),
+    3: t('recurrence.wizard.stepConfirm'),
   };
 
   const CategoryIcon = category ? (getCategoryIcon(category) ?? Tag) : Tag;
@@ -252,7 +238,7 @@ const RecurrenceWizard = ({
         )}
       >
         <p className="mb-1 text-sm font-medium text-muted-foreground">
-          {t('recurrence.wizard.step', { current: step + 1, total: 5 })}
+          {t('recurrence.wizard.step', { current: step + 1, total: 4 })}
         </p>
         <h2 className="mb-6 text-xl font-semibold tracking-tight md:text-2xl">
           {stepQuestions[step]}
@@ -272,55 +258,12 @@ const RecurrenceWizard = ({
         )}
 
         {step === 1 && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => {
-                if (type !== 'conta') setCategory('');
-                setType('conta');
-              }}
-              className={cn(
-                'flex flex-col items-center gap-3 rounded-xl border-2 p-6 transition-all',
-                type === 'conta'
-                  ? 'border-amber-500/60 bg-amber-500/10'
-                  : 'border-border/50 hover:border-amber-500/30'
-              )}
-            >
-              <Receipt className="h-8 w-8 text-amber-400" />
-              <span className="font-medium">{t('sidebar.bills')}</span>
-              <span className="text-center text-xs text-muted-foreground">
-                {t('recurrence.wizard.typeBillHint')}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                if (type !== 'despesa') setCategory('');
-                setType('despesa');
-              }}
-              className={cn(
-                'flex flex-col items-center gap-3 rounded-xl border-2 p-6 transition-all',
-                type === 'despesa'
-                  ? 'border-red-500/60 bg-red-500/10'
-                  : 'border-border/50 hover:border-red-500/30'
-              )}
-            >
-              <TrendingDown className="h-8 w-8 text-red-400" />
-              <span className="font-medium">{t('sidebar.expenses')}</span>
-              <span className="text-center text-xs text-muted-foreground">
-                {t('recurrence.wizard.typeExpenseHint')}
-              </span>
-            </button>
-          </div>
-        )}
-
-        {step === 2 && (
           <Select value={category || undefined} onValueChange={setCategory}>
             <SelectTrigger className="h-12">
               <SelectValue placeholder={t('transactionForm.form.category')} />
             </SelectTrigger>
             <SelectContent>
-              {categories.map((cat) => {
+              {expenseCategories.map((cat) => {
                 const Icon = cat.icon;
                 return (
                   <SelectItem key={cat.id} value={cat.id}>
@@ -335,7 +278,7 @@ const RecurrenceWizard = ({
           </Select>
         )}
 
-        {step === 3 && (
+        {step === 2 && (
           <div className="space-y-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
@@ -398,7 +341,7 @@ const RecurrenceWizard = ({
           </div>
         )}
 
-        {step === 4 && (
+        {step === 3 && (
           <div className="space-y-5">
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-5 text-center">
               <p className="text-sm text-muted-foreground">
@@ -414,30 +357,6 @@ const RecurrenceWizard = ({
                 <CategoryIcon className="h-4 w-4" />
                 {getCategoryLabel(category)}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>
-                {type === 'conta'
-                  ? t('recurrence.wizard.monthlyDueDay')
-                  : t('recurrence.wizard.dueDay')}
-              </Label>
-              <Input
-                type="number"
-                min={1}
-                max={31}
-                value={dueDay}
-                onChange={(e) => {
-                  const nextValue = e.target.value.replace(/\D/g, '').slice(0, 2);
-                  setDueDay(nextValue);
-                }}
-                placeholder={t('recurrence.wizard.dueDayPlaceholder')}
-              />
-              <p className="text-xs text-muted-foreground">
-                {type === 'conta'
-                  ? t('recurrence.wizard.monthlyDueDayHint')
-                  : t('recurrence.wizard.dueDayHint')}
-              </p>
             </div>
 
             <div className="space-y-2">
@@ -474,7 +393,7 @@ const RecurrenceWizard = ({
           </Button>
         )}
 
-        {step < 4 ? (
+        {step < 3 ? (
           <Button
             type="button"
             onClick={goNext}

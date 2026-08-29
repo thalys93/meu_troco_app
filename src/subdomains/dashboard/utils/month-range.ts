@@ -56,14 +56,18 @@ export const clampYmdToToday = (ymd: string, baseDate = new Date()) => {
 export const getBalancePeriodRange = (
   selectedMonth: string,
   filters: { startDate: string; endDate: string; dateRangeLockedToMonth: boolean },
-  baseDate = new Date()
+  options?: { throughFullMonth?: boolean; baseDate?: Date }
 ) => {
+  const baseDate = options?.baseDate ?? new Date();
   const today = formatDateToYmd(baseDate);
+  const throughFullMonth = options?.throughFullMonth ?? false;
 
   if (!filters.dateRangeLockedToMonth) {
     return {
       startDate: filters.startDate,
-      endDate: clampYmdToToday(filters.endDate || today, baseDate),
+      endDate: throughFullMonth
+        ? filters.endDate || today
+        : clampYmdToToday(filters.endDate || today, baseDate),
     };
   }
 
@@ -71,9 +75,11 @@ export const getBalancePeriodRange = (
     shiftMonthKey(selectedMonth, -1)
   ).startDate;
   const selectedMonthEnd = getMonthRangeByKey(selectedMonth).endDate;
-  const endDate = isCurrentMonthKey(selectedMonth, baseDate)
-    ? today
-    : clampYmdToToday(selectedMonthEnd, baseDate);
+  const endDate = throughFullMonth
+    ? selectedMonthEnd
+    : isCurrentMonthKey(selectedMonth, baseDate)
+      ? today
+      : clampYmdToToday(selectedMonthEnd, baseDate);
 
   return {
     startDate: previousMonthStart,

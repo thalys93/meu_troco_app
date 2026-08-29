@@ -38,7 +38,7 @@ export function mergeRecurrenceListItems(
   }));
 
   const pendingTemplates: TransactionListItem[] = recurrences
-    .filter((rec) => rec.type !== 'receita')
+    .filter((rec) => rec.type === 'despesa')
     .filter((rec) => !isRecurrenceGeneratedForMonth(rec, monthKey))
     .filter((rec) => recurrenceMatchesTypeFilter(rec, types))
     .map((data) => ({
@@ -82,9 +82,7 @@ export function compareListItemsByColumn(
       case 'value':
         return (a.data.estimatedValue - b.data.estimatedValue) * direction;
       case 'date':
-        return (
-          ((a.data.dueDay ?? 0) - (b.data.dueDay ?? 0)) * direction
-        );
+        return 0;
       case 'wallet': {
         const resolveWalletName = options?.resolveWalletName ?? (() => '');
         return (
@@ -134,7 +132,7 @@ export function sumPendingRecurrences(
   types: string[]
 ): number {
   return recurrences
-    .filter((rec) => rec.type !== 'receita')
+    .filter((rec) => rec.type === 'despesa')
     .filter((rec) => !isRecurrenceGeneratedForMonth(rec, monthKey))
     .filter((rec) => recurrenceMatchesTypeFilter(rec, types))
     .reduce((acc, rec) => {

@@ -69,26 +69,43 @@ function DashboardHomeBody() {
     [categoryLookup, effectiveFilters, transactions]
   );
   const balancePeriod = useMemo(
-    () => getBalancePeriodRange(selectedMonth, transactionListFilters),
+    () =>
+      getBalancePeriodRange(selectedMonth, transactionListFilters, {
+        throughFullMonth: false,
+      }),
     [selectedMonth, transactionListFilters]
   );
-  const balanceTransactions = useMemo(
+  const balancePeriodFullMonth = useMemo(
     () =>
-      withoutSkippedTransactions(
-        filterTransactionsByPreferences(
-          transactions,
-          {
-            ...transactionListFilters,
-            dateRangeLockedToMonth: false,
-            startDate: balancePeriod.startDate,
-            endDate: balancePeriod.endDate,
-          },
-          { categoryLookup }
-        )
-      ),
-    [balancePeriod.endDate, balancePeriod.startDate, categoryLookup, transactionListFilters, transactions]
+      getBalancePeriodRange(selectedMonth, transactionListFilters, {
+        throughFullMonth: true,
+      }),
+    [selectedMonth, transactionListFilters]
+  );
+  const filterBalanceTransactions = (period: { startDate: string; endDate: string }) =>
+    withoutSkippedTransactions(
+      filterTransactionsByPreferences(
+        transactions,
+        {
+          ...transactionListFilters,
+          dateRangeLockedToMonth: false,
+          startDate: period.startDate,
+          endDate: period.endDate,
+        },
+        { categoryLookup }
+      )
+    );
+  const balanceTransactions = useMemo(
+    () => filterBalanceTransactions(balancePeriod),
+    [balancePeriod, categoryLookup, transactionListFilters, transactions]
+  );
+  const balanceTransactionsFullMonth = useMemo(
+    () => filterBalanceTransactions(balancePeriodFullMonth),
+    [balancePeriodFullMonth, categoryLookup, transactionListFilters, transactions]
   );
   const balancePeriodHintUntilToday = balancePeriod.endDate >= todayYmd;
+  const canToggleBalanceFullMonth =
+    balancePeriod.endDate !== balancePeriodFullMonth.endDate;
   const trendFilters = useMemo(
     () => ({
       ...effectiveFilters,
@@ -216,7 +233,9 @@ function DashboardHomeBody() {
                 formatCurrency={formatCurrency}
                 scope="month"
                 monthTransactions={balanceTransactions}
+                monthTransactionsFullMonth={balanceTransactionsFullMonth}
                 periodHintUntilToday={balancePeriodHintUntilToday}
+                canToggleFullMonth={canToggleBalanceFullMonth}
               />
               <div className={cn(
                 "hidden md:flex items-center justify-between p-4 md:p-6 rounded-3xl border transition-colors duration-500",
@@ -250,7 +269,9 @@ function DashboardHomeBody() {
                     formatCurrency={formatCurrency}
                     scope="month"
                     monthTransactions={balanceTransactions}
+                    monthTransactionsFullMonth={balanceTransactionsFullMonth}
                     periodHintUntilToday={balancePeriodHintUntilToday}
+                    canToggleFullMonth={canToggleBalanceFullMonth}
                   />
               </motion.div>
 

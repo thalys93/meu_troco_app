@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { TrendingDown, Receipt, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useCategories } from '@/hooks/use-categories';
 import { useWalletsStore } from '@/store/useWalletsStore';
 import useUserStore from '@/store/UserStore';
@@ -42,7 +41,7 @@ const RecurrenceEditForm = ({
 }: RecurrenceEditFormProps) => {
   const { t, i18n } = useTranslation();
   const { uid } = useUserStore();
-  const { expenseCategories, billCategories, getCategoryLabel } = useCategories();
+  const { expenseCategories, getCategoryLabel } = useCategories();
   const { wallets, fetchWallets } = useWalletsStore();
   const [draft, setDraft] = React.useState<RecurrenceInlineDraft>(() =>
     draftFromRecurrence(recurrence, i18n.language)
@@ -53,7 +52,6 @@ const RecurrenceEditForm = ({
     wallet: false,
     description: false,
     allocations: false,
-    dueDay: false,
   });
 
   const recurrenceId = recurrence.id ?? '';
@@ -70,7 +68,6 @@ const RecurrenceEditForm = ({
     if (uid && wallets.length === 0) fetchWallets(uid);
   }, [uid, wallets.length, fetchWallets]);
 
-  const categories = draft.type === 'conta' ? billCategories : expenseCategories;
   const realWallets = React.useMemo(
     () => wallets.filter((w) => w.name !== LEGACY_POCKET_CARD_NAME),
     [wallets]
@@ -91,40 +88,6 @@ const RecurrenceEditForm = ({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="space-y-2">
-        <Label>{t('recurrence.editForm.type')}</Label>
-        <ToggleGroup
-          type="single"
-          value={draft.type}
-          onValueChange={(value) => {
-            if (value !== 'conta' && value !== 'despesa') return;
-            const nextCategories = value === 'conta' ? billCategories : expenseCategories;
-            const categoryStillValid = nextCategories.some((cat) => cat.id === draft.category);
-            updateDraft({
-              type: value,
-              category: categoryStillValid ? draft.category : '',
-              dueDayDisplay: value === 'conta' ? draft.dueDayDisplay : '',
-            });
-          }}
-          className="grid grid-cols-2 gap-2"
-        >
-          <ToggleGroupItem
-            value="conta"
-            className="flex items-center gap-2 data-[state=on]:bg-amber-500/10 data-[state=on]:text-amber-700 dark:data-[state=on]:text-amber-300"
-          >
-            <Receipt className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            {t('sidebar.bills')}
-          </ToggleGroupItem>
-          <ToggleGroupItem
-            value="despesa"
-            className="flex items-center gap-2 data-[state=on]:bg-red-500/10 data-[state=on]:text-red-700 dark:data-[state=on]:text-red-300"
-          >
-            <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
-            {t('sidebar.expenses')}
-          </ToggleGroupItem>
-        </ToggleGroup>
-      </div>
-
       <div className="space-y-2">
         <Label htmlFor="recurrence-description">{t('transactionForm.form.description')}</Label>
         <Input
@@ -153,7 +116,7 @@ const RecurrenceEditForm = ({
             <SelectValue placeholder={t('transactionForm.form.selectCategory')} />
           </SelectTrigger>
           <SelectContent>
-            {categories.map((cat) => (
+            {expenseCategories.map((cat) => (
               <SelectItem key={cat.id} value={cat.id}>
                 {getCategoryLabel(cat.id)}
               </SelectItem>
@@ -180,26 +143,6 @@ const RecurrenceEditForm = ({
           )}
         />
       </div>
-
-      {draft.type === 'conta' && (
-        <div className="space-y-2">
-          <Label htmlFor="recurrence-due-day">{t('recurrence.wizard.dueDay')}</Label>
-          <Input
-            id="recurrence-due-day"
-            type="text"
-            inputMode="numeric"
-            value={draft.dueDayDisplay}
-            onChange={(e) => {
-              const next = e.target.value.replace(/\D/g, '').slice(0, 2);
-              updateDraft({ dueDayDisplay: next });
-              setFieldErrors((prev) => ({ ...prev, dueDay: false }));
-            }}
-            placeholder={t('recurrence.wizard.dueDayPlaceholder')}
-            className={cn(fieldErrors.dueDay && 'border-red-500')}
-          />
-          <p className="text-xs text-muted-foreground">{t('recurrence.wizard.dueDayHint')}</p>
-        </div>
-      )}
 
       <div className="space-y-2">
         <Label>{t('transactionForm.form.wallet')}</Label>

@@ -19,16 +19,11 @@ export const isRecurrenceGeneratedForMonth = (
   monthKey: string
 ): boolean => recurrence.lastGeneratedMonth === monthKey;
 
-export const buildRecurrenceDateForMonth = (
-  monthKey: string,
-  dueDay?: number
-): string => {
+export const buildRecurrenceDateForMonth = (monthKey: string): string => {
   const monthDate = parseMonthKey(monthKey);
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
-  const lastDay = new Date(year, month + 1, 0).getDate();
-  const day = dueDay ? Math.min(dueDay, lastDay) : 1;
-  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  return `${year}-${String(month + 1).padStart(2, '0')}-01`;
 };
 
 const recurrenceTransactionBase = (
@@ -38,9 +33,9 @@ const recurrenceTransactionBase = (
   description: recurrence.description,
   category: recurrence.category,
   value: recurrence.estimatedValue,
-  date: buildRecurrenceDateForMonth(monthKey, recurrence.dueDay),
+  date: buildRecurrenceDateForMonth(monthKey),
   walletId: recurrence.walletId,
-  type: recurrence.type,
+  type: 'despesa',
   ...(recurrence.allocations && recurrence.allocations.length >= 2
     ? { allocations: recurrence.allocations }
     : {}),
@@ -49,20 +44,15 @@ const recurrenceTransactionBase = (
 export const buildTransactionPrefillFromRecurrence = (
   recurrence: Recurrence,
   monthKey: string
-): Partial<Transaction> => ({
-  ...recurrenceTransactionBase(recurrence, monthKey),
-  ...(recurrence.type === 'conta' ? { paid: false } : {}),
-});
+): Partial<Transaction> => recurrenceTransactionBase(recurrence, monthKey);
 
 export const buildTransactionFromRecurrence = (
   recurrence: Recurrence,
-  monthKey: string,
-  options?: { paid?: boolean }
+  monthKey: string
 ): Transaction =>
   ({
     ...recurrenceTransactionBase(recurrence, monthKey),
     recurrenceId: recurrence.id,
-    ...(recurrence.type === 'conta' ? { paid: options?.paid ?? false } : {}),
   }) as Transaction;
 
 export const formatMonthLabel = (monthKey: string, locale: string): string => {

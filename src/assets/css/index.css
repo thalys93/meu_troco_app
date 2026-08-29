@@ -178,6 +178,21 @@
   .bo-section-header {
     @apply shrink-0 px-4 py-3 flex items-center gap-3;
   }
+
+  .report-document {
+    --background: 36 33% 98%;
+    --foreground: 24 20% 10%;
+    --card: 36 30% 99%;
+    --card-foreground: 24 20% 10%;
+    --muted-foreground: 24 10% 40%;
+    --border: 30 12% 88%;
+    --primary: 24 75% 45%;
+    --destructive: 0 84.2% 60.2%;
+    color: hsl(var(--foreground));
+    background-color: hsl(var(--card));
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
 
 @media print {
@@ -234,21 +249,9 @@
     border: none !important;
     border-radius: 0 !important;
     box-shadow: none !important;
-    background: #fff !important;
-    color: #111 !important;
-  }
-
-  body.printing-report .report-document h1,
-  body.printing-report .report-document h2,
-  body.printing-report .report-document p,
-  body.printing-report .report-document dt,
-  body.printing-report .report-document dd,
-  body.printing-report .report-document th,
-  body.printing-report .report-document td {
-    color: #111 !important;
-  }
-
-  body.printing-report .report-document .report-brand {
-    color: #C96A1C !important;
+    background: hsl(36 30% 99%) !important;
+    color: hsl(24 20% 10%) !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }

@@ -72,7 +72,6 @@ import { useAccountStatus } from '@/hooks/use-account-status';
 import { useUserRecurrences, useDeleteRecurrence, useMarkRecurrenceGenerated } from '@/utils/services/api/recurrence';
 import type { Recurrence } from '@/types/Recurrence';
 import {
-  buildTransactionFromRecurrence,
   buildTransactionPrefillFromRecurrence,
 } from '@/subdomains/dashboard/utils/recurrence';
 import {
@@ -311,7 +310,6 @@ const TransactionList = ({
   const [generatePrefill, setGeneratePrefill] = React.useState<Partial<Transaction> | undefined>();
   const [generateRecurrenceId, setGenerateRecurrenceId] = React.useState<string | undefined>();
   const [generateType, setGenerateType] = React.useState<TransactionType>('despesa');
-  const [markingRecurrencePaidId, setMarkingRecurrencePaidId] = React.useState<string | null>(null);
   const { data: recurrences = [] } = useUserRecurrences();
   const { mutate: deleteRecurrence } = useDeleteRecurrence();
   const { mutate: createTransaction } = useCreateTransaction();
@@ -770,46 +768,6 @@ const TransactionList = ({
     setGenerateRecurrenceId(undefined);
   }, []);
 
-  const markRecurrencePaidAndGenerate = React.useCallback(
-    (recurrence: Recurrence) => {
-      if (isReadOnly || !selectedMonth || !recurrence.id || recurrence.type !== 'conta') return;
-      setMarkingRecurrencePaidId(recurrence.id);
-      createTransaction(buildTransactionFromRecurrence(recurrence, selectedMonth, { paid: true }), {
-        onSuccess: () => {
-          markRecurrenceGenerated(
-            { id: recurrence.id!, monthKey: selectedMonth },
-            {
-              onSuccess: () => {
-                refetch();
-                toast({
-                  title: t('transactionList.recurrence.markPaidSuccess'),
-                  variant: 'success',
-                });
-                setMarkingRecurrencePaidId(null);
-              },
-              onError: () => {
-                refetch();
-                toast({
-                  title: t('transactionList.paidToggleError'),
-                  variant: 'destructive',
-                });
-                setMarkingRecurrencePaidId(null);
-              },
-            }
-          );
-        },
-        onError: () => {
-          toast({
-            title: t('transactionList.paidToggleError'),
-            variant: 'destructive',
-          });
-          setMarkingRecurrencePaidId(null);
-        },
-      });
-    },
-    [createTransaction, isReadOnly, markRecurrenceGenerated, refetch, selectedMonth, t]
-  );
-
   const openInlineEdit = React.useCallback((transaction: Transaction) => {
     if (isReadOnly) return;
     if (!transaction.id) return;
@@ -1223,10 +1181,7 @@ const TransactionList = ({
                   {transaction.description}
                 </span>
                 {linkedRecurrence && (
-                  <RecurrenceRowPopover
-                    recurrence={linkedRecurrence}
-                    monthKey={selectedMonth}
-                  />
+                  <RecurrenceRowPopover recurrence={linkedRecurrence} />
                 )}
                 {isSplitTransaction && (
                   <Badge
@@ -1451,13 +1406,7 @@ const TransactionList = ({
             color: allocationCount >= 3 ? '#8b5cf6' : '#6366f1',
           }
         : getWalletBadgeData(recurrence.walletId);
-      const isBill = recurrence.type === 'conta';
       const zebra = currentRowIndex % 2 === 1;
-      const isMarkingPaid = markingRecurrencePaidId === recurrence.id;
-      const templateDate =
-        selectedMonth && recurrence.dueDay
-          ? buildTransactionPrefillFromRecurrence(recurrence, selectedMonth).date
-          : undefined;
 
       const recurrenceActionItems = buildRecurrenceActionItems(recurrence);
 
@@ -1465,12 +1414,10 @@ const TransactionList = ({
         <TableRow
           data-recurrence-row-id={recurrence.id}
           className={cn(
-            'border-0 transition-colors cursor-pointer',
-            isBill ? 'border-l-2 border-l-amber-500/40' : 'border-l-2 border-l-red-500/40',
+            'border-0 transition-colors cursor-pointer border-l-2 border-l-red-500/40',
             zebra
               ? 'bg-muted/20 hover:bg-muted/35 dark:bg-muted/10'
               : 'bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20',
-            isMarkingPaid && 'pointer-events-none opacity-70',
             useInlineTable &&
               recurrenceInlineSession &&
               recurrenceInlineSession.recurrenceId !== recurrence.id &&
@@ -1480,27 +1427,16 @@ const TransactionList = ({
         >
           <TableCell className="border-b border-border/30 py-2 pl-4 pr-2 align-middle">
             <div className="flex items-center gap-2.5">
-              <span
-                className={cn(
-                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-md',
-                  isBill
-                    ? 'bg-amber-500/12 text-amber-600 dark:text-amber-400'
-                    : 'bg-red-500/12 text-red-600 dark:text-red-400'
-                )}
-              >
-                {isBill ? <Receipt className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-red-500/12 text-red-600 dark:text-red-400">
+                <TrendingDown className="h-4 w-4" />
               </span>
               <span className="text-sm font-medium leading-snug line-clamp-2 text-foreground">
                 {recurrence.description}
               </span>
               <RecurrenceRowPopover
                 recurrence={recurrence}
-                monthKey={selectedMonth}
                 isPending
                 onGenerate={() => openGenerateFromRecurrence(recurrence)}
-                onMarkPaid={
-                  isBill ? () => markRecurrencePaidAndGenerate(recurrence) : undefined
-                }
               />
             </div>
           </TableCell>
@@ -1515,7 +1451,7 @@ const TransactionList = ({
             </Badge>
           </TableCell>
           <TableCell className="border-b border-border/30 py-2 px-3 align-middle text-sm text-muted-foreground whitespace-nowrap">
-            {templateDate ? formatTableDate(templateDate) : t('transactionList.recurrence.perMonth')}
+            {t('transactionList.recurrence.perMonth')}
           </TableCell>
           <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
             <Badge variant="secondary" className="h-6 gap-1.5 px-2 py-0 text-xs font-normal">
@@ -1526,40 +1462,15 @@ const TransactionList = ({
           <TableCell className="border-b border-border/30 py-2 px-3 align-middle">
             <Badge
               variant="secondary"
-              className={cn(
-                'h-6 border-0 px-2 py-0 text-xs font-medium',
-                isBill
-                  ? 'bg-amber-500/12 text-amber-700 dark:text-amber-400'
-                  : 'bg-red-500/12 text-red-700 dark:text-red-400'
-              )}
+              className="h-6 border-0 bg-red-500/12 px-2 py-0 text-xs font-medium text-red-700 dark:text-red-400"
             >
-              {isBill ? t('sidebar.bills') : t('landing_v2.transactions.expense')}
+              {t('landing_v2.transactions.expense')}
             </Badge>
           </TableCell>
           {showStatusColumn && (
-            <TableCell
-              className="border-b border-border/30 py-2 px-2 align-middle text-center"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {isBill ? (
-                <TransactionPaymentStatus
-                  showPaid
-                  isPaid={false}
-                  isSkipped={false}
-                  disabled={isReadOnly || isMarkingPaid}
-                  onTogglePaid={() => markRecurrencePaidAndGenerate(recurrence)}
-                />
-              ) : null}
-            </TableCell>
+            <TableCell className="border-b border-border/30 py-2 px-2 align-middle text-center" />
           )}
-          <TableCell
-            className={cn(
-              'border-b border-border/30 py-2 px-3 text-right align-middle font-mono text-sm font-semibold tabular-nums whitespace-nowrap',
-              isBill
-                ? 'text-amber-600 dark:text-amber-400'
-                : 'text-red-600 dark:text-red-400'
-            )}
-          >
+          <TableCell className="border-b border-border/30 py-2 px-3 text-right align-middle font-mono text-sm font-semibold tabular-nums whitespace-nowrap text-red-600 dark:text-red-400">
             {formatAmount(recurrence.estimatedValue, recurrence.type)}
           </TableCell>
           <TableCell
@@ -2029,10 +1940,7 @@ const TransactionList = ({
                       >
                         <div className="flex items-center gap-3">
                           {linkedRecurrence && (
-                            <RecurrenceRowPopover
-                              recurrence={linkedRecurrence}
-                              monthKey={selectedMonth}
-                            />
+                            <RecurrenceRowPopover recurrence={linkedRecurrence} />
                           )}
                           <div
                             className={cn(
@@ -2136,7 +2044,6 @@ const TransactionList = ({
                   <div className="mb-3">
                     {pendingTemplateItems.map((item) => {
                       const recurrence = item.data;
-                      const isBill = recurrence.type === 'conta';
                       const recurrenceActionItems = buildRecurrenceActionItems(recurrence);
                       return (
                         <EntityActionsMenu
@@ -2145,34 +2052,22 @@ const TransactionList = ({
                           menuLabel={t('transactionList.actions')}
                           enableContextMenu={!isReadOnly}
                         >
-                          <div
-                            className={cn(
-                              'flex items-center justify-between p-4 rounded-xl border bg-background/50 shadow-sm mb-2',
-                              isBill ? 'border-l-4 border-l-amber-500/50' : 'border-l-4 border-l-red-500/50'
-                            )}
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
+                          <div className="mb-2 flex items-center justify-between rounded-xl border border-l-4 border-l-red-500/50 bg-background/50 p-4 shadow-sm">
+                            <div className="flex min-w-0 items-center gap-3">
                               <RecurrenceRowPopover
                                 recurrence={recurrence}
-                                monthKey={selectedMonth}
                                 isPending
                                 onGenerate={() => openGenerateFromRecurrence(recurrence)}
-                                onMarkPaid={
-                                  isBill ? () => markRecurrencePaidAndGenerate(recurrence) : undefined
-                                }
                               />
                               <div className="min-w-0">
-                                <p className="font-medium leading-tight truncate">{recurrence.description}</p>
-                                <Badge variant="secondary" className="text-xs mt-1">
+                                <p className="truncate font-medium leading-tight">{recurrence.description}</p>
+                                <Badge variant="secondary" className="mt-1 text-xs">
                                   {getCategoryLabel(recurrence.category)}
                                 </Badge>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <p className={cn(
-                                'font-semibold',
-                                isBill ? 'text-amber-500' : 'text-red-500'
-                              )}>
+                            <div className="flex shrink-0 items-center gap-2">
+                              <p className="font-semibold text-red-500">
                                 {formatAmount(recurrence.estimatedValue, recurrence.type)}
                               </p>
                               {!isReadOnly && (

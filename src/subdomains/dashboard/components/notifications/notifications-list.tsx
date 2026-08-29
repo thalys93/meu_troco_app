@@ -113,9 +113,9 @@ function NotificationList() {
     }
 
     return (
-        <div className="flex flex-col min-w-[320px] max-w-[90vw] max-h-[400px]">
-            <div className="flex items-center justify-between gap-2 p-3 border-b border-border/50 shrink-0">
-                <h3 className="font-semibold text-sm flex items-center gap-2">
+        <div className="flex w-[320px] max-w-[90vw] flex-col">
+            <div className="flex shrink-0 items-center justify-between gap-2 border-b border-border/50 p-3">
+                <h3 className="flex items-center gap-2 text-sm font-semibold">
                     <Bell className="h-4 w-4 text-muted-foreground" />
                     {t('notifications.title')}
                 </h3>
@@ -123,31 +123,33 @@ function NotificationList() {
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs h-8"
+                        className="h-8 text-xs"
                         onClick={() => markAllAsRead()}
                     >
                         {t('notifications.markAllAsRead')}
                     </Button>
                 )}
             </div>
-            <ScrollArea className="flex-1 p-2" style={{ maxHeight: 340 }}>
-                {notifications.length === 0 ? (
-                    <div className="py-8 text-center text-sm text-muted-foreground">
-                        {t('notifications.empty')}
-                    </div>
-                ) : (
-                    <div className="space-y-2">
-                        {notifications.map((notification) => (
-                            <NotificationItem
-                                key={notification.id}
-                                notification={notification}
-                                isRead={!!uid && notification.readBy.includes(uid)}
-                                onOpen={() => markAsRead(notification.id)}
-                                lang={i18n.language}
-                            />
-                        ))}
-                    </div>
-                )}
+            <ScrollArea className="h-[min(400px,calc(85vh-3.5rem))]">
+                <div className="p-2">
+                    {notifications.length === 0 ? (
+                        <div className="py-8 text-center text-sm text-muted-foreground">
+                            {t('notifications.empty')}
+                        </div>
+                    ) : (
+                        <div className="space-y-2 pr-3">
+                            {notifications.map((notification) => (
+                                <NotificationItem
+                                    key={notification.id}
+                                    notification={notification}
+                                    isRead={!!uid && notification.readBy.includes(uid)}
+                                    onOpen={() => markAsRead(notification.id)}
+                                    lang={i18n.language}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
             </ScrollArea>
         </div>
     );

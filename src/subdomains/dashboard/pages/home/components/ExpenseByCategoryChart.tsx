@@ -9,20 +9,38 @@ import {
 import { Transaction } from "@/utils/services/api/transation";
 import { useTranslation } from "react-i18next";
 import { useCategories } from "@/hooks/use-categories";
+import { cn } from "@/lib/utils";
 
-/** Cores explícitas por fatia — `fill` vai nos dados do Pie (Recharts mescla no setor). */
-const SLICE_COLORS = [
+const EXPENSE_SLICE_COLORS = [
   "#22c55e",
   "#14b8a6",
   "#3b82f6",
   "#8b5cf6",
-  "#f59e0b",
   "#f97316",
   "#ef4444",
   "#ec4899",
   "#64748b",
   "#0d9488",
 ];
+
+const BILL_SLICE_COLORS = [
+  "#f59e0b",
+  "#d97706",
+  "#b45309",
+  "#fbbf24",
+  "#fcd34d",
+  "#92400e",
+];
+
+type ChartSlice = {
+  sliceKey: string;
+  category: string;
+  label: string;
+  total: number;
+  fill: string;
+  stroke: string;
+  isBill: boolean;
+};
 
 type ExpenseByCategoryChartProps = {
   transactions: Transaction[];
@@ -50,33 +68,49 @@ export default function ExpenseByCategoryChart({
   );
 
   const data = React.useMemo(() => {
-    const grouped = new Map<string, number>();
+    const grouped = new Map<string, { total: number; isBill: boolean; category: string }>();
     transactions
-      .filter((item) => item.type === "despesa")
+      .filter((item) => item.type === "despesa" || item.type === "conta")
       .forEach((item) => {
-        const previous = grouped.get(item.category) || 0;
-        grouped.set(item.category, previous + item.value);
+        const isBill = item.type === "conta";
+        const sliceKey = `${item.category}::${item.type}`;
+        const previous = grouped.get(sliceKey);
+        grouped.set(sliceKey, {
+          category: item.category,
+          isBill,
+          total: (previous?.total ?? 0) + item.value,
+        });
       });
 
+    let expenseColorIndex = 0;
+    let billColorIndex = 0;
+
     return Array.from(grouped.entries())
-      .map(([category, total]) => ({
-        category,
-        label: getCategoryLabel(category),
-        total: Number(total.toFixed(2)),
+      .map(([sliceKey, row]) => ({
+        sliceKey,
+        category: row.category,
+        label: getCategoryLabel(row.category),
+        total: Number(row.total.toFixed(2)),
+        isBill: row.isBill,
       }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 6)
-      .map((row, index) => ({
-        ...row,
-        /** Obrigatório no próprio `data`: `Cell` nem sempre repassa `fill` corretamente para todos os setores. */
-        fill: SLICE_COLORS[index % SLICE_COLORS.length],
-        stroke: "hsl(var(--background))",
-      }));
-  }, [transactions, getCategoryLabel, i18n.language]);
+      .map((row) => {
+        const fill = row.isBill
+          ? BILL_SLICE_COLORS[billColorIndex++ % BILL_SLICE_COLORS.length]
+          : EXPENSE_SLICE_COLORS[expenseColorIndex++ % EXPENSE_SLICE_COLORS.length];
+
+        return {
+          ...row,
+          fill,
+          stroke: "hsl(var(--background))",
+        };
+      });
+  }, [transactions, getCategoryLabel]);
 
   const chartConfig = React.useMemo(() => {
     return data.reduce<Record<string, { label: string }>>((acc, item) => {
-      acc[item.label] = { label: item.label };
+      acc[item.sliceKey] = { label: item.label };
       return acc;
     }, {});
   }, [data]);
@@ -85,9 +119,23 @@ export default function ExpenseByCategoryChart({
   const chartRenderKey = React.useMemo(
     () =>
       data
-        .map((item) => `${item.category}:${item.total}`)
+        .map((item) => `${item.sliceKey}:${item.total}`)
         .join("|"),
     [data]
+  );
+
+  const renderTypeLabel = (isBill: boolean, className?: string) => (
+    <span
+      className={cn(
+        "text-[10px] font-medium",
+        isBill
+          ? "text-amber-700 dark:text-amber-300"
+          : "text-red-700 dark:text-red-300",
+        className
+      )}
+    >
+      {isBill ? t("dashboard.charts.billBadge") : t("dashboard.charts.expenseBadge")}
+    </span>
   );
 
   return (
@@ -97,11 +145,19 @@ export default function ExpenseByCategoryChart({
           {t("dashboard.charts.expenseByCategory")}
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          {topCategory
-            ? `${t("dashboard.charts.topCategoryValue", {
-                category: topCategory.label,
-              })} (${formatCurrency(topCategory.total)})`
-            : t("dashboard.charts.noExpenseData")}
+          {topCategory ? (
+            <span className="inline-flex flex-wrap items-center gap-1.5">
+              <span>
+                {t("dashboard.charts.topCategoryValue", {
+                  category: topCategory.label,
+                })}{" "}
+                ({formatCurrency(topCategory.total)})
+              </span>
+              {renderTypeLabel(topCategory.isBill)}
+            </span>
+          ) : (
+            t("dashboard.charts.noExpenseData")
+          )}
         </p>
       </CardHeader>
       <CardContent>
@@ -110,36 +166,58 @@ export default function ExpenseByCategoryChart({
             {t("dashboard.charts.noExpenseData")}
           </div>
         ) : (
-          <ChartContainer config={chartConfig} className="h-[260px] w-full">
-            <PieChart key={chartRenderKey}>
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    nameKey="label"
-                    formatter={(value, _name, item) => (
-                      <div className="flex flex-1 items-center justify-between leading-none gap-1">
-                        <span className="text-muted-foreground">
-                          {String(item.payload?.label ?? _name)}:
-                        </span>
-                        <span className="font-mono font-medium tabular-nums text-foreground">
-                          {formatCurrency(Number(value))}
-                        </span>
-                      </div>
-                    )}
+          <>
+            <ChartContainer config={chartConfig} className="h-[260px] w-full">
+              <PieChart key={chartRenderKey}>
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      nameKey="label"
+                      formatter={(value, _name, item) => {
+                        const payload = item.payload as ChartSlice | undefined;
+                        return (
+                          <div className="flex flex-1 items-center justify-between gap-2 leading-none">
+                            <span className="inline-flex items-center gap-1.5 text-muted-foreground">
+                              <span>{String(payload?.label ?? _name)}</span>
+                              {payload ? renderTypeLabel(payload.isBill) : null}
+                            </span>
+                            <span className="font-mono font-medium tabular-nums text-foreground">
+                              {formatCurrency(Number(value))}
+                            </span>
+                          </div>
+                        );
+                      }}
+                    />
+                  }
+                />
+                <Pie
+                  data={data}
+                  dataKey="total"
+                  nameKey="sliceKey"
+                  innerRadius={56}
+                  outerRadius={90}
+                  paddingAngle={2}
+                  strokeWidth={2}
+                />
+              </PieChart>
+            </ChartContainer>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {data.map((item) => (
+                <div
+                  key={item.sliceKey}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2 py-1 text-xs"
+                >
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: item.fill }}
+                    aria-hidden
                   />
-                }
-              />
-              <Pie
-                data={data}
-                dataKey="total"
-                nameKey="label"
-                innerRadius={56}
-                outerRadius={90}
-                paddingAngle={2}
-                strokeWidth={2}
-              />
-            </PieChart>
-          </ChartContainer>
+                  <span className="text-foreground">{item.label}</span>
+                  {renderTypeLabel(item.isBill)}
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </CardContent>
     </Card>

@@ -38,6 +38,7 @@ const DescriptionAutocomplete = ({
   placeholder,
   className,
 }: DescriptionAutocompleteProps) => {
+  const [listOpen, setListOpen] = React.useState(false);
   const suggestions = useTransactionDescriptionSuggestions(transactions, value);
   const items = React.useMemo<SuggestionItem[]>(
     () =>
@@ -47,20 +48,48 @@ const DescriptionAutocomplete = ({
       })),
     [suggestions]
   );
-  const shouldShowSuggestions = value.trim().length > 0 && items.length > 0;
+  const canShowList = value.trim().length > 0 && items.length > 0;
+  const isOpen = listOpen && canShowList;
 
-  const handleSelect = (suggestion: DescriptionSuggestion) => {
-    onChange(suggestion.description);
-    onSelectSuggestion(suggestion);
+  const handleValueChange = (
+    next: string,
+    eventDetails?: { reason?: string }
+  ) => {
+    onChange(next);
+
+    if (eventDetails?.reason === 'item-press') {
+      const match = items.find((item) => item.description === next);
+      if (match) {
+        onSelectSuggestion(match);
+      }
+      setListOpen(false);
+      return;
+    }
+
+    if (next.trim().length === 0) {
+      setListOpen(false);
+      return;
+    }
+
+    setListOpen(true);
   };
 
   return (
     <Autocomplete
       value={value}
-      onValueChange={onChange}
+      onValueChange={handleValueChange}
       items={items}
       mode="none"
-      open={shouldShowSuggestions}
+      open={isOpen}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          setListOpen(false);
+          return;
+        }
+        if (canShowList) {
+          setListOpen(true);
+        }
+      }}
       itemToStringValue={(item) => item.description}
     >
       <AutocompleteInput
@@ -72,10 +101,19 @@ const DescriptionAutocomplete = ({
           hasError && 'border-red-500 ring-1 ring-red-500/30',
           className
         )}
+        onFocus={() => {
+          if (canShowList) {
+            setListOpen(true);
+          }
+        }}
+        onBlur={() => {
+          window.setTimeout(() => setListOpen(false), 150);
+        }}
         onKeyDown={(event) => {
-          if (event.key === 'Escape' && shouldShowSuggestions) {
+          if (event.key === 'Escape' && isOpen) {
             event.preventDefault();
             event.stopPropagation();
+            setListOpen(false);
           }
         }}
       />
@@ -85,7 +123,7 @@ const DescriptionAutocomplete = ({
             <AutocompleteItem
               key={item.id}
               value={item}
-              onClick={() => handleSelect(item)}
+              onMouseDown={(event) => event.preventDefault()}
             >
               <span className="truncate">{item.description}</span>
               <span className="ml-auto pl-2 text-xs tabular-nums text-muted-foreground">

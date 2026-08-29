@@ -53,22 +53,22 @@ function billStatusLabel(
 
 const SECTION_THEME = {
   conta: {
-    title: "text-amber-700",
-    border: "border-amber-300",
-    value: "text-amber-700",
-    headerBg: "bg-amber-50",
+    title: "text-amber-600",
+    border: "border-amber-500/40",
+    value: "text-amber-600",
+    headerBg: "bg-amber-500/5",
   },
   receita: {
-    title: "text-emerald-700",
-    border: "border-emerald-300",
-    value: "text-emerald-700",
-    headerBg: "bg-emerald-50",
+    title: "text-emerald-600",
+    border: "border-emerald-500/40",
+    value: "text-emerald-600",
+    headerBg: "bg-emerald-500/5",
   },
   despesa: {
-    title: "text-red-700",
-    border: "border-red-300",
-    value: "text-red-700",
-    headerBg: "bg-red-50",
+    title: "text-red-600",
+    border: "border-red-500/40",
+    value: "text-red-600",
+    headerBg: "bg-red-500/5",
   },
 } as const;
 
@@ -113,13 +113,13 @@ function ReportTable({
         {sectionTitle(section.type, labels)}
       </h2>
       {section.items.length === 0 ? (
-        <p className={cn("text-neutral-500 py-5", size.empty)}>{labels.empty}</p>
+        <p className={cn("text-muted-foreground py-5", size.empty)}>{labels.empty}</p>
       ) : (
         <table className={cn("w-full border-collapse", size.table)}>
           <thead>
             <tr
               className={cn(
-                "text-left text-neutral-700 border-b border-neutral-200",
+                "text-left text-muted-foreground border-b border-border",
                 theme.headerBg
               )}
             >
@@ -138,7 +138,7 @@ function ReportTable({
               return (
                 <tr
                   key={item.id ?? `${item.description}-${item.date}-${index}`}
-                  className="border-b border-neutral-100 text-neutral-900"
+                  className="border-b border-border/60 text-foreground"
                 >
                   <td className="py-4 pr-4 whitespace-nowrap align-top">
                     {formatDate(item.date)}
@@ -146,7 +146,7 @@ function ReportTable({
                   <td
                     className={cn(
                       "py-4 pr-4 align-top",
-                      skipped && "text-red-700"
+                      skipped && "text-red-600"
                     )}
                   >
                     {item.description}
@@ -158,9 +158,9 @@ function ReportTable({
                     <td
                       className={cn(
                         "py-4 pr-4 align-top font-semibold whitespace-nowrap",
-                        skipped && "text-red-700",
-                        !skipped && isBillPaid(item) && "text-emerald-700",
-                        !skipped && !isBillPaid(item) && "text-amber-700"
+                        skipped && "text-red-600",
+                        !skipped && isBillPaid(item) && "text-emerald-600",
+                        !skipped && !isBillPaid(item) && "text-amber-600"
                       )}
                     >
                       {billStatusLabel(item, labels)}
@@ -169,7 +169,7 @@ function ReportTable({
                   <td
                     className={cn(
                       "py-4 text-right whitespace-nowrap tabular-nums align-top font-semibold",
-                      skipped ? "text-red-700" : theme.value
+                      skipped ? "text-red-600" : theme.value
                     )}
                   >
                     {formatCurrency(item.value)}
@@ -223,14 +223,14 @@ const ReportDocument = forwardRef<HTMLArticleElement, ReportDocumentProps>(
       <article
         ref={ref}
         className={cn(
-          "report-document w-full bg-white text-neutral-900 rounded-sm border border-neutral-200 shadow-sm",
+          "report-document w-full rounded-sm border border-border shadow-sm",
           size.root
         )}
       >
-        <header className="border-b border-neutral-300 pb-6 mb-8">
+        <header className="border-b border-border pb-6 mb-8">
           <p
             className={cn(
-              "report-brand font-bold uppercase tracking-[0.2em] text-emerald-700",
+              "report-brand font-bold uppercase tracking-[0.2em] text-primary",
               size.brand
             )}
           >
@@ -238,13 +238,13 @@ const ReportDocument = forwardRef<HTMLArticleElement, ReportDocumentProps>(
           </p>
           <h1
             className={cn(
-              "mt-3 font-bold tracking-tight text-neutral-950",
+              "mt-3 font-bold tracking-tight text-foreground",
               size.title
             )}
           >
             {labels.title}
           </h1>
-          <p className={cn("mt-3 text-neutral-600", size.meta)}>
+          <p className={cn("mt-3 text-muted-foreground", size.meta)}>
             {labels.issuedAt}: {issuedAtLabel}
           </p>
         </header>
@@ -252,7 +252,7 @@ const ReportDocument = forwardRef<HTMLArticleElement, ReportDocumentProps>(
         <section className="mb-2">
           <h2
             className={cn(
-              "font-bold uppercase tracking-[0.1em] text-neutral-800 mb-5",
+              "font-bold uppercase tracking-[0.1em] text-foreground mb-5",
               size.sectionTitle
             )}
           >
@@ -260,28 +260,28 @@ const ReportDocument = forwardRef<HTMLArticleElement, ReportDocumentProps>(
           </h2>
           <table className={cn("w-full border-collapse", size.summary)}>
             <tbody>
-              <tr className="border-b border-neutral-100">
-                <td className="py-4 font-medium text-amber-700">{labels.bills}</td>
-                <td className="py-4 text-right font-bold tabular-nums text-amber-700">
+              <tr className="border-b border-border/60">
+                <td className="py-4 font-medium text-amber-600">{labels.bills}</td>
+                <td className="py-4 text-right font-bold tabular-nums text-amber-600">
                   {formatCurrency(report.billsTotal)}
                 </td>
               </tr>
-              <tr className="border-b border-neutral-100">
-                <td className="py-4 font-medium text-emerald-700">{labels.income}</td>
-                <td className="py-4 text-right font-bold tabular-nums text-emerald-700">
+              <tr className="border-b border-border/60">
+                <td className="py-4 font-medium text-emerald-600">{labels.income}</td>
+                <td className="py-4 text-right font-bold tabular-nums text-emerald-600">
                   {formatCurrency(report.incomeTotal)}
                 </td>
               </tr>
-              <tr className="border-b border-neutral-100">
-                <td className="py-4 font-medium text-red-700">{labels.expenses}</td>
-                <td className="py-4 text-right font-bold tabular-nums text-red-700">
+              <tr className="border-b border-border/60">
+                <td className="py-4 font-medium text-red-600">{labels.expenses}</td>
+                <td className="py-4 text-right font-bold tabular-nums text-red-600">
                   {formatCurrency(report.expenseTotal)}
                 </td>
               </tr>
-              <tr className="border-t-2 border-neutral-300">
+              <tr className="border-t-2 border-border">
                 <td
                   className={cn(
-                    "pt-5 font-bold text-neutral-900",
+                    "pt-5 font-bold text-foreground",
                     size.balance
                   )}
                 >
@@ -291,7 +291,7 @@ const ReportDocument = forwardRef<HTMLArticleElement, ReportDocumentProps>(
                   className={cn(
                     "pt-5 text-right font-bold tabular-nums",
                     size.balance,
-                    report.balance >= 0 ? "text-emerald-700" : "text-red-700"
+                    report.balance >= 0 ? "text-emerald-600" : "text-red-600"
                   )}
                 >
                   {formatCurrency(report.balance)}

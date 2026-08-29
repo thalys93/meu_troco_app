@@ -51,8 +51,10 @@ const normalizeRecurrenceAllocations = (
 
 const mapFirestoreRecurrence = (
   id: string,
-  raw: Recurrence & { estimatedValue?: unknown; dueDay?: unknown; allocations?: unknown }
-): Recurrence => {
+  raw: Recurrence & { estimatedValue?: unknown; type?: unknown; allocations?: unknown }
+): Recurrence | null => {
+  if (raw.type !== 'despesa') return null;
+
   const walletId = raw.walletId?.trim() || NO_WALLET_ID;
   const estimatedValue = normalizeEstimatedValue(raw.estimatedValue);
   const allocations = normalizeRecurrenceAllocations(raw);
@@ -60,13 +62,10 @@ const mapFirestoreRecurrence = (
   return {
     ...raw,
     id,
+    type: 'despesa',
     estimatedValue,
     walletId: allocations?.[0]?.walletId ?? walletId,
     allocations,
-    dueDay:
-      typeof raw.dueDay === 'number' && raw.dueDay >= 1 && raw.dueDay <= 31
-        ? raw.dueDay
-        : undefined,
   };
 };
 
@@ -77,6 +76,7 @@ const normalizeRecurrencePayload = (data: Recurrence): Recurrence => {
   });
   const base: Recurrence = {
     ...data,
+    type: 'despesa',
     description: data.description.trim(),
     walletId,
     estimatedValue: Math.round(data.estimatedValue * 100) / 100,
@@ -107,10 +107,9 @@ const toRecurrenceFirestoreWritePayload = (data: Recurrence) => {
   const base = {
     description: payload.description,
     category: payload.category,
-    type: payload.type,
+    type: 'despesa' as const,
     estimatedValue: payload.estimatedValue,
     walletId: payload.walletId?.trim() || NO_WALLET_ID,
-    ...(payload.dueDay ? { dueDay: payload.dueDay } : {}),
   };
 
   if (payload.allocations && payload.allocations.length >= MIN_WALLET_ALLOCATIONS) {
@@ -125,10 +124,9 @@ const toRecurrenceFirestoreUpdatePayload = (data: Recurrence) => {
   const base = {
     description: payload.description,
     category: payload.category,
-    type: payload.type,
+    type: 'despesa' as const,
     estimatedValue: payload.estimatedValue,
     walletId: payload.walletId?.trim() || NO_WALLET_ID,
-    ...(payload.dueDay ? { dueDay: payload.dueDay } : { dueDay: null }),
   };
 
   if (payload.allocations && payload.allocations.length >= MIN_WALLET_ALLOCATIONS) {
@@ -169,10 +167,12 @@ const markRecurrenceGenerated = async (
 export const getUserRecurrences = async (uid: string): Promise<Recurrence[]> => {
   const ref = collection(FireStore, 'recurrences', uid, 'userRecurrences');
   const snapshot = await getDocs(ref);
-  return snapshot.docs.map((docSnap) => {
-    const raw = docSnap.data() as Recurrence & { estimatedValue?: unknown };
-    return mapFirestoreRecurrence(docSnap.id, raw);
-  });
+  return snapshot.docs
+    .map((docSnap) => {
+      const raw = docSnap.data() as Recurrence & { estimatedValue?: unknown };
+      return mapFirestoreRecurrence(docSnap.id, raw);
+    })
+    .filter((item): item is Recurrence => item !== null);
 };
 
 export const getUserRecurrence = async (

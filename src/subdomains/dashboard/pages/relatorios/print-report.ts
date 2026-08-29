@@ -25,7 +25,7 @@ export async function downloadReportPdf(
   try {
     const canvas = await html2canvas(clone, {
       scale: 2.5,
-      backgroundColor: "#ffffff",
+      backgroundColor: "#fdfbf8",
       useCORS: true,
       logging: false,
       windowWidth: 794,

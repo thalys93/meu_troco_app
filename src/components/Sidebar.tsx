@@ -1,15 +1,13 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, Receipt, User, LogOut, Coins, Crown, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
+import { Home, TrendingUp, TrendingDown, Receipt, User, LogOut, Coins, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import ThemeToggle from '@/components/ThemeToggle';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from './ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu } from './ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from '@radix-ui/react-select';
 import { useTheme } from 'next-themes';
-import { useAuth } from '@/hooks/use-auth';
 import { useUser } from '@/hooks/use-user';
 import AvatarTrigger from './AvatarTrigger';
 import { BankIcon } from '@phosphor-icons/react';
@@ -28,23 +26,19 @@ const AppSidebar = () => {
     { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
     { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
     { name: t('sidebar.bills'), href: '/dashboard/contas', icon: Receipt },
-    // { name: 'Premium', href: '/pricing', icon: Crown },
-    // { name: 'Pagamentos', href: '/payments', icon: CreditCard },    
+    { name: t('sidebar.reports'), href: '/dashboard/relatorios', icon: BarChart3 },
   ];
 
   return (
     <Sidebar variant='floating'>
-      <div className={cn("flex flex-col h-full", theme == "dark" && "bg-gradient-to-br from-green-900/45 via-zinc-900/50 to-zinc-950/70 rounded")}>
+      <div className={cn("flex flex-col h-full", theme == "dark" && "bg-gradient-to-br from-primary/15 via-zinc-900/50 to-zinc-950/70 rounded")}>
         <SidebarHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 px-2">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
                 <Coins className="w-4 h-4 text-primary-foreground" />
               </div>
-              <div className="flex items-baseline gap-1">
-                <span className="font-bold text-sm">{t('brand.name')}</span>
-                <span className="text-xs font-semibold text-primary">{t('brand.suffix')}</span>
-              </div>
+              <span className="font-bold text-sm">{t('brand.name')}</span>
             </div>
             <LanguageSwitcher />
             <ThemeToggle />

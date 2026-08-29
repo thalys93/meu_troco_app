@@ -25,7 +25,8 @@ function SortableCategoryRow({ id, disabled, children }: SortableCategoryRowProp
 
     const style = {
         transform: CSS.Transform.toString(transform),
-        transition
+        transition,
+        opacity: isDragging ? 0.35 : undefined
     };
 
     return (
@@ -34,7 +35,7 @@ function SortableCategoryRow({ id, disabled, children }: SortableCategoryRowProp
             style={style}
             className={cn(
                 'flex items-stretch border-b border-border/60 last:border-b-0 bg-card',
-                isDragging && 'relative z-10 opacity-90 shadow-md ring-1 ring-primary/20'
+                isDragging && 'relative z-0'
             )}
         >
             <button

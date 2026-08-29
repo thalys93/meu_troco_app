@@ -41,10 +41,10 @@ function PrivateLayoutContent({ children }: { children: React.ReactNode }) {
 
     return (
         <main className={cn(
-            "min-h-screen bg-gradient-to-br from-background via-background to-emerald-950/10 flex flex-col",
+            "min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col print:min-h-0 print:h-auto print:bg-white print:bg-none",
             isNotionLayout && "to-sky-950/10"
         )}>
-            <header className="sticky top-0 z-50 w-full border-b border-border/5 bg-background/80 backdrop-blur-md">
+            <header className="print:hidden sticky top-0 z-50 w-full border-b border-border/5 bg-background/80 backdrop-blur-md">
                 <div className={cn(
                     "mx-auto px-4 md:px-6",
                     isNotionLayout ? "max-w-screen-2xl" : "max-w-5xl"
@@ -58,7 +58,7 @@ function PrivateLayoutContent({ children }: { children: React.ReactNode }) {
                 isNotionLayout ? "max-w-screen-2xl" : "max-w-6xl"
             )}>
                 {isReadOnly && (
-                    <div className="mx-auto mt-4 px-4 md:px-6">
+                    <div className="print:hidden mx-auto mt-4 px-4 md:px-6">
                         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200 flex items-center gap-3">
                             <ShieldAlert className="h-4 w-4 shrink-0" />
                             <span>{t('account.blocked.banner', 'Sua conta está bloqueada para alterações. Você pode consultar seus dados, mas não pode criar ou editar informações.')}</span>
@@ -70,7 +70,9 @@ function PrivateLayoutContent({ children }: { children: React.ReactNode }) {
                 </section>
             </div>
 
-            <MobileNav />
+            <div className="print:hidden">
+                <MobileNav />
+            </div>
         </main>
     );
 }

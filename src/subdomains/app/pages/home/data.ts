@@ -68,7 +68,6 @@ export const landingFeatures: {
     { id: 'transacoes', featureKey: 'transactions', screen: 'transactions', reversed: true },
     { id: 'relatorios', featureKey: 'reports', screen: 'reports', reversed: false },
     { id: 'previsoes', featureKey: 'forecasts', screen: 'forecasts', reversed: true },
-    { id: 'perfil', featureKey: 'profile', screen: 'profile', reversed: false },
 ];
 
 export const mockSecurityItems: SecurityItem[] = [

@@ -4,7 +4,6 @@ import {
   TrendingUp,
   TrendingDown,
   Receipt,
-  Calendar as CalendarIcon,
   Check,
   X,
   Loader2,
@@ -22,8 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Transaction } from '@/utils/services/api/transation';
 import { useCategories } from '@/hooks/use-categories';
 import { useWalletsStore } from '@/store/useWalletsStore';
@@ -35,9 +33,6 @@ import DescriptionAutocomplete from './DescriptionAutocomplete';
 import {
   InlineFieldErrors,
   InlineTransactionDraft,
-  dateToYmd,
-  formatDraftDateLabel,
-  parseDraftLocalDate,
   sanitizeValueInput,
   validateInlineDraft,
 } from './transaction-inline-utils';
@@ -69,7 +64,7 @@ const TransactionTableInlineRow = ({
   zebra = false,
   showPaidColumn = false,
 }: TransactionTableInlineRowProps) => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { uid } = useUserStore();
   const { expenseCategories, incomeCategories, billCategories, getCategoryIcon, getCategoryLabel } = useCategories();
   const { wallets, fetchWallets } = useWalletsStore();
@@ -162,7 +157,6 @@ const TransactionTableInlineRow = ({
   };
 
   const CategoryIcon = draft.category ? (getCategoryIcon(draft.category) ?? Tag) : Tag;
-  const dateLabel = formatDraftDateLabel(draft.date, i18n.language);
 
   return (
     <TableRow
@@ -247,27 +241,11 @@ const TransactionTableInlineRow = ({
         />
       </TableCell>
       <TableCell className="border-b border-border/30 py-1.5 px-2 align-middle">
-        <Popover>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              className="flex h-8 w-full min-w-[100px] items-center gap-1.5 rounded-md border border-border/60 bg-background/80 px-2 text-xs text-left hover:bg-muted/50"
-            >
-              <CalendarIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-              <span className="truncate">{dateLabel}</span>
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-2" align="start">
-            <Calendar
-              mode="single"
-              selected={parseDraftLocalDate(draft.date)}
-              onSelect={(date) => {
-                if (!date) return;
-                updateDraft({ date: dateToYmd(date) });
-              }}
-            />
-          </PopoverContent>
-        </Popover>
+        <DatePicker
+          value={draft.date}
+          onChange={(date) => updateDraft({ date })}
+          className="h-8 min-w-[100px] px-2 pl-8 text-xs"
+        />
       </TableCell>
       <TableCell className="border-b border-border/30 py-1.5 px-2 align-middle">
         <Select

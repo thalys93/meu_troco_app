@@ -9,7 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { Form } from './ui/form';
 import { Transaction, type TransactionType, useCreateTransaction, useEditTransaction, useUserTransaction, useUserTransactions } from '@/utils/services/api/transation';
-import { Loader2, Calendar as CalendarIcon, List, CreditCard, Tag } from 'lucide-react';
+import { Loader2, List, CreditCard, Tag } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useUserStore from '@/store/UserStore';
 import { useCategories } from '@/hooks/use-categories';
@@ -17,8 +17,7 @@ import { useTranslation } from 'react-i18next';
 import QuickAmountButtons from './QuickAmountButtons';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
+import { DatePicker } from '@/components/ui/date-picker';
 import { useWalletsStore } from '@/store/useWalletsStore';
 import { usePocketBalance } from '@/hooks/usePocketBalance';
 import { LEGACY_POCKET_CARD_NAME, NO_WALLET_ID, isPocketWalletId } from '@/constants/wallets';
@@ -143,25 +142,6 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   const currencyName = useMemo(() => {
     return i18n.language === 'pt-BR' ? 'BRL' : 'USD';
   }, [i18n.language]);
-
-  const parseLocalDate = (raw?: string) => {
-    if (!raw) return new Date();
-    const [y, m, d] = raw.split('-');
-    const year = Number(y);
-    const month = Number(m) - 1;
-    const day = Number(d);
-    return new Date(year, month, day);
-  };
-
-  const dateLabel = (() => {
-    const raw = transactionForm.watch('date');
-    try {
-      const d = parseLocalDate(raw);
-      return d.toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });
-    } catch {
-      return raw;
-    }
-  })();
 
   React.useEffect(() => {
     if (id) refetchTransaction()
@@ -657,28 +637,13 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
             />
           </div>
           <div className="flex items-center py-3 border-b border-accent/10 md:border-b-0 md:-ml-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <button className="relative w-full h-11 rounded-lg bg-background/40 border border-accent px-3 text-base text-foreground hover:bg-background/50 flex items-center justify-start text-left pl-9">
-                  <CalendarIcon className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
-                  <span className="truncate">{dateLabel}</span>
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="p-2 w-auto">
-                <Calendar
-                  mode="single"
-                  selected={parseLocalDate(transactionForm.watch('date'))}
-                  onSelect={(date) => {
-                    if (!date) return;
-                    const y = date.getFullYear();
-                    const m = String(date.getMonth() + 1).padStart(2, '0');
-                    const d = String(date.getDate()).padStart(2, '0');
-                    const iso = `${y}-${m}-${d}`;
-                    transactionForm.setValue('date', iso, { shouldValidate: true, shouldDirty: true });
-                  }}
-                />
-              </PopoverContent>
-            </Popover>
+            <DatePicker
+              value={transactionForm.watch('date') || ''}
+              onChange={(iso) => {
+                transactionForm.setValue('date', iso, { shouldValidate: true, shouldDirty: true });
+              }}
+              className="h-11 rounded-lg bg-background/40 border-accent"
+            />
           </div>
         </div>
       </div>

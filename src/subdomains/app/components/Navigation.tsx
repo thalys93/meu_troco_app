@@ -27,11 +27,9 @@ function Navigation({
 
     const navigationItems: NavItem[] = [
         { name: t('navigation.home'), href: '#hero' },
-        { name: t('navigation.dashboard'), href: '#dashboard' },
-        { name: t('navigation.transactions'), href: '#transacoes' },
-        { name: t('navigation.reports'), href: '#relatorios' },
-        { name: t('navigation.forecasts'), href: '#previsoes' },
-        { name: t('navigation.profile'), href: '#perfil' },
+        { name: t('navigation.howItWorks'), href: '#como-funciona' },
+        { name: t('navigation.funcionalities'), href: '#produto' },
+        { name: t('navigation.faq'), href: '#faq' },
     ]
 
     const scrollToSection = (href: string) => {
@@ -59,14 +57,9 @@ function Navigation({
                     className="w-7 h-7 object-cover"
                 />
             </div>
-            <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
-                    {label ?? t('brand.name')}
-                </span>
-                {!label && (
-                    <span className="text-sm font-semibold text-primary">{t('brand.suffix')}</span>
-                )}
-            </div>
+            <span className="text-lg font-bold tracking-tight group-hover:text-primary transition-colors">
+                {label ?? t('brand.name')}
+            </span>
         </div>
     )
 

@@ -1,6 +1,9 @@
 import { Transaction, type TransactionType } from '@/utils/services/api/transation';
 import { NO_WALLET_ID } from '@/constants/wallets';
-import { parseLocalDateInput } from '@/subdomains/dashboard/utils/month-range';
+import {
+  getLocalTodayYmd,
+  parseLocalDateInput,
+} from '@/subdomains/dashboard/utils/month-range';
 import {
   allocationRowsFromTransaction,
   createAllocationDraftRows,
@@ -34,8 +37,6 @@ export type InlineFieldErrors = {
   allocations: boolean;
 };
 
-const todayYmd = () => new Date().toISOString().split('T')[0];
-
 export function createEmptyDraft(
   type: TransactionType,
   defaultDate?: string
@@ -44,7 +45,7 @@ export function createEmptyDraft(
     description: '',
     category: '',
     walletId: NO_WALLET_ID,
-    date: defaultDate?.trim() || todayYmd(),
+    date: defaultDate?.trim() || getLocalTodayYmd(),
     type,
     valueDisplay: '',
     splitAcrossWallets: false,
@@ -70,7 +71,7 @@ export function draftFromTransaction(
     description: transaction.description ?? '',
     category: transaction.category ?? '',
     walletId,
-    date: transaction.date ?? todayYmd(),
+    date: transaction.date ?? getLocalTodayYmd(),
     type: transaction.type,
     valueDisplay,
     splitAcrossWallets: split,
@@ -140,6 +141,27 @@ export function isInlineDraftValid(draft: InlineTransactionDraft): boolean {
     !errors.description &&
     !errors.allocations
   );
+}
+
+export function isDraftDirty(draft: InlineTransactionDraft): boolean {
+  const empty = createEmptyDraft(draft.type);
+
+  if (draft.description.trim() !== empty.description) return true;
+  if (draft.category.trim() !== empty.category) return true;
+  if (draft.walletId !== empty.walletId) return true;
+  if (draft.valueDisplay.trim() !== empty.valueDisplay) return true;
+  if (draft.splitAcrossWallets !== empty.splitAcrossWallets) return true;
+
+  if (draft.allocationRows.length !== empty.allocationRows.length) return true;
+
+  return draft.allocationRows.some((row, index) => {
+    const emptyRow = empty.allocationRows[index];
+    if (!emptyRow) return true;
+    return (
+      row.walletId !== emptyRow.walletId ||
+      row.amountDisplay.trim() !== emptyRow.amountDisplay.trim()
+    );
+  });
 }
 
 export function buildTransactionPayload(draft: InlineTransactionDraft): Transaction {

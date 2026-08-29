@@ -110,16 +110,16 @@ const RecurrenceEditForm = ({
         >
           <ToggleGroupItem
             value="conta"
-            className="flex items-center gap-2 data-[state=on]:bg-amber-500/10 data-[state=on]:text-amber-700"
+            className="flex items-center gap-2 data-[state=on]:bg-amber-500/10 data-[state=on]:text-amber-700 dark:data-[state=on]:text-amber-300"
           >
-            <Receipt className="h-4 w-4" />
+            <Receipt className="h-4 w-4 text-amber-600 dark:text-amber-400" />
             {t('sidebar.bills')}
           </ToggleGroupItem>
           <ToggleGroupItem
             value="despesa"
-            className="flex items-center gap-2 data-[state=on]:bg-red-500/10 data-[state=on]:text-red-700"
+            className="flex items-center gap-2 data-[state=on]:bg-red-500/10 data-[state=on]:text-red-700 dark:data-[state=on]:text-red-300"
           >
-            <TrendingDown className="h-4 w-4" />
+            <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
             {t('sidebar.expenses')}
           </ToggleGroupItem>
         </ToggleGroup>

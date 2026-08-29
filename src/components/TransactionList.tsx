@@ -13,6 +13,7 @@ import {
   createEmptyDraft,
   draftFromTransaction,
   InlineTransactionDraft,
+  isDraftDirty,
 } from './transaction-table/transaction-inline-utils';
 import DeleteDialog from './DeleteDialog';
 import { toast } from '@/hooks/use-toast';
@@ -188,6 +189,16 @@ function hasOpenInlineEditOverlay(): boolean {
       return true;
     }
   }
+
+  const autocompletePositioners = document.querySelectorAll(
+    '[data-slot="autocomplete-positioner"]'
+  );
+  for (const positioner of autocompletePositioners) {
+    if (positioner.querySelector('[data-slot="autocomplete-popup"]')) {
+      return true;
+    }
+  }
+
   return false;
 }
 
@@ -667,13 +678,6 @@ const TransactionList = ({
     setSelectedTransaction((current) => (open ? current : undefined));
   }, []);
 
-  const defaultCreateDate = React.useMemo(() => {
-    const today = new Date().toISOString().split('T')[0];
-    if (!selectedMonth || !monthRange) return today;
-    if (isCurrentMonthKey(selectedMonth)) return today;
-    return monthRange.endDate;
-  }, [monthRange, selectedMonth]);
-
   const defaultCreateType = React.useMemo(
     (): TransactionType => resolveDefaultCreateType(filterTypes),
     [filterTypes]
@@ -704,10 +708,10 @@ const TransactionList = ({
       if (isReadOnly) return;
       setInlineSession({
         mode: 'create',
-        draft: createEmptyDraft(type, defaultCreateDate),
+        draft: createEmptyDraft(type),
       });
     },
-    [defaultCreateDate, isReadOnly]
+    [isReadOnly]
   );
 
   const openCreateAction = React.useCallback(
@@ -935,6 +939,7 @@ const TransactionList = ({
     if (!useInlineTable || (!inlineSession && !recurrenceInlineSession)) return;
 
     const handlePointerDown = (event: PointerEvent) => {
+      if (hasOpenInlineEditOverlay()) return;
       if (isInsideQuickAddNestedLayer(event.target)) return;
 
       const el = elementFromEventTarget(event.target);
@@ -959,6 +964,7 @@ const TransactionList = ({
         clearRecurrenceInlineSession();
       }
       if (inlineSession) {
+        if (isDraftDirty(inlineSession.draft)) return;
         clearInlineSession();
       }
     };
@@ -1798,14 +1804,14 @@ const TransactionList = ({
               <ToggleGroupItem value="Todos" aria-label="Todos">
                 {t('default.all') || 'Todos'}
               </ToggleGroupItem>
-              <ToggleGroupItem value="receita" aria-label="Receitas" className="data-[state=on]:bg-emerald-500/10">
-                <TrendingUp className="w-4 h-4 mr-1 text-emerald-400" /> {t('landing_v2.transactions.income')}
+              <ToggleGroupItem value="receita" aria-label="Receitas" className="data-[state=on]:bg-emerald-500/10 data-[state=on]:text-emerald-700 dark:data-[state=on]:text-emerald-300">
+                <TrendingUp className="w-4 h-4 mr-1 text-emerald-600 dark:text-emerald-400" /> {t('landing_v2.transactions.income')}
               </ToggleGroupItem>
-              <ToggleGroupItem value="despesa" aria-label="Despesas" className="data-[state=on]:bg-red-500/10">
-                <TrendingDown className="w-4 h-4 mr-1 text-red-400" /> {t('landing_v2.transactions.expense')}
+              <ToggleGroupItem value="despesa" aria-label="Despesas" className="data-[state=on]:bg-red-500/10 data-[state=on]:text-red-700 dark:data-[state=on]:text-red-300">
+                <TrendingDown className="w-4 h-4 mr-1 text-red-600 dark:text-red-400" /> {t('landing_v2.transactions.expense')}
               </ToggleGroupItem>
-              <ToggleGroupItem value="conta" aria-label="Contas" className="data-[state=on]:bg-amber-500/10">
-                <Receipt className="w-4 h-4 mr-1 text-amber-400" /> {t('sidebar.bills')}
+              <ToggleGroupItem value="conta" aria-label="Contas" className="data-[state=on]:bg-amber-500/10 data-[state=on]:text-amber-700 dark:data-[state=on]:text-amber-300">
+                <Receipt className="w-4 h-4 mr-1 text-amber-600 dark:text-amber-400" /> {t('sidebar.bills')}
               </ToggleGroupItem>
             </ToggleGroup>
           </div>          
@@ -2244,6 +2250,7 @@ const TransactionList = ({
         <SheetContent
           side="right"
           className="z-[50] flex h-svh max-h-svh w-full max-w-[min(100vw,28rem)] flex-col gap-0 overflow-hidden p-0 sm:w-[28rem]"
+          onPointerDownOutside={onQuickAddSheetDismissIntercept}
         >
           <SheetHeader className="shrink-0 space-y-1 border-b border-border/50 px-6 pb-4 pt-6 text-left">
             <SheetTitle>{t('recurrence.generateTitle')}</SheetTitle>

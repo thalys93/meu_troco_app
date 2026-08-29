@@ -34,7 +34,10 @@ import {
   validateAllocationsForSave,
 } from '@/utils/transaction-allocations';
 import { computeWalletDisplayBalance } from '@/utils/wallet-balance';
-import { getCurrentMonthKey } from '@/subdomains/dashboard/utils/month-range';
+import {
+  getCurrentMonthKey,
+  getLocalTodayYmd,
+} from '@/subdomains/dashboard/utils/month-range';
 import { useAccountStatus } from '@/hooks/use-account-status';
 import { useMarkRecurrenceGenerated } from '@/utils/services/api/recurrence';
 
@@ -51,13 +54,13 @@ interface TransactionFormProps {
   recurrenceMonthKey?: string;
 }
 
-const initialValues = {
+const buildInitialValues = () => ({
   value: 0,
-  date: new Date().toISOString().split('T')[0],
+  date: getLocalTodayYmd(),
   description: '',
   category: '',
-  type: ''
-}
+  type: '',
+});
 
 type FieldErrors = {
   value: boolean;
@@ -83,8 +86,8 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
     createAllocationDraftRows
   );
   const transactionForm = useForm({
-    defaultValues: initialValues
-  })
+    defaultValues: buildInitialValues(),
+  });
 
   const { id: routeId } = useParams();
   const id = transactionIdProp ?? routeId;
@@ -149,10 +152,11 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
 
   React.useEffect(() => {
     if (id || !prefill) return;
+    const defaults = buildInitialValues();
     transactionForm.reset({
-      ...initialValues,
+      ...defaults,
       description: prefill.description ?? '',
-      date: prefill.date ?? initialValues.date,
+      date: prefill.date ?? defaults.date,
     });
     if (prefill.category) setCategory(prefill.category);
     if (prefill.walletId) setSelectedWalletId(prefill.walletId);
@@ -344,7 +348,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
           description: `${typeLabel} ${t('transactionForm.toast.successDescription')}`,
           variant: "success",
         });
-        transactionForm.reset(initialValues);
+        transactionForm.reset(buildInitialValues());
         setCategory('');
         setDisplayValue('');
         setFieldErrors({

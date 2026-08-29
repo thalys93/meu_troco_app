@@ -36,7 +36,7 @@ type RecurrenceTableInlineRowProps = {
   recurrenceId: string;
   rowIndex?: number;
   zebra?: boolean;
-  showPaidColumn?: boolean;
+  showStatusColumn?: boolean;
 };
 
 const RecurrenceTableInlineRow = ({
@@ -46,7 +46,7 @@ const RecurrenceTableInlineRow = ({
   onSaved,
   recurrenceId,
   zebra = false,
-  showPaidColumn = false,
+  showStatusColumn = false,
 }: RecurrenceTableInlineRowProps) => {
   const { t } = useTranslation();
   const { uid } = useUserStore();
@@ -262,7 +262,7 @@ const RecurrenceTableInlineRow = ({
             : t('landing_v2.transactions.expense')}
         </Badge>
       </TableCell>
-      {showPaidColumn && (
+      {showStatusColumn && (
         <TableCell className="border-b border-border/30 py-1.5 px-2 align-middle" />
       )}
       <TableCell className="border-b border-border/30 py-1.5 px-2 align-middle">

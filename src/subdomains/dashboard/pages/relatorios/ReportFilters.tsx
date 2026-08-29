@@ -59,6 +59,7 @@ type ReportFiltersProps = {
     statusAll: string;
     statusPaid: string;
     statusPending: string;
+    statusSkipped: string;
     textSize: string;
     textSizeSm: string;
     textSizeMd: string;
@@ -236,6 +237,7 @@ export default function ReportFilters({
                   <SelectItem value="all">{labels.statusAll}</SelectItem>
                   <SelectItem value="paid">{labels.statusPaid}</SelectItem>
                   <SelectItem value="pending">{labels.statusPending}</SelectItem>
+                  <SelectItem value="skipped">{labels.statusSkipped}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

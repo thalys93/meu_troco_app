@@ -49,7 +49,7 @@ type TransactionTableInlineRowProps = {
   allTransactions: Transaction[];
   rowIndex?: number;
   zebra?: boolean;
-  showPaidColumn?: boolean;
+  showStatusColumn?: boolean;
 };
 
 const TransactionTableInlineRow = ({
@@ -62,7 +62,7 @@ const TransactionTableInlineRow = ({
   allTransactions,
   rowIndex = 0,
   zebra = false,
-  showPaidColumn = false,
+  showStatusColumn = false,
 }: TransactionTableInlineRowProps) => {
   const { t } = useTranslation();
   const { uid } = useUserStore();
@@ -300,7 +300,7 @@ const TransactionTableInlineRow = ({
               : t('landing_v2.transactions.expense')}
         </Badge>
       </TableCell>
-      {showPaidColumn && (
+      {showStatusColumn && (
         <TableCell className="border-b border-border/30 py-1.5 px-2 align-middle" />
       )}
       <TableCell className="border-b border-border/30 py-1.5 px-2 align-middle">

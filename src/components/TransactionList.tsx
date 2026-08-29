@@ -1,12 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { TrendingUp, TrendingDown, Receipt, Loader2, Trash, Pen, ChevronLeft, ChevronRight, Plus, ChevronDown, ChevronRight as ChevronRightIcon, ArrowDown, ArrowUp, Repeat } from 'lucide-react';
+import { TrendingUp, TrendingDown, Receipt, Loader2, Trash, Pen, ChevronLeft, ChevronRight, Plus, ChevronDown, ChevronRight as ChevronRightIcon, ArrowDown, ArrowUp, Repeat, Ban } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Transaction, type TransactionType, useCreateTransaction, useDeleteTransaction, useToggleBillPaid, useUserTransactions } from '@/utils/services/api/transation';
+import { Transaction, type TransactionType, useCreateTransaction, useDeleteTransaction, useToggleBillPaid, useToggleTransactionSkipped, useUserTransactions } from '@/utils/services/api/transation';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { EntityActionsDropdown, EntityActionsMenu, type ActionMenuItem } from '@/components/EntityActionsMenu';
+import TransactionPaymentStatus from '@/components/TransactionPaymentStatus';
 import TransactionTableInlineRow from './transaction-table/TransactionTableInlineRow';
 import {
   createEmptyDraft,
@@ -35,13 +36,16 @@ import {
   type TransactionTableSortColumn,
 } from '@/subdomains/dashboard/context/dashboard-preferences';
 import {
+  canSkipTransaction,
   compareTransactionsByColumn,
   filterTransactionsByPreferences,
   getDefaultSortOrderForColumn,
   isBillPaid,
   isExclusiveContaTypeFilter,
+  isTransactionSkipped,
   resolveDefaultCreateType,
   shouldShowPaidColumn,
+  shouldShowSkipColumn,
   toggleTransactionTypes,
 } from '@/subdomains/dashboard/utils/transaction-filters';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from './ui/sheet';
@@ -54,7 +58,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Checkbox } from '@/components/ui/checkbox';
 import { useWalletsStore } from '@/store/useWalletsStore';
 import { NO_WALLET_ID } from '@/constants/wallets';
 import {
@@ -246,6 +249,8 @@ const TransactionList = ({
   const [selectedTransaction, setSelectedTransaction] = React.useState<Transaction>()
   const { mutate, isPending } = useDeleteTransaction()
   const { mutate: toggleBillPaid, isPending: isTogglingPaid } = useToggleBillPaid()
+  const { mutate: toggleTransactionSkipped, isPending: isTogglingSkipped } =
+    useToggleTransactionSkipped()
   const { refetch } = useUserTransactions()
   const { t, i18n } = useTranslation();
   const { getCategoryIcon, getCategoryLabel, categoryLookup } = useCategories();
@@ -273,6 +278,7 @@ const TransactionList = ({
   const [sheetEditId, setSheetEditId] = React.useState<string | null>(null);
   const [sheetEditType, setSheetEditType] = React.useState<TransactionType>('receita');
   const [togglingPaidId, setTogglingPaidId] = React.useState<string | null>(null);
+  const [togglingSkippedId, setTogglingSkippedId] = React.useState<string | null>(null);
   const [inlineSession, setInlineSession] = React.useState<{
     mode: 'create' | 'edit';
     transactionId?: string;
@@ -301,7 +307,8 @@ const TransactionList = ({
   const { mutate: markRecurrenceGenerated } = useMarkRecurrenceGenerated();
   const isTableVariant = variant === 'table';
   const showPaidColumn = shouldShowPaidColumn(filterTypes);
-  const tableColumnCount = showPaidColumn ? 8 : 7;
+  const showStatusColumn = shouldShowSkipColumn(filterTypes);
+  const tableColumnCount = 7 + (showStatusColumn ? 1 : 0);
   const monthRange = React.useMemo(
     () => (selectedMonth ? getMonthRangeByKey(selectedMonth) : undefined),
     [selectedMonth]
@@ -522,6 +529,7 @@ const TransactionList = ({
   const tableRealizadoSum = React.useMemo(() => {
     const base = sumRealizado(
       filteredTransactions.filter((tr) => {
+        if (isTransactionSkipped(tr)) return false;
         if (excludePaidBillsFromSum && isBillPaid(tr)) return false;
         return true;
       })
@@ -533,6 +541,7 @@ const TransactionList = ({
     () =>
       sumPrevisto(
         filteredTransactions.filter((tr) => {
+          if (isTransactionSkipped(tr)) return false;
           if (excludePaidBillsFromSum && isBillPaid(tr)) return false;
           return true;
         }),
@@ -831,23 +840,64 @@ const TransactionList = ({
     [openEditSheet, openInlineEdit, useInlineTable]
   );
 
+  const handleToggleSkipped = React.useCallback(
+    (transaction: Transaction) => {
+      if (isReadOnly) return;
+      if (!transaction.id || !canSkipTransaction(transaction)) return;
+      const nextSkipped = !isTransactionSkipped(transaction);
+      setTogglingSkippedId(transaction.id);
+      toggleTransactionSkipped(
+        { id: transaction.id, skipped: nextSkipped },
+        {
+          onSuccess: () => {
+            refetch();
+            setTogglingSkippedId(null);
+          },
+          onError: () => {
+            toast({
+              title: t('transactionList.skipToggleError'),
+              variant: 'destructive',
+            });
+            setTogglingSkippedId(null);
+          },
+        }
+      );
+    },
+    [isReadOnly, refetch, t, toggleTransactionSkipped]
+  );
+
   const buildTransactionActionItems = React.useCallback(
-    (transaction: Transaction, onEdit: () => void): ActionMenuItem[] => [
-      {
-        id: 'edit',
-        label: t('transactionList.edit'),
-        icon: <Pen className="h-4 w-4" />,
-        onSelect: onEdit,
-      },
-      {
+    (transaction: Transaction, onEdit: () => void): ActionMenuItem[] => {
+      const items: ActionMenuItem[] = [
+        {
+          id: 'edit',
+          label: t('transactionList.edit'),
+          icon: <Pen className="h-4 w-4" />,
+          onSelect: onEdit,
+        },
+      ];
+
+      if (canSkipTransaction(transaction)) {
+        const skipped = isTransactionSkipped(transaction);
+        items.push({
+          id: 'skip',
+          label: skipped ? t('transactionList.unskip') : t('transactionList.skip'),
+          icon: <Ban className="h-4 w-4" />,
+          onSelect: () => handleToggleSkipped(transaction),
+        });
+      }
+
+      items.push({
         id: 'delete',
         label: t('transactionList.delete'),
         icon: <Trash className="h-4 w-4" />,
         onSelect: () => openDeleteDialog(transaction),
         destructive: true,
-      },
-    ],
-    [openDeleteDialog, t]
+      });
+
+      return items;
+    },
+    [handleToggleSkipped, openDeleteDialog, t]
   );
 
   const buildRecurrenceActionItems = React.useCallback(
@@ -1030,7 +1080,7 @@ const TransactionList = ({
               allTransactions={displayTransactions || []}
               rowIndex={currentRowIndex}
               zebra={currentRowIndex % 2 === 1}
-              showPaidColumn={showPaidColumn}
+              showStatusColumn={showStatusColumn}
             />
           );
         }
@@ -1053,8 +1103,12 @@ const TransactionList = ({
         const zebra = currentRowIndex % 2 === 1;
         const isBill = transaction.type === 'conta';
         const isBillPaidRow = isBillPaid(transaction);
+        const isSkippedRow = isTransactionSkipped(transaction);
+        const canSkipRow = canSkipTransaction(transaction);
         const isTogglingThisPaid =
           isTogglingPaid && togglingPaidId === transaction.id;
+        const isTogglingThisSkipped =
+          isTogglingSkipped && togglingSkippedId === transaction.id;
 
         const handleTableRowClick = () => {
           if (!isTableVariant) {
@@ -1087,13 +1141,14 @@ const TransactionList = ({
             className={cn(
               'border-0 transition-colors',
               isTableVariant && 'cursor-pointer select-none',
-              isBill && !isBillPaidRow && 'border-l-2 border-l-amber-500/50',
-              isBill && isBillPaidRow && 'opacity-60',
+              isBill && !isBillPaidRow && !isSkippedRow && 'border-l-2 border-l-amber-500/50',
+              isSkippedRow && 'border-l-2 border-l-red-500 opacity-70 shadow-[inset_4px_0_12px_-6px_rgba(239,68,68,0.55)]',
+              isBill && isBillPaidRow && !isSkippedRow && 'opacity-60',
               zebra
                 ? 'bg-muted/30 hover:bg-muted/45 dark:bg-muted/15 dark:hover:bg-muted/25'
                 : 'bg-transparent hover:bg-muted/25 dark:hover:bg-muted/20',
               isPendingTransaction(transaction.id) && 'pointer-events-none opacity-60',
-              isTogglingThisPaid && 'pointer-events-none opacity-70',
+              (isTogglingThisPaid || isTogglingThisSkipped) && 'pointer-events-none opacity-70',
               useInlineTable &&
                 inlineSession &&
                 inlineSession.mode === 'edit' &&
@@ -1154,7 +1209,9 @@ const TransactionList = ({
                 <span
                   className={cn(
                     'text-sm font-medium leading-snug line-clamp-2 text-foreground',
-                    isBill && isBillPaidRow && 'line-through'
+                    isBill && isBillPaidRow && !isSkippedRow && 'line-through',
+                    isSkippedRow &&
+                      'line-through text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.65)] dark:text-red-400'
                   )}
                 >
                   {transaction.description}
@@ -1216,29 +1273,35 @@ const TransactionList = ({
                     : t('landing_v2.transactions.expense')}
               </Badge>
             </TableCell>
-            {showPaidColumn && (
+            {showStatusColumn && (
               <TableCell
-                className="border-b border-border/30 py-2 px-3 align-middle text-center"
+                className="border-b border-border/30 py-2 px-2 align-middle text-center"
                 onClick={(e) => e.stopPropagation()}
               >
-                {isBill && (
-                  <Checkbox
-                    checked={isBillPaidRow}
-                    disabled={isTogglingThisPaid || isReadOnly}
-                    onCheckedChange={() => handleToggleBillPaid(transaction)}
-                    aria-label={t('transactionList.paid')}
+                {canSkipRow ? (
+                  <TransactionPaymentStatus
+                    showPaid={isBill}
+                    isPaid={isBillPaidRow}
+                    isSkipped={isSkippedRow}
+                    disabled={
+                      isReadOnly || isTogglingThisPaid || isTogglingThisSkipped
+                    }
+                    onTogglePaid={() => handleToggleBillPaid(transaction)}
+                    onToggleSkipped={() => handleToggleSkipped(transaction)}
                   />
-                )}
+                ) : null}
               </TableCell>
             )}
             <TableCell
               className={cn(
                 'border-b border-border/30 py-2 px-3 text-right align-middle font-mono text-sm font-semibold tabular-nums whitespace-nowrap',
-                transaction.type === 'receita'
+                isSkippedRow &&
+                  'line-through text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.75)] dark:text-red-400',
+                !isSkippedRow && transaction.type === 'receita'
                   ? 'text-emerald-600 dark:text-emerald-400'
-                  : transaction.type === 'conta'
+                  : !isSkippedRow && transaction.type === 'conta'
                     ? 'text-amber-600 dark:text-amber-400'
-                    : 'text-red-600 dark:text-red-400'
+                    : !isSkippedRow && 'text-red-600 dark:text-red-400'
               )}
             >
               {formatAmount(transaction.value, transaction.type)}
@@ -1311,7 +1374,7 @@ const TransactionList = ({
                   <TableCell className="border-b border-border/20 py-1.5 px-3" />
                   <TableCell className="border-b border-border/20 py-1.5 px-3" />
                   <TableCell className="border-b border-border/20 py-1.5 px-3" />
-                  {showPaidColumn && <TableCell className="border-b border-border/20 py-1.5 px-3" />}
+                  {showStatusColumn && <TableCell className="border-b border-border/20 py-1.5 px-3" />}
                   <TableCell
                     className={cn(
                       'border-b border-border/20 py-1.5 px-3 text-right align-middle font-mono text-xs font-semibold tabular-nums whitespace-nowrap',
@@ -1365,7 +1428,7 @@ const TransactionList = ({
             onSaved={clearRecurrenceInlineSession}
             rowIndex={currentRowIndex}
             zebra={currentRowIndex % 2 === 1}
-            showPaidColumn={showPaidColumn}
+            showStatusColumn={showStatusColumn}
           />
         );
       }
@@ -1467,21 +1530,20 @@ const TransactionList = ({
               {isBill ? t('sidebar.bills') : t('landing_v2.transactions.expense')}
             </Badge>
           </TableCell>
-          {showPaidColumn && (
+          {showStatusColumn && (
             <TableCell
-              className="border-b border-border/30 py-2 px-3 align-middle text-center"
+              className="border-b border-border/30 py-2 px-2 align-middle text-center"
               onClick={(e) => e.stopPropagation()}
             >
-              {isBill && (
-                <Checkbox
-                  checked={false}
+              {isBill ? (
+                <TransactionPaymentStatus
+                  showPaid
+                  isPaid={false}
+                  isSkipped={false}
                   disabled={isReadOnly || isMarkingPaid}
-                  onCheckedChange={(checked) => {
-                    if (checked) markRecurrencePaidAndGenerate(recurrence);
-                  }}
-                  aria-label={t('transactionList.recurrence.markPaid')}
+                  onTogglePaid={() => markRecurrencePaidAndGenerate(recurrence)}
                 />
-              )}
+              ) : null}
             </TableCell>
           )}
           <TableCell
@@ -1810,16 +1872,24 @@ const TransactionList = ({
                         onSort={handleTableSortClick}
                         className={cn(TABLE_HEAD_CLASS, "w-[14%] px-3")}
                       />
-                      {showPaidColumn && (
-                        <SortableTableHead
-                          column="paid"
-                          label={t('transactionList.paid')}
-                          activeColumn={tableSortColumn}
-                          sortOrder={tableSortOrder}
-                          onSort={handleTableSortClick}
-                          align="center"
-                          className={cn(TABLE_HEAD_CLASS, "w-[8%] px-3 text-center")}
-                        />
+                      {showStatusColumn && (
+                        showPaidColumn ? (
+                          <SortableTableHead
+                            column="paid"
+                            label={t('transactionList.status')}
+                            activeColumn={tableSortColumn}
+                            sortOrder={tableSortOrder}
+                            onSort={handleTableSortClick}
+                            align="center"
+                            className={cn(TABLE_HEAD_CLASS, "w-[10%] min-w-[88px] px-2 text-center")}
+                          />
+                        ) : (
+                          <TableHead
+                            className={cn(TABLE_HEAD_CLASS, "w-[10%] min-w-[88px] px-2 text-center")}
+                          >
+                            {t('transactionList.status')}
+                          </TableHead>
+                        )
                       )}
                       <SortableTableHead
                         column="value"
@@ -1852,7 +1922,7 @@ const TransactionList = ({
                           onSaved={clearInlineSession}
                           allTransactions={displayTransactions || []}
                           zebra={filteredTransactions.length % 2 === 1}
-                          showPaidColumn={showPaidColumn}
+                          showStatusColumn={showStatusColumn}
                         />
                       ) : (
                         <TableRow
@@ -1886,7 +1956,7 @@ const TransactionList = ({
                   <TableFooter className="border-0 bg-transparent">
                     <TableRow className="border-0 hover:bg-transparent">
                       <TableCell
-                        colSpan={showPaidColumn ? 7 : 6}
+                        colSpan={tableColumnCount - 1}
                         className="sticky bottom-0 z-10 border-t border-border/50 bg-muted py-2 pl-4 pr-2 text-sm font-semibold text-muted-foreground shadow-[0_-1px_0_0_hsl(var(--border)/0.35)]"
                       >
                         <span>{t('transactionList.footer.realized')}: </span>
@@ -1939,11 +2009,16 @@ const TransactionList = ({
                       const listActionItems = buildTransactionActionItems(transaction, () =>
                         openEditSheet(transaction)
                       );
+                      const isSkippedListRow = isTransactionSkipped(transaction);
+                      const canSkipListRow = canSkipTransaction(transaction);
+                      const isTogglingThisSkippedList =
+                        isTogglingSkipped && togglingSkippedId === transaction.id;
                       const listCard = (
                       <div
                         className={cn(
                           "flex items-center justify-between p-4 rounded-xl border bg-background/50 shadow-sm hover:shadow-md transition-all mb-2",
-                          isPendingTransaction(transaction.id) && "pointer-events-none animate-pulse"
+                          isPendingTransaction(transaction.id) && "pointer-events-none animate-pulse",
+                          isSkippedListRow && "opacity-70 border-red-500/70 shadow-[0_0_12px_rgba(239,68,68,0.35)]"
                         )}
                       >
                         <div className="flex items-center gap-3">
@@ -1972,7 +2047,15 @@ const TransactionList = ({
                             )}
                           </div>
                           <div>
-                            <p className="font-medium leading-tight">{transaction.description}</p>
+                            <p
+                              className={cn(
+                                "font-medium leading-tight",
+                                isSkippedListRow &&
+                                  "line-through text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.75)] dark:text-red-400"
+                              )}
+                            >
+                              {transaction.description}
+                            </p>
                             <div className="flex items-center gap-2 mt-1">
                               <Badge variant="secondary" className="text-xs gap-1.5">
                                 {(() => {
@@ -1992,14 +2075,30 @@ const TransactionList = ({
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          {canSkipListRow && (
+                            <TransactionPaymentStatus
+                              showPaid={transaction.type === 'conta'}
+                              isPaid={isBillPaid(transaction)}
+                              isSkipped={isSkippedListRow}
+                              disabled={
+                                isReadOnly ||
+                                isTogglingThisSkippedList ||
+                                (isTogglingPaid && togglingPaidId === transaction.id)
+                              }
+                              onTogglePaid={() => handleToggleBillPaid(transaction)}
+                              onToggleSkipped={() => handleToggleSkipped(transaction)}
+                            />
+                          )}
                           <div
                             className={cn(
                               "font-semibold text-right min-w-[88px]",
-                              transaction.type === 'receita'
-                                ? "text-emerald-500"
-                                : transaction.type === 'conta'
-                                  ? "text-amber-500"
-                                  : "text-red-500"
+                              isSkippedListRow
+                                ? "line-through text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.75)] dark:text-red-400"
+                                : transaction.type === 'receita'
+                                  ? "text-emerald-500"
+                                  : transaction.type === 'conta'
+                                    ? "text-amber-500"
+                                    : "text-red-500"
                             )}
                           >
                             {formatAmount(transaction.value, transaction.type)}

@@ -49,6 +49,18 @@ export function shouldShowPaidColumn(types: string[]): boolean {
   );
 }
 
+export function shouldShowSkipColumn(types: string[]): boolean {
+  return (
+    types.includes(TRANSACTION_TYPE_FILTER_ALL) ||
+    types.includes("conta") ||
+    types.includes("despesa")
+  );
+}
+
+export function canSkipTransaction(transaction: Transaction): boolean {
+  return transaction.type === "conta" || transaction.type === "despesa";
+}
+
 export function resolveDefaultCreateType(types: string[]): TransactionType {
   const specific = types.filter((t) => t !== TRANSACTION_TYPE_FILTER_ALL);
   if (
@@ -213,10 +225,25 @@ export const filterTransactionsByPreferences = (
 };
 
 export const isBillPaid = (transaction: Transaction): boolean =>
-  transaction.type === "conta" && transaction.paid === true;
+  transaction.type === "conta" &&
+  transaction.paid === true &&
+  transaction.skipped !== true;
+
+export const isTransactionSkipped = (transaction: Transaction): boolean =>
+  (transaction.type === "conta" || transaction.type === "despesa") &&
+  transaction.skipped === true;
+
+export const isBillSkipped = (transaction: Transaction): boolean =>
+  transaction.type === "conta" && isTransactionSkipped(transaction);
 
 export const isBillPending = (transaction: Transaction): boolean =>
-  transaction.type === "conta" && !isBillPaid(transaction);
+  transaction.type === "conta" &&
+  !isBillPaid(transaction) &&
+  !isBillSkipped(transaction);
+
+export const withoutSkippedTransactions = (
+  transactions: Transaction[]
+): Transaction[] => transactions.filter((tr) => !isTransactionSkipped(tr));
 
 export const summarizeTransactionTypes = (
   transactions: Transaction[]
@@ -285,5 +312,52 @@ if (import.meta.env.DEV) {
   assert(
     !transactionMatchesTypeFilter("receita", ["despesa", "conta"]),
     "multi excludes receita"
+  );
+  assert(
+    isTransactionSkipped({
+      type: "despesa",
+      skipped: true,
+      value: 1,
+      date: "2026-01-01",
+      description: "",
+      category: "",
+      walletId: "",
+    }),
+    "skipped despesa"
+  );
+  assert(
+    !isTransactionSkipped({
+      type: "receita",
+      skipped: true,
+      value: 1,
+      date: "2026-01-01",
+      description: "",
+      category: "",
+      walletId: "",
+    }),
+    "receita never skipped"
+  );
+  assert(
+    withoutSkippedTransactions([
+      {
+        type: "despesa",
+        skipped: true,
+        value: 10,
+        date: "2026-01-01",
+        description: "",
+        category: "",
+        walletId: "",
+      },
+      {
+        type: "despesa",
+        skipped: false,
+        value: 5,
+        date: "2026-01-01",
+        description: "",
+        category: "",
+        walletId: "",
+      },
+    ]).length === 1,
+    "withoutSkipped filters"
   );
 }

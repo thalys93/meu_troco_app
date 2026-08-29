@@ -155,6 +155,7 @@ function RelatoriosPageBody() {
     status: t("reports.columns.status"),
     paid: t("dashboard.billsChart.paid"),
     pending: t("dashboard.billsChart.pending"),
+    skipped: t("reports.status.skipped"),
     sectionTotal: t("reports.document.sectionTotal"),
     empty: t("reports.document.sectionEmpty"),
   };
@@ -229,6 +230,7 @@ function RelatoriosPageBody() {
           statusAll: t("reports.filters.statusAll"),
           statusPaid: t("reports.filters.statusPaid"),
           statusPending: t("reports.filters.statusPending"),
+          statusSkipped: t("reports.filters.statusSkipped"),
           textSize: t("reports.filters.textSize"),
           textSizeSm: t("reports.filters.textSizeSm"),
           textSizeMd: t("reports.filters.textSizeMd"),

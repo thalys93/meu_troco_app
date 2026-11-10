@@ -980,12 +980,41 @@
       "badge": "Gratis. Sin tarjeta. Sin armar planilla.",
       "title_line1": "Cayo el sueldo.",
       "title_line2": "Y desaparecio otra vez?",
+      "lede": "Basta de planilla y Notion. La app nace lista para el mes.",
       "description": "Basta de Notion, planilla y app que se vuelve otro proyecto. Meu Troco nace listo para que registres el mes y veas a donde fue cada real.",
       "cta_primary": "Crear cuenta gratis",
       "cta_demo": "Ver como funciona",
       "trust_line": "Cuenta gratis. Sin tarjeta. Sal cuando quieras.",
       "device_desktop": "Panel",
       "device_mobile": "Celular"
+    },
+    "receipt": {
+      "aria": "Extracto de la pagina",
+      "title": "Extracto",
+      "unit": "mes",
+      "line_hero": "Cayo el sueldo",
+      "line_problema": "Planilla abandonada",
+      "line_virada": "El metodo",
+      "line_produto": "Dia 28",
+      "line_faq": "Cuenta gratis",
+      "value_month": "ver el mes",
+      "value_close": "empezar"
+    },
+    "month": {
+      "title": "El mes, legible.",
+      "p1": "Sin saldos inventados en esta pagina. Lo que Meu Troco entrega es el metodo: registrar, ver el panel, leer el informe y anticipar el aprieto.",
+      "p2": "Registras. El panel responde. Sin armar sistema.",
+      "proof_lancar": "Registrar",
+      "proof_lancar_desc": "Ingresos y gastos en el mismo lugar.",
+      "proof_painel": "Panel",
+      "proof_painel_desc": "El mes de un vistazo, sin cazar celdas.",
+      "proof_relatorios": "Informes",
+      "proof_relatorios_desc": "A donde fue cada real, en graficos simples.",
+      "proof_previsoes": "Previsiones",
+      "proof_previsoes_desc": "Antes de que la cuenta llegue sin aviso."
+    },
+    "close": {
+      "lead": "Cuando quieras empezar,"
     },
     "visual": {
       "caption": "Asi se ve el panel cuando el mes deja de ser un misterio."

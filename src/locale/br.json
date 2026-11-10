@@ -880,12 +880,41 @@
       "badge": "Grátis. Sem cartão. Sem montar planilha.",
       "title_line1": "O salário entrou.",
       "title_line2": "E sumiu de novo?",
+      "lede": "Chega de planilha e Notion. O app nasce pronto pro mês.",
       "description": "Chega de Notion, planilha e app que vira outro projeto. O Meu Troco já nasce pronto pra você lançar o mês e ver pra onde foi cada real.",
       "cta_primary": "Criar conta grátis",
       "cta_demo": "Ver como funciona",
       "trust_line": "Conta gratuita. Sem cartão. Cancele quando quiser.",
       "device_desktop": "Painel",
       "device_mobile": "Celular"
+    },
+    "receipt": {
+      "aria": "Extrato da página",
+      "title": "Extrato",
+      "unit": "mês",
+      "line_hero": "Salário entrou",
+      "line_problema": "Planilha abandonada",
+      "line_virada": "O método",
+      "line_produto": "Dia 28",
+      "line_faq": "Conta grátis",
+      "value_month": "ver o mês",
+      "value_close": "começar"
+    },
+    "month": {
+      "title": "O mês, legível.",
+      "p1": "Sem saldo inventado nesta página. O que o Meu Troco entrega é o método: lançar, ver o painel, ler o relatório e antecipar o aperto.",
+      "p2": "Você lança. O painel responde. Sem montar sistema.",
+      "proof_lancar": "Lançar",
+      "proof_lancar_desc": "Receitas e despesas no mesmo lugar.",
+      "proof_painel": "Painel",
+      "proof_painel_desc": "O mês num olhar, sem caçar célula.",
+      "proof_relatorios": "Relatórios",
+      "proof_relatorios_desc": "Pra onde foi cada real, em gráficos simples.",
+      "proof_previsoes": "Previsões",
+      "proof_previsoes_desc": "Antes da conta chegar sem aviso."
+    },
+    "close": {
+      "lead": "Quando quiser começar,"
     },
     "visual": {
       "caption": "Assim fica o painel quando o mês deixa de ser mistério."

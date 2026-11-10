@@ -52,7 +52,7 @@ function RelatoriosPageBody() {
   const [endDate, setEndDate] = useState("");
   const [isExporting, setIsExporting] = useState(false);
   const skipMonthRangeResetRef = useRef(false);
-  const reportRef = useRef<HTMLArticleElement>(null);
+  const reportRef = useRef<HTMLTitleElement>(null);
 
   const monthRange = useMemo(
     () => getMonthRangeByKey(selectedMonth),

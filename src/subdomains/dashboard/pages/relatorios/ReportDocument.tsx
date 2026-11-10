@@ -204,7 +204,7 @@ function ReportTable({
   );
 }
 
-const ReportDocument = forwardRef<HTMLArticleElement, ReportDocumentProps>(
+const ReportDocument = forwardRef<HTMLTitleElement, ReportDocumentProps>(
   function ReportDocument(
     {
       issuedAtLabel,

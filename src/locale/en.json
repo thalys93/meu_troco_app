@@ -995,12 +995,41 @@
       "badge": "Free. No card. No spreadsheet setup.",
       "title_line1": "Payday hit.",
       "title_line2": "And it vanished again?",
+      "lede": "Skip the spreadsheet and Notion. The app is ready for the month.",
       "description": "Enough Notion, spreadsheets, and apps that become another project. Meu Troco is ready out of the box so you can log the month and see where every real went.",
       "cta_primary": "Create free account",
       "cta_demo": "See how it works",
       "trust_line": "Free account. No card. Leave anytime.",
       "device_desktop": "Dashboard",
       "device_mobile": "Phone"
+    },
+    "receipt": {
+      "aria": "Page statement",
+      "title": "Statement",
+      "unit": "month",
+      "line_hero": "Payday hit",
+      "line_problema": "Abandoned sheet",
+      "line_virada": "The method",
+      "line_produto": "Day 28",
+      "line_faq": "Free account",
+      "value_month": "see the month",
+      "value_close": "start"
+    },
+    "month": {
+      "title": "The month, readable.",
+      "p1": "No invented balances on this page. What Meu Troco delivers is the method: log it, read the dashboard, open reports, and spot the squeeze early.",
+      "p2": "You log it. The dashboard answers. No system to assemble.",
+      "proof_lancar": "Log",
+      "proof_lancar_desc": "Income and expenses in one place.",
+      "proof_painel": "Dashboard",
+      "proof_painel_desc": "The month at a glance, no cell hunt.",
+      "proof_relatorios": "Reports",
+      "proof_relatorios_desc": "Where every real went, in plain charts.",
+      "proof_previsoes": "Forecasts",
+      "proof_previsoes_desc": "Before the bill arrives without warning."
+    },
+    "close": {
+      "lead": "When you are ready,"
     },
     "visual": {
       "caption": "This is the dashboard when the month stops being a mystery."

@@ -16,11 +16,11 @@ function WalletsPageBody() {
                 "container mx-auto mt-8 mb-20 md:mb-28 px-4 md:px-6",
                 isNotionDesktop ? "max-w-screen-2xl" : "max-w-5xl"
             )}
-        >
+        >            
             <div className="space-y-8">
                 <CardList />
                 <WalletsOverview />
-            </div>
+            </div>            
         </div>
     );
 }

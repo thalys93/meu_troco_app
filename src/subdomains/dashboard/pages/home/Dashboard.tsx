@@ -28,6 +28,8 @@ import {
   withoutSkippedTransactions,
 } from '../../utils/transaction-filters';
 
+import { Shimmer } from '@shimmer-from-structure/react'
+
 function DashboardHomeBody() {
   const { data: transactions = [], isLoading } = useUserTransactions();
   const {
@@ -193,6 +195,7 @@ function DashboardHomeBody() {
       animate="visible"
       variants={containerVariants}
     >
+      <Shimmer loading={isLoading}>
       {isNotionDesktop ? (
         <>
           <motion.div variants={itemVariants} className="space-y-3 pt-2 pb-2">
@@ -345,6 +348,7 @@ function DashboardHomeBody() {
           </motion.div>
         </>
       )}
+      </Shimmer>
     </motion.div>
   );
 }

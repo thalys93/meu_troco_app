@@ -1,22 +1,29 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { LinkedinLogo, ThreadsLogoIcon } from '@phosphor-icons/react';
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { useNavigate } from 'react-router-dom';
-import PublicLayout from '@/subdomains/app/layout/PublicLayout';
-import { useTranslation } from 'react-i18next';
-import { motion } from 'framer-motion';
-import LandingFeatureSection from './LandingFeatureSection';
-import LandingScreenMockup from './LandingScreenMockup';
-import { landingFeatures } from './data';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import ThemeToggle from '@/components/ThemeToggle';
+import LegalModals from '@/shared/components/LegalModals';
+import MarginReceipt from './MarginReceipt';
+import { useScrollCraftLanding } from './useScrollCraftLanding';
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const rootRef = React.useRef<HTMLDivElement>(null);
+  useScrollCraftLanding(rootRef);
+
+  const [legalModal, setLegalModal] = React.useState<{
+    isOpen: boolean;
+    type: 'terms' | 'privacy';
+  }>({ isOpen: false, type: 'terms' });
 
   React.useEffect(() => {
     const id = window.location.hash.replace('#', '');
@@ -26,269 +33,239 @@ const LandingPage = () => {
     });
   }, []);
 
-  const scrollToSection = (id: string) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   const goRegister = () => navigate('oauth/register');
 
-  const howSteps = [1, 2, 3] as const;
   const faqItems = [1, 2, 3, 4, 5] as const;
   const riskItems = [1, 2, 3] as const;
+  const proofItems = ['lancar', 'painel', 'relatorios', 'previsoes'] as const;
 
   return (
-    <PublicLayout type="full">
-      <div className="relative overflow-hidden bg-background">
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 bg-background/75" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_2px,transparent_2px),linear-gradient(to_bottom,#80808008_2px,transparent_2px)] bg-[size:40px_40px]" />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-primary/12 rounded-full blur-[120px] opacity-50 -translate-y-1/2" />
+    <div ref={rootRef} className="mt-landing">
+      <span data-sc-progress aria-hidden="true" />
+
+      <div className="mt-folio">
+        <a href="#hero" className="mt-folio__mark">
+          <img src="/new_rebrand/nobg.png" alt="" width={28} height={28} />
+          <span>{t('brand.name')}</span>
+        </a>
+        <div className="mt-folio__lang">
+          <ThemeToggle />
+          <LanguageSwitcher />
         </div>
+      </div>
 
-        <section id="hero" className="relative z-10 pt-24 pb-16 md:pt-32 md:pb-20 scroll-mt-20">
-          <div className="container mx-auto px-4 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="max-w-4xl mx-auto"
-            >
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
-                {t('landing_v3.hero.badge')}
-              </div>
+      <MarginReceipt />
 
-              <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight leading-[1.08] mb-6 text-foreground">
-                {t('landing_v3.hero.title_line1')}{' '}
-                <span className="text-primary">{t('landing_v3.hero.title_line2')}</span>
-              </h1>
+      {/* 1 · Rosto — flow */}
+      <section
+        id="hero"
+        className="mt-ground--paper"
+        data-sc-act="flow"
+        data-sc-span="1.2"
+      >
+        <div className="mt-title">
+          <div className="mt-title__inner sc-stack" data-sc-in data-sc-stagger="60">
+            <h1 className="sc-display sc-display--xl">
+              {t('landing_v3.hero.title_line1')}{' '}
+              <span style={{ color: 'var(--sc-accent)' }}>{t('landing_v3.hero.title_line2')}</span>
+            </h1>
+            <p className="sc-lede mt-title__lede">{t('landing_v3.hero.description')}</p>
+            <button type="button" className="mt-title__cta" onClick={goRegister}>
+              {t('landing_v3.hero.cta_primary')}
+            </button>
+            <p className="mt-title__trust">{t('landing_v3.hero.trust_line')}</p>
+          </div>
+        </div>
+      </section>
 
-              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
+      {/* 2 · Problema — reveal */}
+      <section
+        id="problema"
+        className="mt-ground--cold"
+        data-sc-act="pin"
+        data-sc-span="1.8"
+      >
+        <div data-sc-stage>
+          <div className="mt-problem" data-sc-reveal="left" data-sc-reveal-at="0.08 0.55">
+            <div className="sc-stack">
+              <h2 className="sc-display sc-display--md">{t('landing_v3.problem.title')}</h2>
+              <p className="sc-body">{t('landing_v3.problem.p1')}</p>
+              <p className="sc-body">{t('landing_v3.problem.p2')}</p>
+              <p className="sc-body" style={{ color: 'var(--sc-ink)' }}>
                 {t('landing_v3.hero.description')}
               </p>
-
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
-                <Button
-                  size="lg"
-                  className="rounded-full px-8 h-12 text-base font-semibold shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
-                  onClick={goRegister}
-                >
-                  {t('landing_v3.hero.cta_primary')}
-                </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="rounded-full px-8 h-12 text-base font-semibold hover:scale-[1.02] transition-transform"
-                  onClick={() => scrollToSection('como-funciona')}
-                >
-                  {t('landing_v3.hero.cta_demo')}
-                </Button>
-              </div>
-
-              <p className="text-sm text-muted-foreground">
-                {t('landing_v3.hero.trust_line')}
-              </p>
-            </motion.div>
-          </div>
-        </section>
-
-        <section id="prova-visual" className="relative z-10 pb-16 md:pb-24 scroll-mt-20">
-          <div className="container mx-auto px-4">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-60px' }}
-              transition={{ duration: 0.6 }}
-              className="max-w-5xl mx-auto"
-            >
-              <p className="text-center text-sm font-medium text-muted-foreground mb-6">
-                {t('landing_v3.visual.caption')}
-              </p>
-              <LandingScreenMockup screen="dashboard" />
-            </motion.div>
-          </div>
-        </section>
-
-        <section id="problema" className="relative z-10 py-20 md:py-28 scroll-mt-20">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center space-y-6">
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
-                {t('landing_v3.problem.title')}
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {t('landing_v3.problem.p1')}
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {t('landing_v3.problem.p2')}
-              </p>
             </div>
+            <figure className="mt-problem__plate" aria-hidden="true">
+              <div className="mt-problem__plate-sheet" />
+            </figure>
           </div>
-        </section>
-
-        <section id="virada" className="relative z-10 py-20 md:py-28 bg-muted/40 scroll-mt-20">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center space-y-6">
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
-                {t('landing_v3.turn.title')}{' '}
-                <span className="text-primary">{t('landing_v3.turn.title_accent')}</span>
-              </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {t('landing_v3.turn.p1')}
-              </p>
-              <p className="text-lg text-foreground/90 leading-relaxed font-medium">
-                {t('landing_v3.turn.p2')}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section id="historia" className="relative z-10 py-20 md:py-28 scroll-mt-20">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto rounded-3xl border border-border/60 bg-card/60 p-8 md:p-12 space-y-5">
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary">
-                {t('landing_v3.story.label')}
-              </p>
-              <h2 className="text-2xl md:text-4xl font-bold tracking-tight">
-                {t('landing_v3.story.title')}
-              </h2>
-              <p className="text-muted-foreground leading-relaxed">
-                {t('landing_v3.story.p1')}
-              </p>
-              <p className="text-muted-foreground leading-relaxed">
-                {t('landing_v3.story.p2')}
-              </p>
-              <p className="text-foreground leading-relaxed font-medium">
-                {t('landing_v3.story.p3')}
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section id="como-funciona" className="relative z-10 py-20 md:py-28 bg-muted/40 scroll-mt-20">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto">
-              <div className="text-center mb-12 space-y-3">
-                <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
-                  {t('landing_v3.how.title')}
-                </h2>
-                <p className="text-lg text-muted-foreground">
-                  {t('landing_v3.how.subtitle')}
-                </p>
-              </div>
-              <div className="grid md:grid-cols-3 gap-8">
-                {howSteps.map((step) => (
-                  <div key={step} className="space-y-3">
-                    <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                      {step}
-                    </div>
-                    <h3 className="text-xl font-semibold">
-                      {t(`landing_v3.how.step${step}_title`)}
-                    </h3>
-                    <p className="text-muted-foreground leading-relaxed">
-                      {t(`landing_v3.how.step${step}_desc`)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div id="produto">
-          {landingFeatures.map((feature) => (
-            <LandingFeatureSection
-              key={feature.id}
-              id={feature.id}
-              featureKey={feature.featureKey}
-              screen={feature.screen}
-              reversed={feature.reversed}
-            />
-          ))}
         </div>
+      </section>
 
-        <section id="risco-zero" className="relative z-10 py-20 md:py-28 bg-muted/40 scroll-mt-20">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center space-y-8">
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
-                {t('landing_v3.risk.title')}
+      {/* 3 · Virada — kinetic (held briefly so lines assemble) */}
+      <section
+        id="virada"
+        className="mt-ground--turn"
+        data-sc-act="pin"
+        data-sc-span="2.8"
+        data-sc-dwell="0.46"
+      >
+        <div data-sc-stage className="mt-turn">
+          <div>
+            <h2
+              className="sc-display sc-display--lg"
+              data-sc-cue="0.04 0.98 0.16 0.04"
+              data-sc-kinetic="lines"
+            >
+              {t('landing_v3.turn.title')}{' '}
+              <span className="sc-accent-line">{t('landing_v3.turn.title_accent')}</span>
+            </h2>
+            <div className="mt-turn__body" data-sc-cue="0.22 0.98 0.2 0.04">
+              <p className="sc-body">{t('landing_v3.turn.p1')}</p>
+              <p className="sc-body">{t('landing_v3.turn.p2')}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4 · Mês — peak, parallax */}
+      <section
+        id="produto"
+        className="mt-ground--month"
+        data-sc-act="pin"
+        data-sc-span="3.4"
+      >
+        <div data-sc-stage>
+          <div className="mt-month">
+            <div className="mt-month__copy" data-sc-cue="0.06 0.94 0.12 0.1">
+              <p className="sc-label">{t('landing_v3.story.label')}</p>
+              <h2 className="sc-display sc-display--md" style={{ marginTop: 'var(--sc-4)' }}>
+                {t('landing_v3.month.title')}
               </h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                {t('landing_v3.risk.subtitle')}
+              <p className="sc-body" style={{ marginTop: 'var(--sc-4)' }}>
+                {t('landing_v3.month.p1')}
               </p>
-              <ul className="grid sm:grid-cols-3 gap-4 text-left">
-                {riskItems.map((n) => (
-                  <li
-                    key={n}
-                    className="rounded-2xl border border-border/60 bg-background/80 p-5 text-sm font-medium leading-relaxed"
-                  >
-                    {t(`landing_v3.risk.item${n}`)}
+              <p className="sc-body" style={{ marginTop: 'var(--sc-3)', color: 'var(--sc-ink)' }}>
+                {t('landing_v3.month.p2')}
+              </p>
+              <ul className="mt-month__proof">
+                {proofItems.map((key) => (
+                  <li key={key}>
+                    <strong>{t(`landing_v3.month.proof_${key}`)}</strong>
+                    <span>{t(`landing_v3.month.proof_${key}_desc`)}</span>
                   </li>
                 ))}
               </ul>
-              <Button
-                size="lg"
-                className="rounded-full px-8 h-12 text-base font-semibold"
-                onClick={goRegister}
-              >
-                {t('landing_v3.risk.cta')}
-              </Button>
+            </div>
+
+            <div className="mt-month__scene" aria-hidden="true">
+              <div className="mt-layer mt-layer--back" data-sc-parallax="-1.2" />
+              <div className="mt-layer mt-layer--mid" data-sc-parallax="-0.55">
+                <div className="mt-layer--mid-card">
+                  <div className="mt-line mt-line--short" />
+                  <div className="mt-rule" />
+                  <div className="mt-line mt-line--mid" />
+                  <div className="mt-line mt-line--accent" />
+                  <div className="mt-line mt-line--mid" />
+                  <div className="mt-line mt-line--short" />
+                  <div className="mt-rule" />
+                  <div className="mt-line mt-line--accent" />
+                </div>
+              </div>
+              <div className="mt-layer mt-layer--mark" data-sc-parallax="-0.2">
+                <img src="/new_rebrand/nobg.png" alt="" width={160} height={160} />
+              </div>
+              <div className="mt-layer mt-layer--front" data-sc-parallax="0.45" />
+              <div className="mt-month__fade" />
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section id="faq" className="relative z-10 py-20 md:py-28 scroll-mt-20">
-          <div className="container mx-auto px-4">
-            <div className="max-w-2xl mx-auto">
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-center mb-10">
-                {t('landing_v3.faq.title')}
-              </h2>
-              <Accordion type="single" collapsible className="w-full">
-                {faqItems.map((n) => (
-                  <AccordionItem key={n} value={`faq-${n}`}>
-                    <AccordionTrigger className="text-left text-base font-semibold">
-                      {t(`landing_v3.faq.q${n}`)}
-                    </AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground leading-relaxed">
-                      {t(`landing_v3.faq.a${n}`)}
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </div>
+      {/* 5 · Fecho — in */}
+      <section id="faq" className="mt-ground--close sc-section" data-sc-act="flow">
+        <div className="mt-close" data-sc-in data-sc-stagger="70">
+          <p className="sc-label">{t('landing_v3.cta.badge')}</p>
+          <h2 className="sc-display sc-display--md" style={{ marginTop: 'var(--sc-4)' }}>
+            {t('landing_v3.cta.title')} {t('landing_v3.cta.subtitle')}
+          </h2>
+          <p className="sc-body" style={{ marginTop: 'var(--sc-4)' }}>
+            {t('landing_v3.cta.description')}
+          </p>
+
+          <ul className="mt-close__risk">
+            {riskItems.map((n) => (
+              <li key={n}>{t(`landing_v3.risk.item${n}`)}</li>
+            ))}
+          </ul>
+
+          <p className="sc-lede">
+            {t('landing_v3.close.lead')}{' '}
+            <button type="button" className="mt-close__cta" onClick={goRegister}>
+              {t('landing_v3.cta.button')}
+            </button>
+            .
+          </p>
+
+          <div className="mt-close__faq">
+            <h3>{t('landing_v3.faq.title')}</h3>
+            <Accordion type="single" collapsible className="w-full">
+              {faqItems.map((n) => (
+                <AccordionItem key={n} value={`faq-${n}`}>
+                  <AccordionTrigger className="text-left text-base font-semibold">
+                    {t(`landing_v3.faq.q${n}`)}
+                  </AccordionTrigger>
+                  <AccordionContent className="text-muted-foreground leading-relaxed">
+                    {t(`landing_v3.faq.a${n}`)}
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
           </div>
-        </section>
 
-        <section id="cta-final" className="relative z-10 py-28 md:py-32 scroll-mt-20">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-[120px] pointer-events-none" />
-          <div className="container mx-auto px-4 text-center relative z-10">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8 }}
-              className="max-w-3xl mx-auto space-y-6"
+          <div className="mt-close__meta">
+            <button
+              type="button"
+              onClick={() => setLegalModal({ isOpen: true, type: 'privacy' })}
             >
-              <p className="text-xs font-bold uppercase tracking-widest text-primary">
-                {t('landing_v3.cta.badge')}
-              </p>
-              <h2 className="text-3xl md:text-5xl font-bold tracking-tight">
-                {t('landing_v3.cta.title')}{' '}
-                <span className="text-primary">{t('landing_v3.cta.subtitle')}</span>
-              </h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                {t('landing_v3.cta.description')}
-              </p>
-              <Button
-                size="lg"
-                className="rounded-full px-12 h-14 text-lg font-bold"
-                onClick={goRegister}
-              >
-                {t('landing_v3.cta.button')}
-              </Button>
-            </motion.div>
+              {t('footer.privacy_policy')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setLegalModal({ isOpen: true, type: 'terms' })}
+            >
+              {t('footer.terms_of_use')}
+            </button>
+            <a
+              href="https://www.linkedin.com/in/thalys-dev202/"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="LinkedIn"
+            >
+              <LinkedinLogo className="w-4 h-4 inline" />
+            </a>
+            <a
+              href="https://www.threads.com/@thalys_xavierr"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Threads"
+            >
+              <ThreadsLogoIcon className="w-4 h-4 inline" />
+            </a>
+            <a href="/oauth/login">{t('navigation.signIn')}</a>
+            <a href="/backoffice/login" aria-label={t('footer.backoffice_access')}>
+              © {new Date().getFullYear()} {t('brand.full')}
+            </a>
           </div>
-        </section>
-      </div>
-    </PublicLayout>
+        </div>
+      </section>
+
+      <LegalModals
+        isOpen={legalModal.isOpen}
+        onOpenChange={(open) => setLegalModal((prev) => ({ ...prev, isOpen: open }))}
+        type={legalModal.type}
+      />
+    </div>
   );
 };
 

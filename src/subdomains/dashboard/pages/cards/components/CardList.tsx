@@ -27,6 +27,7 @@ import { computeWalletDisplayBalance, computeWalletOutflow } from "@/utils/walle
 import { AdjustBalanceModal } from "@/subdomains/dashboard/pages/cards/components/AdjustBalanceModal";
 import { DeleteWalletModal } from "@/subdomains/dashboard/pages/cards/components/DeleteWalletModal";
 import { useAccountStatus } from "@/hooks/use-account-status";
+import { Shimmer } from "@shimmer-from-structure/react";
 
 export function CardList() {
     const { wallets, fetchWallets, isLoading, reorderWallets } = useWalletsStore();
@@ -142,103 +143,105 @@ export function CardList() {
     }
 
     return (
-        <div className="space-y-6">
-            <section className="space-y-2">
-                <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                    {t("wallets.pocket", POCKET_WALLET_NAME)}
-                </h2>
-                <div className="max-w-sm">
-                    <PocketCard monthOutflow={pocketMonthOutflow} monthLabel={monthLabel} />
-                </div>
-            </section>
-
-            <section className="space-y-4">
-                <div className="flex items-center justify-between gap-4 flex-wrap">
-                    <div>
-                        <h2 className="text-xl font-bold tracking-tight">{t("wallets.title", "Minhas Carteiras")}</h2>
-                        <p className="text-sm text-muted-foreground mt-1 capitalize">
-                            {t("wallets.monthContextLabel", { month: monthLabel })}
-                        </p>
+        <Shimmer loading={isLoading}>
+            <div className="space-y-6">
+                <section className="space-y-2">
+                    <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                        {t("wallets.pocket", POCKET_WALLET_NAME)}
+                    </h2>
+                    <div className="max-w-sm">
+                        <PocketCard monthOutflow={pocketMonthOutflow} monthLabel={monthLabel} />
                     </div>
-                    <Button onClick={handleAddNew} size="sm" disabled={isReadOnly}>
-                        <Plus className="mr-2 h-4 w-4" /> {t("wallets.add", "Adicionar")}
-                    </Button>
-                </div>
+                </section>
 
-                <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-                    <SortableContext
-                        items={realWallets.map((wallet) => wallet.id)}
-                        strategy={rectSortingStrategy}
-                    >
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {realWallets.map((wallet) => (
-                                <SortableCardItem
-                                    key={wallet.id}
-                                    card={wallet}
-                                    onEdit={handleEdit}
-                                    onAdjust={handleAdjust}
-                                    onDelete={handleDelete}
-                                    displayBalance={computeWalletDisplayBalance(wallet, allTransactions, selectedMonth)}
-                                    monthOutflow={computeWalletOutflow(wallet.id, allTransactions, selectedMonth)}
-                                    monthLabel={monthLabel}
-                                />
-                            ))}
-
-                            {realWallets.length === 0 && (
-                                <div className="col-span-full flex flex-col items-center justify-center p-8 border rounded-lg border-dashed text-muted-foreground">
-                                    <p>{t("wallets.empty", "Nenhuma carteira cadastrada.")}</p>
-                                    <Button variant="link" onClick={handleAddNew} disabled={isReadOnly}>
-                                        {t("wallets.createFirst", "Cadastrar a primeira")}
-                                    </Button>
-                                </div>
-                            )}
+                <section className="space-y-4">
+                    <div className="flex items-center justify-between gap-4 flex-wrap">
+                        <div>
+                            <h2 className="text-xl font-bold tracking-tight">{t("wallets.title", "Minhas Carteiras")}</h2>
+                            <p className="text-sm text-muted-foreground mt-1 capitalize">
+                                {t("wallets.monthContextLabel", { month: monthLabel })}
+                            </p>
                         </div>
-                    </SortableContext>
-                </DndContext>
-            </section>
+                        <Button onClick={handleAddNew} size="sm" disabled={isReadOnly}>
+                            <Plus className="mr-2 h-4 w-4" /> {t("wallets.add", "Adicionar")}
+                        </Button>
+                    </div>
 
-            <AddCardModal
-                open={isModalOpen}
-                onOpenChange={setIsModalOpen}
-                cardToEdit={editingWallet}
-            />
-            <AdjustBalanceModal
-                wallet={adjustingWallet}
-                open={Boolean(adjustingWallet)}
-                onOpenChange={(open) => {
-                    if (!open) setAdjustingWallet(null);
-                }}
-                currentBalance={
-                    adjustingWallet
-                        ? computeWalletDisplayBalance(adjustingWallet, allTransactions, selectedMonth)
-                        : 0
-                }
-            />
-            <DeleteWalletModal
-                uid={user?.uid}
-                wallet={deletingWallet}
-                destinationWallets={realWallets}
-                open={Boolean(deletingWallet)}
-                onOpenChange={(open) => {
-                    if (!open) setDeletingWallet(null);
-                }}
-                onCompleted={async () => {
-                    if (user?.uid) {
-                        await fetchWallets(user.uid);
+                    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                        <SortableContext
+                            items={realWallets.map((wallet) => wallet.id)}
+                            strategy={rectSortingStrategy}
+                        >
+                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                                {realWallets.map((wallet) => (
+                                    <SortableCardItem
+                                        key={wallet.id}
+                                        card={wallet}
+                                        onEdit={handleEdit}
+                                        onAdjust={handleAdjust}
+                                        onDelete={handleDelete}
+                                        displayBalance={computeWalletDisplayBalance(wallet, allTransactions, selectedMonth)}
+                                        monthOutflow={computeWalletOutflow(wallet.id, allTransactions, selectedMonth)}
+                                        monthLabel={monthLabel}
+                                    />
+                                ))}
+
+                                {realWallets.length === 0 && (
+                                    <div className="col-span-full flex flex-col items-center justify-center p-8 border rounded-lg border-dashed text-muted-foreground">
+                                        <p>{t("wallets.empty", "Nenhuma carteira cadastrada.")}</p>
+                                        <Button variant="link" onClick={handleAddNew} disabled={isReadOnly}>
+                                            {t("wallets.createFirst", "Cadastrar a primeira")}
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </SortableContext>
+                    </DndContext>
+                </section>
+
+                <AddCardModal
+                    open={isModalOpen}
+                    onOpenChange={setIsModalOpen}
+                    cardToEdit={editingWallet}
+                />
+                <AdjustBalanceModal
+                    wallet={adjustingWallet}
+                    open={Boolean(adjustingWallet)}
+                    onOpenChange={(open) => {
+                        if (!open) setAdjustingWallet(null);
+                    }}
+                    currentBalance={
+                        adjustingWallet
+                            ? computeWalletDisplayBalance(adjustingWallet, allTransactions, selectedMonth)
+                            : 0
                     }
-                    await refetchTransactions();
-                }}
-            />
-            {user?.uid && (
-                <LegacyCardsMigrationModal
-                    uid={user.uid}
-                    open={showLegacyMigrationModal}
-                    onMigrationSuccess={async () => {
-                        await fetchWallets(user.uid);
-                        setShowLegacyMigrationModal(false);
+                />
+                <DeleteWalletModal
+                    uid={user?.uid}
+                    wallet={deletingWallet}
+                    destinationWallets={realWallets}
+                    open={Boolean(deletingWallet)}
+                    onOpenChange={(open) => {
+                        if (!open) setDeletingWallet(null);
+                    }}
+                    onCompleted={async () => {
+                        if (user?.uid) {
+                            await fetchWallets(user.uid);
+                        }
+                        await refetchTransactions();
                     }}
                 />
-            )}
-        </div>
+                {user?.uid && (
+                    <LegacyCardsMigrationModal
+                        uid={user.uid}
+                        open={showLegacyMigrationModal}
+                        onMigrationSuccess={async () => {
+                            await fetchWallets(user.uid);
+                            setShowLegacyMigrationModal(false);
+                        }}
+                    />
+                )}
+            </div>
+        </Shimmer>
     );
 }

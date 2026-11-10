@@ -16,6 +16,7 @@ import { NO_WALLET_ID } from "@/constants/wallets";
 import { resolveAllocations } from "@/utils/transaction-allocations";
 import useUserStore from "@/store/UserStore";
 import { computeWalletFlowRow, computeWalletIncome, computeWalletOutflow } from "@/utils/wallet-balance";
+import { Shimmer } from "@shimmer-from-structure/react";
 
 type WalletFlowRow = {
     walletId: string;
@@ -30,7 +31,7 @@ export function WalletsOverview() {
     const { t, i18n } = useTranslation();
     const { selectedMonth } = useDashboardPreferences();
     const { wallets, fetchWallets } = useWalletsStore();
-    const { data: transactions = [] } = useUserTransactions();
+    const { data: transactions = [], isLoading } = useUserTransactions();
     const { user } = useUserStore();
 
     React.useEffect(() => {
@@ -123,6 +124,7 @@ export function WalletsOverview() {
     );
 
     return (
+        <Shimmer loading={isLoading}>
         <section className="space-y-4">
             <Card className="border-none bg-gradient-to-br from-zinc-900 via-zinc-800 to-zinc-900 text-zinc-100 shadow-xl">
                 <CardContent className="p-6 md:p-8">
@@ -314,5 +316,6 @@ export function WalletsOverview() {
                 </Card>
             </div>
         </section>
+        </Shimmer>
     );
 }

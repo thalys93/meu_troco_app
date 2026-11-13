@@ -14,11 +14,24 @@ import LegalModals from '@/shared/components/LegalModals';
 import MarginReceipt from './MarginReceipt';
 import { useScrollCraftLanding } from './useScrollCraftLanding';
 
+const LANDING_STACK_MONTH_MQ = '(max-width: 900px)';
+
 const LandingPage = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const rootRef = React.useRef<HTMLDivElement>(null);
-  useScrollCraftLanding(rootRef);
+
+  const stackMonth = React.useSyncExternalStore(
+    (onStoreChange) => {
+      const mq = window.matchMedia(LANDING_STACK_MONTH_MQ);
+      mq.addEventListener('change', onStoreChange);
+      return () => mq.removeEventListener('change', onStoreChange);
+    },
+    () => window.matchMedia(LANDING_STACK_MONTH_MQ).matches,
+    () => false,
+  );
+
+  useScrollCraftLanding(rootRef, stackMonth);
 
   const [legalModal, setLegalModal] = React.useState<{
     isOpen: boolean;
@@ -38,6 +51,60 @@ const LandingPage = () => {
   const faqItems = [1, 2, 3, 4, 5] as const;
   const riskItems = [1, 2, 3] as const;
   const proofItems = ['lancar', 'painel', 'relatorios', 'previsoes'] as const;
+
+  const monthChapter = (
+    <div className={`mt-month${stackMonth ? ' mt-month--stack' : ''}`}>
+      <div
+        className="mt-month__copy"
+        {...(stackMonth
+          ? { 'data-sc-in': true }
+          : { 'data-sc-cue': '0.06 0.94 0.35 0.12', 'data-sc-rise': '0' })}
+      >
+        <p className="sc-label">{t('landing_v3.story.label')}</p>
+        <h2 className="sc-display sc-display--md" style={{ marginTop: 'var(--sc-4)' }}>
+          {t('landing_v3.month.title')}
+        </h2>
+        <p className="sc-body" style={{ marginTop: 'var(--sc-4)' }}>
+          {t('landing_v3.month.p1')}
+        </p>
+        <p className="sc-body" style={{ marginTop: 'var(--sc-3)', color: 'var(--sc-ink)' }}>
+          {t('landing_v3.month.p2')}
+        </p>
+        <ul className="mt-month__proof">
+          {proofItems.map((key) => (
+            <li key={key}>
+              <strong>{t(`landing_v3.month.proof_${key}`)}</strong>
+              <span>{t(`landing_v3.month.proof_${key}_desc`)}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div
+        className={`mt-month__scene${stackMonth ? ' mt-month__scene--compact' : ''}`}
+        aria-hidden="true"
+      >
+        <div className="mt-layer mt-layer--back" data-sc-parallax={stackMonth ? undefined : '-1.2'} />
+        <div className="mt-layer mt-layer--mid" data-sc-parallax={stackMonth ? undefined : '-0.55'}>
+          <div className="mt-layer--mid-card">
+            <div className="mt-line mt-line--short" />
+            <div className="mt-rule" />
+            <div className="mt-line mt-line--mid" />
+            <div className="mt-line mt-line--accent" />
+            <div className="mt-line mt-line--mid" />
+            <div className="mt-line mt-line--short" />
+            <div className="mt-rule" />
+            <div className="mt-line mt-line--accent" />
+          </div>
+        </div>
+        <div className="mt-layer mt-layer--mark" data-sc-parallax={stackMonth ? undefined : '-0.2'}>
+          <img src="/new_rebrand/nobg.png" alt="" width={160} height={160} />
+        </div>
+        <div className="mt-layer mt-layer--front" data-sc-parallax={stackMonth ? undefined : '0.45'} />
+        <div className="mt-month__fade" />
+      </div>
+    </div>
+  );
 
   return (
     <div ref={rootRef} className="mt-landing">
@@ -128,58 +195,14 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* 4 · Mês — peak, parallax */}
+      {/* 4 · Mês — pin + parallax no desktop; flow legível no mobile */}
       <section
         id="produto"
-        className="mt-ground--month"
-        data-sc-act="pin"
-        data-sc-span="3.4"
+        className={`mt-ground--month${stackMonth ? ' sc-section' : ''}`}
+        data-sc-act={stackMonth ? 'flow' : 'pin'}
+        {...(!stackMonth ? { 'data-sc-span': '1.8' } : {})}
       >
-        <div data-sc-stage>
-          <div className="mt-month">
-            <div className="mt-month__copy" data-sc-cue="0.06 0.94 0.12 0.1">
-              <p className="sc-label">{t('landing_v3.story.label')}</p>
-              <h2 className="sc-display sc-display--md" style={{ marginTop: 'var(--sc-4)' }}>
-                {t('landing_v3.month.title')}
-              </h2>
-              <p className="sc-body" style={{ marginTop: 'var(--sc-4)' }}>
-                {t('landing_v3.month.p1')}
-              </p>
-              <p className="sc-body" style={{ marginTop: 'var(--sc-3)', color: 'var(--sc-ink)' }}>
-                {t('landing_v3.month.p2')}
-              </p>
-              <ul className="mt-month__proof">
-                {proofItems.map((key) => (
-                  <li key={key}>
-                    <strong>{t(`landing_v3.month.proof_${key}`)}</strong>
-                    <span>{t(`landing_v3.month.proof_${key}_desc`)}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="mt-month__scene" aria-hidden="true">
-              <div className="mt-layer mt-layer--back" data-sc-parallax="-1.2" />
-              <div className="mt-layer mt-layer--mid" data-sc-parallax="-0.55">
-                <div className="mt-layer--mid-card">
-                  <div className="mt-line mt-line--short" />
-                  <div className="mt-rule" />
-                  <div className="mt-line mt-line--mid" />
-                  <div className="mt-line mt-line--accent" />
-                  <div className="mt-line mt-line--mid" />
-                  <div className="mt-line mt-line--short" />
-                  <div className="mt-rule" />
-                  <div className="mt-line mt-line--accent" />
-                </div>
-              </div>
-              <div className="mt-layer mt-layer--mark" data-sc-parallax="-0.2">
-                <img src="/new_rebrand/nobg.png" alt="" width={160} height={160} />
-              </div>
-              <div className="mt-layer mt-layer--front" data-sc-parallax="0.45" />
-              <div className="mt-month__fade" />
-            </div>
-          </div>
-        </div>
+        {stackMonth ? monthChapter : <div data-sc-stage>{monthChapter}</div>}
       </section>
 
       {/* 5 · Fecho — in */}

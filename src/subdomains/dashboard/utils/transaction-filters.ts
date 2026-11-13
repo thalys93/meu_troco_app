@@ -43,9 +43,15 @@ export function isExclusiveContaTypeFilter(types: string[]): boolean {
   return types.length === 1 && types[0] === "conta";
 }
 
+export function canHavePaidStatus(transaction: Transaction): boolean {
+  return transaction.type === "conta" || transaction.type === "despesa";
+}
+
 export function shouldShowPaidColumn(types: string[]): boolean {
   return (
-    types.includes(TRANSACTION_TYPE_FILTER_ALL) || types.includes("conta")
+    types.includes(TRANSACTION_TYPE_FILTER_ALL) ||
+    types.includes("conta") ||
+    types.includes("despesa")
   );
 }
 
@@ -149,8 +155,8 @@ export function compareTransactionsByColumn(
     case "type":
       return a.type.localeCompare(b.type) * direction;
     case "paid": {
-      const aPaid = isBillPaid(a) ? 1 : 0;
-      const bPaid = isBillPaid(b) ? 1 : 0;
+      const aPaid = isTransactionPaid(a) ? 1 : 0;
+      const bPaid = isTransactionPaid(b) ? 1 : 0;
       return (aPaid - bPaid) * direction;
     }
     case "value":
@@ -224,10 +230,13 @@ export const filterTransactionsByPreferences = (
     );
 };
 
-export const isBillPaid = (transaction: Transaction): boolean =>
-  transaction.type === "conta" &&
+export const isTransactionPaid = (transaction: Transaction): boolean =>
+  canHavePaidStatus(transaction) &&
   transaction.paid === true &&
   transaction.skipped !== true;
+
+export const isBillPaid = (transaction: Transaction): boolean =>
+  transaction.type === "conta" && isTransactionPaid(transaction);
 
 export const isTransactionSkipped = (transaction: Transaction): boolean =>
   (transaction.type === "conta" || transaction.type === "despesa") &&
@@ -336,6 +345,19 @@ if (import.meta.env.DEV) {
       walletId: "",
     }),
     "receita never skipped"
+  );
+  assert(
+    isTransactionPaid({
+      type: "despesa",
+      paid: true,
+      skipped: false,
+      value: 1,
+      date: "2026-01-01",
+      description: "",
+      category: "",
+      walletId: "",
+    }),
+    "paid despesa"
   );
   assert(
     withoutSkippedTransactions([

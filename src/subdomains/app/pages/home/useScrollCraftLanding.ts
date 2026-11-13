@@ -52,7 +52,10 @@ function ensureEngineScript(): Promise<void> {
   });
 }
 
-export function useScrollCraftLanding(rootRef: React.RefObject<HTMLElement | null>) {
+export function useScrollCraftLanding(
+  rootRef: React.RefObject<HTMLElement | null>,
+  layoutKey?: boolean,
+) {
   const apiRef = useRef<ScrollCraftApi | null>(null);
 
   useEffect(() => {
@@ -107,5 +110,5 @@ export function useScrollCraftLanding(rootRef: React.RefObject<HTMLElement | nul
       document.getElementById(FONT_ID)?.remove();
       document.documentElement.classList.remove('sc-ready');
     };
-  }, [rootRef]);
+  }, [rootRef, layoutKey]);
 }

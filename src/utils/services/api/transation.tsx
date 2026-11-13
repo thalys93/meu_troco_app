@@ -61,8 +61,11 @@ const normalizeTransactionDate = (rawDate: unknown): string => {
     return "";
 };
 
+const canHavePaidTransactionType = (type: TransactionType) =>
+    type === 'conta' || type === 'despesa';
+
 const normalizePaidField = (type: TransactionType, paid: unknown): boolean | undefined => {
-    if (type !== 'conta') return undefined;
+    if (!canHavePaidTransactionType(type)) return undefined;
     if (paid === true || paid === 1 || paid === 'true') return true;
     if (paid === false || paid === 0 || paid === 'false') return false;
     return false;
@@ -140,7 +143,7 @@ const createTransaction = async (data: Transaction, uid: string) => {
         createdAt: new Date(),
     };
 
-    if (payload.type === 'conta') {
+    if (canHavePaidTransactionType(payload.type)) {
         Object.assign(firestorePayload, { paid: payload.paid ?? false });
     }
 

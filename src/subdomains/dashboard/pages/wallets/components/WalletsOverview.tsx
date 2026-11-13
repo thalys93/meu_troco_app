@@ -10,6 +10,10 @@ import {
 } from "@/components/ui/chart";
 import { useTranslation } from "react-i18next";
 import { useDashboardPreferences } from "@/subdomains/dashboard/context/dashboard-preferences";
+import {
+    getFinancialPeriodRange,
+    isYmdWithinRange,
+} from "@/subdomains/dashboard/utils/month-range";
 import { useWalletsStore } from "@/store/useWalletsStore";
 import { useUserTransactions } from "@/utils/services/api/transation";
 import { NO_WALLET_ID } from "@/constants/wallets";
@@ -29,7 +33,7 @@ type WalletFlowRow = {
 
 export function WalletsOverview() {
     const { t, i18n } = useTranslation();
-    const { selectedMonth } = useDashboardPreferences();
+    const { selectedMonth, financialPeriod } = useDashboardPreferences();
     const { wallets, fetchWallets } = useWalletsStore();
     const { data: transactions = [], isLoading } = useUserTransactions();
     const { user } = useUserStore();
@@ -65,9 +69,23 @@ export function WalletsOverview() {
         }).format(monthDate);
     }, [i18n.language, selectedMonth]);
 
+    const periodRange = React.useMemo(
+        () => getFinancialPeriodRange(selectedMonth, financialPeriod),
+        [financialPeriod, selectedMonth]
+    );
+
     const monthTransactions = React.useMemo(
-        () => transactions.filter((transaction) => transaction.date?.startsWith(selectedMonth)),
-        [selectedMonth, transactions]
+        () =>
+            transactions.filter((transaction) =>
+                transaction.date
+                    ? isYmdWithinRange(
+                          transaction.date,
+                          periodRange.startDate,
+                          periodRange.endDate
+                      )
+                    : false
+            ),
+        [periodRange.endDate, periodRange.startDate, transactions]
     );
 
     const macro = React.useMemo(() => {

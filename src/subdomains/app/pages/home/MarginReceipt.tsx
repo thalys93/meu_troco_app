@@ -1,9 +1,25 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  CalendarBlank,
+  FileX,
+  Signpost,
+  UserPlus,
+  Wallet,
+  type Icon,
+} from '@phosphor-icons/react';
 
 export type ReceiptChapterId = 'hero' | 'problema' | 'virada' | 'produto' | 'faq';
 
 const CHAPTERS: ReceiptChapterId[] = ['hero', 'problema', 'virada', 'produto', 'faq'];
+
+const CHAPTER_ICONS: Record<ReceiptChapterId, Icon> = {
+  hero: Wallet,
+  problema: FileX,
+  virada: Signpost,
+  produto: CalendarBlank,
+  faq: UserPlus,
+};
 
 function MarginReceipt() {
   const { t } = useTranslation();
@@ -11,11 +27,10 @@ function MarginReceipt() {
     hero: true,
   });
   const [active, setActive] = React.useState<ReceiptChapterId>('hero');
-  const [monthOpen, setMonthOpen] = React.useState(false);
 
   React.useEffect(() => {
     const nodes = CHAPTERS.map((id) => document.getElementById(id)).filter(
-      (el): el is HTMLElement => Boolean(el)
+      (el): el is HTMLElement => Boolean(el),
     );
     if (!nodes.length) return;
 
@@ -27,7 +42,6 @@ function MarginReceipt() {
         return next;
       });
       setActive(id);
-      if (id === 'produto' || id === 'faq') setMonthOpen(true);
     };
 
     const observer = new IntersectionObserver(
@@ -40,7 +54,7 @@ function MarginReceipt() {
           if (CHAPTERS.includes(id)) mark(id);
         });
       },
-      { root: null, threshold: [0.15, 0.35, 0.55], rootMargin: '-8% 0px -28% 0px' }
+      { root: null, threshold: [0.15, 0.35, 0.55], rootMargin: '-8% 0px -28% 0px' },
     );
 
     nodes.forEach((n) => observer.observe(n));
@@ -71,16 +85,6 @@ function MarginReceipt() {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const valueFor = (id: ReceiptChapterId) => {
-    if (id === 'produto' && monthOpen && stamped[id]) {
-      return t('landing_v3.receipt.value_month');
-    }
-    if (id === 'faq' && stamped[id]) {
-      return t('landing_v3.receipt.value_close');
-    }
-    return '·';
-  };
-
   return (
     <aside className="mt-receipt" aria-label={t('landing_v3.receipt.aria')}>
       <div className="mt-receipt__head">
@@ -90,7 +94,9 @@ function MarginReceipt() {
       <ul className="mt-receipt__list">
         {CHAPTERS.map((id) => {
           const isStamped = Boolean(stamped[id]);
-          const open = (id === 'produto' && monthOpen && isStamped) || (id === 'faq' && isStamped);
+          const isActive = active === id;
+          const ChapterIcon = CHAPTER_ICONS[id];
+          const label = t(`landing_v3.receipt.line_${id}`);
 
           return (
             <li key={id}>
@@ -98,13 +104,19 @@ function MarginReceipt() {
                 type="button"
                 className="mt-receipt__row"
                 data-stamped={isStamped}
-                data-active={active === id}
-                data-open={open}
+                data-active={isActive}
                 onClick={() => go(id)}
-                aria-current={active === id ? 'true' : undefined}
+                aria-current={isActive ? 'step' : undefined}
+                aria-label={label}
+                title={label}
               >
-                <span>{t(`landing_v3.receipt.line_${id}`)}</span>
-                <span className="mt-receipt__value">{valueFor(id)}</span>
+                <span className="mt-receipt__icon" aria-hidden>
+                  <ChapterIcon
+                    size={22}
+                    weight={isActive ? 'fill' : isStamped ? 'duotone' : 'regular'}
+                  />
+                </span>
+                <span className="mt-receipt__label">{label}</span>
               </button>
             </li>
           );

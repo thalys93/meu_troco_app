@@ -273,7 +273,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
       type,
       category,
       walletId: selectedWalletId?.trim() || NO_WALLET_ID,
-      ...(type === 'conta' && !id ? { paid: false } : {}),
+      ...((type === 'conta' || type === 'despesa') && !id ? { paid: false } : {}),
       ...(recurrenceId ? { recurrenceId } : {}),
     };
 

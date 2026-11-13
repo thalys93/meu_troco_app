@@ -1,7 +1,12 @@
 import React from "react";
+import useUserStore from "@/store/UserStore";
 import {
+  defaultFinancialPeriodPreference,
   getCurrentMonthKey,
+  getFinancialMonthKeyForDate,
+  normalizeFinancialPeriodPreference,
   shiftMonthKey,
+  type FinancialPeriodPreference,
 } from "@/subdomains/dashboard/utils/month-range";
 
 type DashboardLayoutMode = "default" | "notion";
@@ -123,10 +128,32 @@ type DashboardPreferencesContextValue = {
   setTransactionListFilters: React.Dispatch<
     React.SetStateAction<TransactionListFiltersPreference>
   >;
+  financialPeriod: FinancialPeriodPreference;
+  setFinancialPeriod: (next: FinancialPeriodPreference) => void;
 };
 
 const LAYOUT_STORAGE_KEY = "dashboard-layout-mode";
 const MONTH_STORAGE_KEY = "dashboard-selected-month";
+const FINANCIAL_PERIOD_STORAGE_KEY = "dashboard-financial-period";
+
+function parseStoredFinancialPeriod(): FinancialPeriodPreference {
+  if (typeof window === "undefined") {
+    return defaultFinancialPeriodPreference;
+  }
+  try {
+    const raw = window.localStorage.getItem(FINANCIAL_PERIOD_STORAGE_KEY);
+    if (!raw) return defaultFinancialPeriodPreference;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object") {
+      return defaultFinancialPeriodPreference;
+    }
+    return normalizeFinancialPeriodPreference(
+      parsed as Partial<FinancialPeriodPreference>
+    );
+  } catch {
+    return defaultFinancialPeriodPreference;
+  }
+}
 
 const DashboardPreferencesContext =
   React.createContext<DashboardPreferencesContextValue | null>(null);
@@ -156,6 +183,15 @@ export function DashboardPreferencesProvider({
     React.useState<TransactionListFiltersPreference>(
       parseStoredTransactionListFilters
     );
+  const [financialPeriod, setFinancialPeriodState] =
+    React.useState<FinancialPeriodPreference>(parseStoredFinancialPeriod);
+
+  const setFinancialPeriod = React.useCallback(
+    (next: FinancialPeriodPreference) => {
+      setFinancialPeriodState(normalizeFinancialPeriodPreference(next));
+    },
+    []
+  );
 
   React.useEffect(() => {
     window.localStorage.setItem(LAYOUT_STORAGE_KEY, layoutMode);
@@ -176,6 +212,17 @@ export function DashboardPreferencesProvider({
     }
   }, [transactionListFilters]);
 
+  React.useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        FINANCIAL_PERIOD_STORAGE_KEY,
+        JSON.stringify(financialPeriod)
+      );
+    } catch {
+      /* ignore */
+    }
+  }, [financialPeriod]);
+
   const value = React.useMemo<DashboardPreferencesContextValue>(
     () => ({
       layoutMode,
@@ -188,11 +235,14 @@ export function DashboardPreferencesProvider({
       goToPreviousMonth: () =>
         setSelectedMonth((prev) => shiftMonthKey(prev, -1)),
       goToNextMonth: () => setSelectedMonth((prev) => shiftMonthKey(prev, 1)),
-      resetCurrentMonth: () => setSelectedMonth(getCurrentMonthKey()),
+      resetCurrentMonth: () =>
+        setSelectedMonth(getFinancialMonthKeyForDate(new Date(), financialPeriod)),
       transactionListFilters,
       setTransactionListFilters,
+      financialPeriod,
+      setFinancialPeriod,
     }),
-    [layoutMode, selectedMonth, transactionListFilters]
+    [layoutMode, selectedMonth, transactionListFilters, financialPeriod, setFinancialPeriod]
   );
 
   return (
@@ -211,3 +261,19 @@ export const useDashboardPreferences = () => {
   }
   return context;
 };
+
+/** Sincroniza período financeiro do Firestore para o contexto após login. */
+export function FinancialPeriodHydrator() {
+  const { setFinancialPeriod } = useDashboardPreferences();
+  const financialPeriodFromUser = useUserStore(
+    (state) => state.user?.preferences?.financialPeriod
+  );
+
+  React.useEffect(() => {
+    if (financialPeriodFromUser) {
+      setFinancialPeriod(financialPeriodFromUser);
+    }
+  }, [financialPeriodFromUser, setFinancialPeriod]);
+
+  return null;
+}

@@ -71,6 +71,16 @@ body {
   background: var(--mt-close);
 }
 
+/* Folio flutuante: reserva espaço nos acts com pin para não cobrir títulos */
+.mt-landing {
+  --mt-chrome-top: calc(max(1rem, env(safe-area-inset-top)) + 3.5rem);
+}
+
+.mt-landing [data-sc-stage].sc-stage {
+  box-sizing: border-box;
+  padding-top: var(--mt-chrome-top);
+}
+
 /* Folio + language */
 .mt-folio {
   position: fixed;
@@ -222,9 +232,14 @@ body {
 }
 
 @media (max-width: 900px) {
+  .mt-landing {
+    --mt-chrome-top: calc(max(1rem, env(safe-area-inset-top)) + 4.25rem);
+  }
+
   .mt-problem {
     grid-template-columns: 1fr;
-    padding-block: var(--sc-7);
+    padding-block: var(--sc-5) var(--sc-7);
+    align-content: start;
   }
 }
 
@@ -312,7 +327,75 @@ body {
   .mt-month {
     grid-template-columns: 1fr;
     padding-block: var(--sc-6);
-    align-content: center;
+    align-content: start;
+  }
+
+  /* Mobile: cópia primeiro, cena compacta — sem pin que corta o texto */
+  .mt-month--stack {
+    padding-block: var(--sc-8) var(--sc-7);
+    padding-bottom: max(var(--sc-8), 5.5rem);
+    gap: var(--sc-6);
+    height: auto;
+  }
+
+  .mt-month--stack .mt-month__copy {
+    max-width: none;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .mt-month--stack .mt-month__copy .sc-display--md {
+    font-size: clamp(1.75rem, 7vw, 2.35rem);
+    line-height: 1.12;
+    max-width: 16em;
+  }
+
+  .mt-month--stack .mt-month__copy .sc-body {
+    font-size: 1.05rem;
+    line-height: 1.55;
+  }
+
+  .mt-month__scene--compact {
+    order: 2;
+  }
+
+  .mt-month--stack .mt-month__copy {
+    order: 1;
+  }
+
+  .mt-month--stack [data-sc-parallax] {
+    transform: none !important;
+  }
+
+  .mt-month--stack .mt-layer--front {
+    opacity: 0.45;
+  }
+
+  .mt-month--stack .mt-month__fade {
+    height: 16%;
+  }
+
+  .mt-month--stack .mt-month__proof li {
+    grid-template-columns: 1fr;
+    gap: var(--sc-1);
+  }
+
+  .mt-month--stack .mt-month__proof strong {
+    display: block;
+    margin-bottom: 0.12rem;
+  }
+
+  /* Fallback se o pin ainda aparecer (resize / edge): não esconder copy */
+  #produto[data-sc-act='pin'] [data-sc-stage] {
+    overflow-y: auto;
+    overflow-x: clip;
+    overscroll-behavior-y: contain;
+  }
+
+  .sc-ready #produto .mt-month__copy[data-sc-cue] {
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
   }
 }
 
@@ -357,6 +440,15 @@ body {
   overflow: clip;
   background: var(--mt-cold);
   box-shadow: var(--sc-e3);
+}
+
+@media (max-width: 900px) {
+  .mt-month__scene.mt-month__scene--compact {
+    height: min(34svh, 200px);
+    max-width: 18rem;
+    margin-inline: auto;
+    width: 100%;
+  }
 }
 
 .mt-layer {
@@ -544,17 +636,16 @@ body {
   right: max(0.75rem, env(safe-area-inset-right));
   transform: translateY(-50%);
   z-index: var(--sc-z-chrome);
-  width: 11.5rem;
+  width: min(13.25rem, calc(100vw - 2rem));
   padding: 0.85rem 0.75rem;
   background: color-mix(in oklab, var(--sc-surface) 92%, transparent);
   border: 1px solid color-mix(in oklab, var(--sc-ink) 14%, transparent);
   color: var(--sc-ink);
-  border-radius: 2px;
+  border-radius: var(--sc-r-md);
   box-shadow: var(--sc-e2);
   font-family: var(--sc-font-mono);
-  font-size: 0.65rem;
+  font-size: 0.68rem;
   letter-spacing: 0.02em;
-  color: var(--sc-ink);
   backdrop-filter: blur(8px);
 }
 
@@ -579,19 +670,40 @@ body {
 
 .mt-receipt__row {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.4rem;
-  align-items: baseline;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem;
+  align-items: center;
   width: 100%;
   text-align: left;
   background: none;
   border: 0;
-  padding: 0;
+  padding: 0.15rem 0;
   color: inherit;
   font: inherit;
-  opacity: 0.28;
+  opacity: 0.32;
   cursor: default;
-  transition: opacity 280ms var(--sc-ease-out);
+  border-radius: var(--sc-r-sm);
+  transition:
+    opacity 280ms var(--sc-ease-out),
+    color 280ms var(--sc-ease-out),
+    background-color 280ms var(--sc-ease-out);
+}
+
+.mt-receipt__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--sc-ink-soft);
+}
+
+.mt-receipt__icon svg {
+  display: block;
+}
+
+.mt-receipt__label {
+  line-height: 1.25;
+  min-width: 0;
 }
 
 .mt-receipt__row[data-stamped='true'] {
@@ -603,25 +715,21 @@ body {
   color: var(--sc-accent);
 }
 
+.mt-receipt__row[data-stamped='true']:hover .mt-receipt__icon {
+  color: var(--sc-accent);
+}
+
 .mt-receipt__row[data-active='true'] {
   opacity: 1;
-}
-
-.mt-receipt__value {
-  color: var(--sc-ink-soft);
-  min-width: 2.4rem;
-  text-align: right;
-}
-
-.mt-receipt__row[data-open='true'] .mt-receipt__value {
   color: var(--sc-accent);
-  font-size: 0.58rem;
-  letter-spacing: 0;
-  text-transform: none;
-  max-width: 5.5rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.mt-receipt__row[data-active='true'] .mt-receipt__icon {
+  color: var(--sc-accent);
+}
+
+.mt-receipt__row[data-active='true'] .mt-receipt__label {
+  font-weight: 600;
 }
 
 @media (max-width: 900px) {
@@ -631,8 +739,8 @@ body {
     left: 50%;
     right: auto;
     transform: translateX(-50%);
-    width: min(calc(100vw - 1.5rem), 26rem);
-    padding: 0.55rem 0.7rem;
+    width: min(calc(100vw - 1.25rem), 22rem);
+    padding: 0.4rem 0.45rem;
   }
 
   .mt-receipt__head {
@@ -640,39 +748,38 @@ body {
   }
 
   .mt-receipt__list {
-    display: flex;
-    gap: 0.55rem;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .mt-receipt__list::-webkit-scrollbar {
-    display: none;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.2rem;
   }
 
   .mt-receipt__row {
     display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    flex: 0 0 auto;
-    min-width: 4.6rem;
-    padding: 0.2rem 0.35rem;
-    border-right: 1px dashed color-mix(in oklab, #1a211c 16%, transparent);
+    justify-content: center;
+    align-items: center;
+    aspect-ratio: 1;
+    min-height: 2.65rem;
+    padding: 0.35rem;
   }
 
-  .mt-receipt__row:last-child {
-    border-right: 0;
+  .mt-receipt__label {
+    display: none;
   }
 
-  .mt-receipt__value {
-    text-align: left;
-    min-width: 0;
+  .mt-receipt__icon svg {
+    width: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .mt-receipt__row[data-active='true'] {
+    background: color-mix(in oklab, var(--sc-accent) 14%, transparent);
   }
 
   .mt-folio {
     left: 1rem;
     right: 1rem;
     justify-content: space-between;
+    width: auto;
   }
 
   .mt-title {

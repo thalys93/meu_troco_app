@@ -1,6 +1,10 @@
 import type { Recurrence } from '@/types/Recurrence';
 import type { Transaction } from '@/utils/services/api/transation';
-import { getMonthRangeByKey, parseMonthKey } from './month-range';
+import {
+  defaultFinancialPeriodPreference,
+  getFinancialPeriodRange,
+  parseMonthKey,
+} from './month-range';
 
 export type RecurrenceAmountPeriod = 'month' | 'week';
 
@@ -60,7 +64,13 @@ export const formatMonthLabel = (monthKey: string, locale: string): string => {
   return date.toLocaleDateString(locale, { month: 'long', year: 'numeric' });
 };
 
-export const getMonthRangeLabel = (monthKey: string): string => {
-  const { startDate, endDate } = getMonthRangeByKey(monthKey);
+export const getMonthRangeLabel = (
+  monthKey: string,
+  financialPeriod = defaultFinancialPeriodPreference
+): string => {
+  const { startDate, endDate } = getFinancialPeriodRange(
+    monthKey,
+    financialPeriod
+  );
   return `${startDate} — ${endDate}`;
 };

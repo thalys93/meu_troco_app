@@ -7,6 +7,7 @@ import IncomePage from "@/subdomains/dashboard/pages/income/Income";
 import ContasPage from "@/subdomains/dashboard/pages/contas/Contas";
 import PaymentsPage from "@/subdomains/dashboard/pages/payments/Payments";
 import ProfilePage from "@/subdomains/dashboard/pages/profile/Profile";
+import SettingsPage from "@/subdomains/dashboard/pages/settings/SettingsPage";
 import TransactionsPage from "@/subdomains/dashboard/pages/transactions/Transactions";
 import CurrencyConverter from "@/subdomains/dashboard/pages/converter/CurrencyConverter";
 import CardsPage from "@/subdomains/dashboard/pages/cards/CardsPage";
@@ -73,6 +74,7 @@ export const DashboardRoutes: RoutesGroup = {
         { path: 'contas/:id', element: ContasPage },
         { path: 'payments', element: PaymentsPage },
         { path: 'profile', element: ProfilePage },
+        { path: 'settings', element: SettingsPage },
         { path: 'transactions', element: TransactionsPage },
         { path: 'converter', element: CurrencyConverter },
         { path: 'wallets', element: WalletsPage },

@@ -4,6 +4,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Languages } from 'lucide-react'
 import { useTranslation } from "react-i18next";
 import { cn } from '@/lib/utils';
+import { Button } from './ui/button';
 
 function LanguageSwitcher({ className }: { className?: string }) {
     const { i18n, t } = useTranslation();
@@ -28,13 +29,29 @@ function LanguageSwitcher({ className }: { className?: string }) {
     }, []);
 
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger className={cn('glass-effect hover:bg-emerald-700/50 transition-all p-2 rounded relative ', className)}>
-                <Languages className='size-4' />
+        <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                        'rounded-full text-muted-foreground hover:bg-muted hover:text-foreground',
+                        className
+                    )}
+                    aria-label={t('settings.appearance.languageLabel')}
+                >
+                    <Languages className="h-5 w-5 text-muted-foreground" />
+                </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent>
+            <DropdownMenuContent align="end">
                 {languages.map((lang) => (
-                    <DropdownMenuItem onClick={(e) => { e.preventDefault(), updateLanguage(lang.key) }}>{lang.label}</DropdownMenuItem>
+                    <DropdownMenuItem
+                        key={lang.key}
+                        onClick={(e) => { e.preventDefault(); updateLanguage(lang.key); }}
+                    >
+                        {lang.label}
+                    </DropdownMenuItem>
                 ))}
             </DropdownMenuContent>
         </DropdownMenu>

@@ -173,7 +173,7 @@ export function buildTransactionPayload(draft: InlineTransactionDraft): Transact
     date: draft.date,
     type: draft.type,
     value,
-    ...(draft.type === 'conta' ? { paid: false } : {}),
+    ...(draft.type === 'conta' || draft.type === 'despesa' ? { paid: false } : {}),
   };
 
   if (!draft.splitAcrossWallets) {

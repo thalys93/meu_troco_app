@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { User, Pencil, Lock, Cog } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import PrivateLayout from '../../layout/PrivateLayout';
 import { useForm } from 'react-hook-form';
 import ProfileMenuSheet from './components/profile-menu-sheet';
 import ProfileForm from './components/profile-form';
 import ProfilePasswordForm from './components/profile-password-form';
-import ProfileSettingsForm from './components/profile-settings-form';
 import { AuthProvider, FireStore } from '@/utils/services/api/firebase';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -34,12 +34,6 @@ const initialPassForm = {
   confirmPassword: '',
 };
 
-const initialSettingsForm = {
-  emailNotifications: true,
-  pushNotifications: true,
-  monthlyReports: false,
-};
-
 const ProfilePage = () => {
   const { toast } = useToast();
   const { user: userLocal } = useUser();
@@ -47,10 +41,10 @@ const ProfilePage = () => {
   const { refetch } = useGetUserData(uid);
   const [file, setFile] = useState<File | null>(null);
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const {
     expenseLength,
@@ -66,10 +60,6 @@ const ProfilePage = () => {
 
   const passForm = useForm({
     defaultValues: initialPassForm,
-  });
-
-  const settingsForm = useForm({
-    defaultValues: initialSettingsForm,
   });
 
   const handleSaveProfile = async (data: typeof initialNameForm) => {
@@ -198,53 +188,14 @@ const ProfilePage = () => {
     }
   };
 
-  const handleSaveSettings = async (data: typeof initialSettingsForm) => {
-    try {
-      const userRef = doc(FireStore, 'users', userLocal.uid);
-
-      await updateDoc(userRef, {
-        preferences: {
-          emailNotifications: data.emailNotifications,
-          pushNotifications: data.pushNotifications,
-          monthlyReports: data.monthlyReports,
-          updatedAt: new Date(),
-        },
-      });
-
-      toast({
-        title: t('profile.toast.settingsSuccess'),
-        description: t('profile.toast.settingsSuccessDescription'),
-        variant: 'success',
-      });
-      refetch();
-      setSettingsOpen(false);
-    } catch (error) {
-      toast({
-        title: t('profile.toast.settingsError'),
-        description: t('profile.toast.settingsErrorDescription'),
-        variant: 'destructive',
-      });
-      console.log(error);
-    }
-  };
-
   useEffect(() => {
     if (userLocal) {
       nameForm.reset({
         name: userLocal.displayName,
         email: userLocal.email ?? '',
       });
-
-      const userPreferences = (userLocal as any).preferences;
-      if (userPreferences) {
-        settingsForm.reset({
-          emailNotifications: userPreferences.emailNotifications ?? true,
-          pushNotifications: userPreferences.pushNotifications ?? true,
-          monthlyReports: userPreferences.monthlyReports ?? false,
-        });
-      }
     }
-  }, [nameForm, settingsForm, userLocal]);
+  }, [nameForm, userLocal]);
 
   const stats = [
     {
@@ -392,10 +343,9 @@ const ProfilePage = () => {
           <ProfileMenuItem
             icon={<Cog className="h-5 w-5" />}
             title={t('sidebar.settings')}
-            description={t('sidebar.settingsDescription')}
-            onClick={() => setSettingsOpen(true)}
+            description={t('settings.subtitle')}
+            onClick={() => navigate('/dashboard/settings')}
             iconClassName='text-yellow-400 bg-yellow-400/10'
-            isDisabled={true}
           />
         </div>
 
@@ -413,19 +363,6 @@ const ProfilePage = () => {
           />
         </ProfileMenuSheet>
 
-        <ProfileMenuSheet
-          open={settingsOpen}
-          onOpenChange={setSettingsOpen}
-          title={t('sidebar.settings')}
-          titleIcon={<Cog className="h-5 w-5" />}
-        >
-          <ProfileSettingsForm
-            form={settingsForm}
-            onSubmit={handleSaveSettings}
-            onCancel={() => setSettingsOpen(false)}
-            t={t}
-          />
-        </ProfileMenuSheet>
       </div>
     </PrivateLayout>
   );

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import {
   isBillPaid,
   isBillSkipped,
+  isTransactionPaid,
   isTransactionSkipped,
 } from "../../utils/transaction-filters";
 import { parseLocalDateInput } from "../../utils/month-range";
@@ -47,8 +48,11 @@ function billStatusLabel(
   labels: ReportDocumentProps["labels"]
 ) {
   if (isBillSkipped(item)) return labels.skipped;
-  if (isBillPaid(item)) return labels.paid;
-  return labels.pending;
+  if (item.type === "conta" && isBillPaid(item)) return labels.paid;
+  if (item.type === "despesa" && isTransactionPaid(item)) return labels.paid;
+  if (item.type === "conta") return labels.pending;
+  if (item.type === "despesa" && isTransactionSkipped(item)) return labels.skipped;
+  return "";
 }
 
 const SECTION_THEME = {
@@ -159,8 +163,11 @@ function ReportTable({
                       className={cn(
                         "py-4 pr-4 align-top font-semibold whitespace-nowrap",
                         skipped && "text-red-600",
-                        !skipped && isBillPaid(item) && "text-emerald-600",
-                        !skipped && !isBillPaid(item) && "text-amber-600"
+                        !skipped && isTransactionPaid(item) && "text-emerald-600",
+                        !skipped &&
+                          item.type === "conta" &&
+                          !isBillPaid(item) &&
+                          "text-amber-600"
                       )}
                     >
                       {billStatusLabel(item, labels)}

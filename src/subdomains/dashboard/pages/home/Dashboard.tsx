@@ -14,8 +14,8 @@ import { useDefaultCard } from '@/hooks/useDefaultCard';
 import { useDashboardPreferences } from '../../context/dashboard-preferences';
 import {
   getBalancePeriodRange,
+  getFinancialPeriodRange,
   getLocalTodayYmd,
-  getMonthRangeByKey,
 } from '../../utils/month-range';
 import ExpenseByCategoryChart from './components/ExpenseByCategoryChart';
 import MonthlyExpenseTrendChart from './components/MonthlyExpenseTrendChart';
@@ -46,11 +46,15 @@ function DashboardHomeBody() {
     resetCurrentMonth,
     layoutMode,
     transactionListFilters,
+    financialPeriod,
   } = useDashboardPreferences();
   const isMobile = useIsMobile();
   const { categoryLookup } = useCategories();
   const isNotionDesktop = layoutMode === 'notion' && !isMobile;
-  const monthRange = useMemo(() => getMonthRangeByKey(selectedMonth), [selectedMonth]);
+  const monthRange = useMemo(
+    () => getFinancialPeriodRange(selectedMonth, financialPeriod),
+    [financialPeriod, selectedMonth]
+  );
   const todayYmd = getLocalTodayYmd();
 
   const effectiveFilters = useMemo(() => {
@@ -74,15 +78,17 @@ function DashboardHomeBody() {
     () =>
       getBalancePeriodRange(selectedMonth, transactionListFilters, {
         throughFullMonth: false,
+        financialPeriod,
       }),
-    [selectedMonth, transactionListFilters]
+    [financialPeriod, selectedMonth, transactionListFilters]
   );
   const balancePeriodFullMonth = useMemo(
     () =>
       getBalancePeriodRange(selectedMonth, transactionListFilters, {
         throughFullMonth: true,
+        financialPeriod,
       }),
-    [selectedMonth, transactionListFilters]
+    [financialPeriod, selectedMonth, transactionListFilters]
   );
   const filterBalanceTransactions = (period: { startDate: string; endDate: string }) =>
     withoutSkippedTransactions(

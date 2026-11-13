@@ -6,7 +6,7 @@ import { useDashboardStats } from "@/hooks/use-dashboard";
 import { useDashboardPreferences } from "../../context/dashboard-preferences";
 import {
   getCurrentMonthKey,
-  getMonthRangeByKey,
+  getFinancialPeriodRange,
   parseMonthKey,
 } from "../../utils/month-range";
 import { useCategories } from "@/hooks/use-categories";
@@ -43,6 +43,7 @@ function RelatoriosPageBody() {
     goToPreviousMonth,
     resetCurrentMonth,
     layoutMode,
+    financialPeriod,
   } = useDashboardPreferences();
 
   const [sections, setSections] = useState<ReportSections>(DEFAULT_SECTIONS);
@@ -55,8 +56,8 @@ function RelatoriosPageBody() {
   const reportRef = useRef<HTMLTitleElement>(null);
 
   const monthRange = useMemo(
-    () => getMonthRangeByKey(selectedMonth),
-    [selectedMonth]
+    () => getFinancialPeriodRange(selectedMonth, financialPeriod),
+    [financialPeriod, selectedMonth]
   );
 
   useEffect(() => {
@@ -191,7 +192,10 @@ function RelatoriosPageBody() {
         onNextMonth={goToNextMonth}
         onResetMonth={() => {
           resetCurrentMonth();
-          const current = getMonthRangeByKey(getCurrentMonthKey());
+          const current = getFinancialPeriodRange(
+            getCurrentMonthKey(),
+            financialPeriod
+          );
           setStartDate(current.startDate);
           setEndDate(current.endDate);
         }}

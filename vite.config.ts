@@ -2,6 +2,10 @@ import { defineConfig, loadEnv, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { readFileSync, writeFileSync } from "fs";
+import { createRequire } from "node:module";
+
+const require = createRequire(import.meta.url);
+const { version: appVersion } = require("./package.json") as { version: string };
 import { componentTagger } from "lovable-tagger";
 
 const SITEMAP_PAGES = [
@@ -72,6 +76,10 @@ export default defineConfig(({ mode }) => {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+  },
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+    __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
 };
 });

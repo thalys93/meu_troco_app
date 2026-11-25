@@ -9,6 +9,7 @@ import DashboardHeader from '../components/DashboardHeader';
 import { cn } from '@/lib/utils';
 import {
     DashboardPreferencesProvider,
+    FinancialPeriodHydrator,
     useDashboardPreferences
 } from '../context/dashboard-preferences';
 import { useAccountStatus } from '@/hooks/use-account-status';
@@ -28,6 +29,7 @@ function PrivateLayout({ children }: { children: React.ReactNode }) {
 
     return (
         <DashboardPreferencesProvider>
+            <FinancialPeriodHydrator />
             <PrivateLayoutContent>{children}</PrivateLayoutContent>
         </DashboardPreferencesProvider>
     );

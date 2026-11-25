@@ -1,11 +1,11 @@
 import React from 'react';
-import { Popover, PopoverAnchor, PopoverContent } from '@/components/ui/popover';
 import {
-  Command,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+  Autocomplete,
+  AutocompleteContent,
+  AutocompleteInput,
+  AutocompleteItem,
+  AutocompleteList,
+} from '@/components/ui/autocomplete';
 import { cn } from '@/lib/utils';
 import {
   DescriptionSuggestion,
@@ -25,6 +25,8 @@ type DescriptionAutocompleteProps = {
   className?: string;
 };
 
+type SuggestionItem = DescriptionSuggestion & { id: string };
+
 const DescriptionAutocomplete = ({
   value,
   onChange,
@@ -36,84 +38,102 @@ const DescriptionAutocomplete = ({
   placeholder,
   className,
 }: DescriptionAutocompleteProps) => {
-  const [open, setOpen] = React.useState(false);
-  const inputRef = React.useRef<HTMLInputElement>(null);
+  const [listOpen, setListOpen] = React.useState(false);
   const suggestions = useTransactionDescriptionSuggestions(transactions, value);
+  const items = React.useMemo<SuggestionItem[]>(
+    () =>
+      suggestions.map((suggestion, index) => ({
+        ...suggestion,
+        id: `${suggestion.description}-${index}`,
+      })),
+    [suggestions]
+  );
+  const canShowList = value.trim().length > 0 && items.length > 0;
+  const isOpen = listOpen && canShowList;
 
-  const showSuggestions = open && suggestions.length > 0 && value.trim().length > 0;
+  const handleValueChange = (
+    next: string,
+    eventDetails?: { reason?: string }
+  ) => {
+    onChange(next);
 
-  const handleSelect = (suggestion: DescriptionSuggestion) => {
-    onChange(suggestion.description);
-    onSelectSuggestion(suggestion);
-    setOpen(false);
-    inputRef.current?.focus();
+    if (eventDetails?.reason === 'item-press') {
+      const match = items.find((item) => item.description === next);
+      if (match) {
+        onSelectSuggestion(match);
+      }
+      setListOpen(false);
+      return;
+    }
+
+    if (next.trim().length === 0) {
+      setListOpen(false);
+      return;
+    }
+
+    setListOpen(true);
   };
 
   return (
-    <Popover open={showSuggestions} onOpenChange={setOpen} modal={false}>
-      <PopoverAnchor asChild>
-        <input
-          ref={inputRef}
-          type="text"
-          value={value}
-          disabled={disabled}
-          autoFocus={autoFocus}
-          placeholder={placeholder}
-          className={cn(
-            'flex h-8 w-full min-w-0 rounded-md border border-border/60 bg-background/80 px-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-            hasError && 'border-red-500 ring-1 ring-red-500/30',
-            className
+    <Autocomplete
+      value={value}
+      onValueChange={handleValueChange}
+      items={items}
+      mode="none"
+      open={isOpen}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          setListOpen(false);
+          return;
+        }
+        if (canShowList) {
+          setListOpen(true);
+        }
+      }}
+      itemToStringValue={(item) => item.description}
+    >
+      <AutocompleteInput
+        disabled={disabled}
+        autoFocus={autoFocus}
+        placeholder={placeholder}
+        className={cn(
+          'min-w-0 border-border/60 bg-background/80 shadow-sm focus-visible:ring-1',
+          hasError && 'border-red-500 ring-1 ring-red-500/30',
+          className
+        )}
+        onFocus={() => {
+          if (canShowList) {
+            setListOpen(true);
+          }
+        }}
+        onBlur={() => {
+          window.setTimeout(() => setListOpen(false), 150);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape' && isOpen) {
+            event.preventDefault();
+            event.stopPropagation();
+            setListOpen(false);
+          }
+        }}
+      />
+      <AutocompleteContent align="start">
+        <AutocompleteList>
+          {(item: SuggestionItem) => (
+            <AutocompleteItem
+              key={item.id}
+              value={item}
+              onMouseDown={(event) => event.preventDefault()}
+            >
+              <span className="truncate">{item.description}</span>
+              <span className="ml-auto pl-2 text-xs tabular-nums text-muted-foreground">
+                {item.count}
+              </span>
+            </AutocompleteItem>
           )}
-          onChange={(e) => {
-            onChange(e.target.value);
-            setOpen(true);
-          }}
-          onFocus={() => setOpen(true)}
-          onBlur={() => {
-            window.setTimeout(() => setOpen(false), 150);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'ArrowDown' && suggestions.length > 0) {
-              e.preventDefault();
-              e.stopPropagation();
-              setOpen(true);
-            }
-            if (e.key === 'Escape' && open) {
-              e.preventDefault();
-              e.stopPropagation();
-              setOpen(false);
-            }
-          }}
-        />
-      </PopoverAnchor>
-      <PopoverContent
-        className="w-[var(--radix-popover-trigger-width)] min-w-[200px] p-0"
-        align="start"
-        onOpenAutoFocus={(e) => e.preventDefault()}
-        onCloseAutoFocus={(e) => e.preventDefault()}
-      >
-        <Command shouldFilter={false}>
-          <CommandList>
-            <CommandGroup>
-              {suggestions.map((suggestion) => (
-                <CommandItem
-                  key={`${suggestion.description}-${suggestion.count}`}
-                  value={suggestion.description}
-                  onSelect={() => handleSelect(suggestion)}
-                  onMouseDown={(e) => e.preventDefault()}
-                  className="cursor-pointer text-sm"
-                >
-                  <span className="truncate">{suggestion.description}</span>
-                  <span className="ml-auto pl-2 text-xs text-muted-foreground tabular-nums">
-                    {suggestion.count}
-                  </span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+        </AutocompleteList>
+      </AutocompleteContent>
+    </Autocomplete>
   );
 };
 

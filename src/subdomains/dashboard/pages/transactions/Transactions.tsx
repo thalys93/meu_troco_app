@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
 import { TrendingUp, TrendingDown, Receipt, Activity } from 'lucide-react'
 import { useDashboardPreferences } from '../../context/dashboard-preferences'
-import { getMonthRangeByKey } from '../../utils/month-range'
+import { getFinancialPeriodRange } from '../../utils/month-range'
 import { useIsMobile } from '@/hooks/use-mobile'
 import { useCategories } from '@/hooks/use-categories'
 import {
@@ -30,12 +30,16 @@ function TransactionsPageBody() {
         goToPreviousMonth,
         resetCurrentMonth,
         layoutMode,
-        transactionListFilters
+        transactionListFilters,
+        financialPeriod,
     } = useDashboardPreferences();
     const isMobile = useIsMobile();
     const { categoryLookup } = useCategories();
     const isNotionDesktop = layoutMode === 'notion' && !isMobile;
-    const monthRange = useMemo(() => getMonthRangeByKey(selectedMonth), [selectedMonth]);
+    const monthRange = useMemo(
+        () => getFinancialPeriodRange(selectedMonth, financialPeriod),
+        [financialPeriod, selectedMonth]
+    );
     const effectiveFilters = useMemo(() => {
         if (!transactionListFilters.dateRangeLockedToMonth) {
             return transactionListFilters;

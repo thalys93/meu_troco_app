@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { PlusCircle, MinusCircle, Receipt, BarChart3, Wallet, Scale3D } from 'lucide-react';
+import { PlusCircle, MinusCircle, Receipt, BarChart3 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -41,22 +41,6 @@ const QuickActions = () => {
             href: '/dashboard/transactions',
             color: 'text-yellow-500',
             bg: 'bg-yellow-500/10',
-            disabled: false,
-        },
-        {
-            icon: Wallet,
-            label: t('dashboard.actions.wallets'),
-            href: '/dashboard/wallets',
-            color: 'text-orange-500',
-            bg: 'bg-orange-500/10',
-            disabled: isReadOnly,
-        },
-        {
-            icon: Scale3D,
-            label: t('dashboard.actions.converter'),
-            href: '/dashboard/converter',
-            color: 'text-blue-500',
-            bg: 'bg-blue-500/10',
             disabled: false,
         },
         {

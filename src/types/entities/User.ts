@@ -1,6 +1,18 @@
 import { AccountTypes } from "@/types/enums/AccountsTypes";
 import { AccountProviders } from "../enums/AccountProviders";
 import { FirebaseTimestamp } from "../Firebase";
+import type { FinancialPeriodPreference } from "@/subdomains/dashboard/utils/month-range";
+
+export type UserNotificationPreferences = {
+    emailNotifications?: boolean;
+    pushNotifications?: boolean;
+    monthlyReports?: boolean;
+    updatedAt?: Date;
+};
+
+export type UserPreferences = UserNotificationPreferences & {
+    financialPeriod?: FinancialPeriodPreference;
+};
 
 export type User = {
     uid: string;
@@ -11,6 +23,7 @@ export type User = {
     status?: UserStatus;
     details?: UserDetails;
     billing?: UserBilling;
+    preferences?: UserPreferences;
 }
 
 export type UserStatus = 'active' | 'inactive' | 'blocked';

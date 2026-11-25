@@ -1,4 +1,4 @@
-import type { Recurrence, RecurrenceType } from '@/types/Recurrence';
+import type { Recurrence } from '@/types/Recurrence';
 import { NO_WALLET_ID } from '@/constants/wallets';
 import {
   allocationRowsFromTransaction,
@@ -21,9 +21,7 @@ export type { AllocationDraftRow };
 export type RecurrenceInlineDraft = {
   description: string;
   category: string;
-  type: RecurrenceType;
   valueDisplay: string;
-  dueDayDisplay: string;
   walletId: string;
   splitAcrossWallets: boolean;
   allocationRows: AllocationDraftRow[];
@@ -35,7 +33,6 @@ export type RecurrenceInlineFieldErrors = {
   wallet: boolean;
   description: boolean;
   allocations: boolean;
-  dueDay: boolean;
 };
 
 export function hasRecurrenceMultipleAllocations(
@@ -66,9 +63,7 @@ export function draftFromRecurrence(
   return {
     description: recurrence.description ?? '',
     category: recurrence.category ?? '',
-    type: recurrence.type,
     valueDisplay,
-    dueDayDisplay: recurrence.dueDay ? String(recurrence.dueDay) : '',
     walletId,
     splitAcrossWallets: split,
     allocationRows: split
@@ -84,10 +79,6 @@ export function validateRecurrenceDraft(
   draft: RecurrenceInlineDraft
 ): RecurrenceInlineFieldErrors {
   const valueNum = parseInlineValue(draft.valueDisplay);
-  const dueDayNumber = Number(draft.dueDayDisplay);
-  const hasValidDueDay =
-    !draft.dueDayDisplay.trim() ||
-    (Number.isInteger(dueDayNumber) && dueDayNumber >= 1 && dueDayNumber <= 31);
 
   const base: RecurrenceInlineFieldErrors = {
     value: !draft.valueDisplay.trim() || valueNum <= 0,
@@ -95,7 +86,6 @@ export function validateRecurrenceDraft(
     wallet: false,
     description: !draft.description.trim(),
     allocations: false,
-    dueDay: draft.type === 'conta' && !hasValidDueDay,
   };
 
   if (draft.splitAcrossWallets) {
@@ -112,17 +102,13 @@ export function validateRecurrenceDraft(
 
 export function buildRecurrencePayload(draft: RecurrenceInlineDraft): Recurrence {
   const estimatedValue = Math.round(parseInlineValue(draft.valueDisplay) * 100) / 100;
-  const dueDayNumber = Number(draft.dueDayDisplay);
-  const hasValidDueDay =
-    Number.isInteger(dueDayNumber) && dueDayNumber >= 1 && dueDayNumber <= 31;
 
   const base: Recurrence = {
     description: draft.description.trim(),
     category: draft.category,
-    type: draft.type,
+    type: 'despesa',
     estimatedValue,
     walletId: draft.walletId?.trim() || NO_WALLET_ID,
-    ...(draft.type === 'conta' && hasValidDueDay ? { dueDay: dueDayNumber } : {}),
   };
 
   if (!draft.splitAcrossWallets) {

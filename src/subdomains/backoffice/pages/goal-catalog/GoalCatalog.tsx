@@ -22,6 +22,7 @@ import {
 } from '@/utils/services/api/goal-templates-service';
 import { RANK_CRITERION_METRICS } from '@/constants/rank-criterion-metrics';
 import { CATEGORY_ICON_OPTIONS, resolveCategoryIcon } from '@/utils/category-icons';
+import { RankBadge } from '@/components/rank/RankBadge';
 import {
     RANK_FORM_LOCALES,
     emptyRankLocalized,
@@ -92,41 +93,6 @@ function formatCriterionValue(
         return new Intl.NumberFormat(locale, { style: 'currency', currency: 'BRL' }).format(value);
     }
     return `${value} ${t(`goalCatalog.criteria.unit.${metric}`, { defaultValue: '' })}`.trim();
-}
-
-function RankPreviewBadge({
-    title,
-    icon,
-    color,
-    level,
-    levelLabel,
-}: {
-    title: string;
-    icon: string;
-    color: string;
-    level: number;
-    levelLabel: string;
-}) {
-    const Icon = resolveCategoryIcon(icon) ?? resolveCategoryIcon(DEFAULT_ICON);
-    const PreviewIcon = Icon!;
-
-    return (
-        <div
-            className="flex items-center gap-3 rounded-xl border border-border/70 bg-card px-4 py-3"
-            style={{ borderLeftWidth: 4, borderLeftColor: color }}
-        >
-            <div
-                className="flex h-10 w-10 items-center justify-center rounded-lg"
-                style={{ backgroundColor: `${color}22`, color }}
-            >
-                <PreviewIcon className="h-5 w-5" />
-            </div>
-            <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{levelLabel}</p>
-                <p className="font-semibold">{title}</p>
-            </div>
-        </div>
-    );
 }
 
 function GoalCatalogPage() {
@@ -375,11 +341,10 @@ function GoalCatalogPage() {
                                 )}
                             </div>
 
-                            <RankPreviewBadge
+                            <RankBadge
                                 title={previewTitle}
                                 icon={form.icon}
                                 color={form.color}
-                                level={Number(form.level) || 1}
                                 levelLabel={t('goalCatalog.levelBadge', 'Nível {{level}}', { level: Number(form.level) || 1 })}
                             />
                         </div>

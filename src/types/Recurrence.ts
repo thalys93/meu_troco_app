@@ -1,4 +1,4 @@
-export type RecurrenceType = 'conta' | 'despesa';
+export type RecurrenceType = 'despesa';
 
 export type RecurrenceAllocation = {
   walletId: string;
@@ -13,7 +13,6 @@ export interface Recurrence {
   estimatedValue: number;
   walletId: string;
   allocations?: RecurrenceAllocation[];
-  dueDay?: number;
   lastGeneratedMonth?: string;
   createdAt?: Date;
 }

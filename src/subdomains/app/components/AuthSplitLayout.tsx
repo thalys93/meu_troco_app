@@ -130,6 +130,8 @@ type AuthSplitLayoutProps = {
   teamName?: string;
   teamDescription?: string;
   className?: string;
+  /** Destino do botão Voltar (app público). Padrão: landing `/`. */
+  backTo?: string;
 };
 
 export function AuthSplitLayout({
@@ -141,6 +143,7 @@ export function AuthSplitLayout({
   teamName,
   teamDescription,
   className,
+  backTo,
 }: AuthSplitLayoutProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -265,7 +268,27 @@ export function AuthSplitLayout({
           <div className="mb-3 flex items-center justify-end gap-2 md:sticky md:top-0 md:z-20 md:mb-0 md:bg-[hsl(36_28%_96%)]/80 md:py-1 md:backdrop-blur-sm dark:md:bg-background/80">
             <LanguageSwitcher />
             <ThemeToggle />
-            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="text-foreground/80">
+            <Button
+              variant="ghost"
+              size="sm"
+              type="button"
+              onClick={() => {
+                if (isBackoffice) {
+                  if (typeof backTo === 'string') {
+                    navigate(backTo);
+                    return;
+                  }
+                  if (window.history.length > 1) {
+                    navigate(-1);
+                    return;
+                  }
+                  navigate('/backoffice/login');
+                  return;
+                }
+                navigate(backTo ?? '/');
+              }}
+              className="text-foreground/80"
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               {t('navigation.back')}
             </Button>

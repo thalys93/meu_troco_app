@@ -34,7 +34,6 @@ export function useRecurrenceInlineSubmit({
         errors.category && t('transactionForm.form.category'),
         errors.wallet && t('transactionForm.form.wallet'),
         errors.description && t('transactionForm.form.description'),
-        errors.dueDay && t('recurrence.wizard.dueDay'),
         errors.allocations &&
           t('transactionList.inline.splitWallets', {
             defaultValue: 'Rateio entre carteiras',
@@ -55,8 +54,7 @@ export function useRecurrenceInlineSubmit({
         errors.category ||
         errors.wallet ||
         errors.description ||
-        errors.allocations ||
-        errors.dueDay
+        errors.allocations
       ) {
         let description = getMissingFieldsMessage(errors);
         if (errors.allocations && draft.splitAcrossWallets) {

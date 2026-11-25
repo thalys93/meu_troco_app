@@ -6,47 +6,24 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import type { Recurrence } from '@/types/Recurrence';
-import { buildRecurrenceDateForMonth } from '@/subdomains/dashboard/utils/recurrence';
 import { Repeat } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { parseLocalDateInput } from '@/subdomains/dashboard/utils/month-range';
 
 type RecurrenceRowPopoverProps = {
   recurrence: Recurrence;
-  monthKey?: string;
   isPending?: boolean;
   onGenerate?: () => void;
-  onMarkPaid?: () => void;
   className?: string;
 };
 
 const RecurrenceRowPopover = ({
   recurrence,
-  monthKey,
   isPending = false,
   onGenerate,
-  onMarkPaid,
   className,
 }: RecurrenceRowPopoverProps) => {
-  const { t, i18n } = useTranslation();
-
-  const scheduleLabel = React.useMemo(() => {
-    if (recurrence.dueDay && monthKey) {
-      const dateStr = buildRecurrenceDateForMonth(monthKey, recurrence.dueDay);
-      const date = parseLocalDateInput(dateStr);
-      if (!Number.isNaN(date.getTime())) {
-        return t('transactionList.recurrence.dueDay', {
-          day: date.toLocaleDateString(i18n.language, {
-            day: 'numeric',
-            month: 'long',
-          }),
-        });
-      }
-      return t('transactionList.recurrence.dueDay', { day: recurrence.dueDay });
-    }
-    return t('transactionList.recurrence.perMonth');
-  }, [recurrence.dueDay, monthKey, t, i18n.language]);
+  const { t } = useTranslation();
 
   return (
     <Popover>
@@ -71,7 +48,9 @@ const RecurrenceRowPopover = ({
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-sm font-medium">{recurrence.description}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{scheduleLabel}</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t('transactionList.recurrence.perMonth')}
+        </p>
         {isPending && onGenerate && (
           <Button
             type="button"
@@ -83,20 +62,6 @@ const RecurrenceRowPopover = ({
             }}
           >
             {t('transactionList.recurrence.generate')}
-          </Button>
-        )}
-        {isPending && onMarkPaid && (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="mt-2 w-full"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMarkPaid();
-            }}
-          >
-            {t('transactionList.recurrence.markPaid')}
           </Button>
         )}
       </PopoverContent>

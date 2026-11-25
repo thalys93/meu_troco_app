@@ -36,6 +36,111 @@ export const getMonthRangeByKey = (monthKey: string) => {
   return { startDate, endDate };
 };
 
+export type FinancialPeriodPreference = {
+  periodStartDay: number;
+  periodEndDay: number;
+};
+
+export const defaultFinancialPeriodPreference: FinancialPeriodPreference = {
+  periodStartDay: 1,
+  periodEndDay: 31,
+};
+
+const clampPeriodDay = (year: number, monthIndex: number, day: number) => {
+  const lastDay = new Date(year, monthIndex + 1, 0).getDate();
+  return Math.min(Math.max(1, Math.floor(day)), lastDay);
+};
+
+export const normalizeFinancialPeriodPreference = (
+  raw?: Partial<FinancialPeriodPreference> | null
+): FinancialPeriodPreference => {
+  const fallback = defaultFinancialPeriodPreference;
+  const start =
+    typeof raw?.periodStartDay === "number" && Number.isFinite(raw.periodStartDay)
+      ? raw.periodStartDay
+      : fallback.periodStartDay;
+  const end =
+    typeof raw?.periodEndDay === "number" && Number.isFinite(raw.periodEndDay)
+      ? raw.periodEndDay
+      : fallback.periodEndDay;
+  return {
+    periodStartDay: clampPeriodDay(2024, 0, start),
+    periodEndDay: clampPeriodDay(2024, 0, end),
+  };
+};
+
+export const getFinancialPeriodRange = (
+  monthKey: string,
+  prefs: FinancialPeriodPreference = defaultFinancialPeriodPreference
+) => {
+  const { periodStartDay, periodEndDay } =
+    normalizeFinancialPeriodPreference(prefs);
+
+  if (periodStartDay === 1 && periodEndDay === 31) {
+    return getMonthRangeByKey(monthKey);
+  }
+
+  const monthDate = parseMonthKey(monthKey);
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+
+  const crossesMonths =
+    periodStartDay > periodEndDay || periodStartDay === periodEndDay;
+
+  if (!crossesMonths) {
+    const startDay = clampPeriodDay(year, month, periodStartDay);
+    const endDay = clampPeriodDay(year, month, periodEndDay);
+    return {
+      startDate: formatDateToYmd(new Date(year, month, startDay)),
+      endDate: formatDateToYmd(new Date(year, month, endDay)),
+    };
+  }
+
+  const prevMonth = new Date(year, month - 1, 1);
+  const prevYear = prevMonth.getFullYear();
+  const prevMonthIndex = prevMonth.getMonth();
+  const startDay = clampPeriodDay(prevYear, prevMonthIndex, periodStartDay);
+  const endDay = clampPeriodDay(year, month, periodEndDay);
+
+  return {
+    startDate: formatDateToYmd(new Date(prevYear, prevMonthIndex, startDay)),
+    endDate: formatDateToYmd(new Date(year, month, endDay)),
+  };
+};
+
+/** Rótulo YYYY-MM do período financeiro que contém a data. */
+export const getFinancialMonthKeyForDate = (
+  baseDate = new Date(),
+  prefs: FinancialPeriodPreference = defaultFinancialPeriodPreference
+) => {
+  const ymd = getLocalTodayYmd(baseDate);
+  const calendarKey = getCurrentMonthKey(baseDate);
+  const candidates = [
+    calendarKey,
+    shiftMonthKey(calendarKey, -1),
+    shiftMonthKey(calendarKey, 1),
+  ];
+
+  for (const monthKey of candidates) {
+    const range = getFinancialPeriodRange(monthKey, prefs);
+    if (isYmdWithinRange(ymd, range.startDate, range.endDate)) {
+      return monthKey;
+    }
+  }
+
+  return calendarKey;
+};
+
+export const isYmdWithinRange = (
+  ymd: string,
+  startDate: string,
+  endDate: string
+) => {
+  const normalized = normalizeLocalDateString(ymd);
+  if (!normalized) return false;
+  return normalized >= startDate && normalized <= endDate;
+};
+
 export const isCurrentMonthKey = (monthKey: string, baseDate = new Date()) =>
   monthKey === getCurrentMonthKey(baseDate);
 
@@ -56,27 +161,42 @@ export const clampYmdToToday = (ymd: string, baseDate = new Date()) => {
 export const getBalancePeriodRange = (
   selectedMonth: string,
   filters: { startDate: string; endDate: string; dateRangeLockedToMonth: boolean },
-  baseDate = new Date()
+  options?: {
+    throughFullMonth?: boolean;
+    baseDate?: Date;
+    financialPeriod?: FinancialPeriodPreference;
+  }
 ) => {
+  const baseDate = options?.baseDate ?? new Date();
   const today = formatDateToYmd(baseDate);
+  const throughFullMonth = options?.throughFullMonth ?? false;
 
   if (!filters.dateRangeLockedToMonth) {
     return {
       startDate: filters.startDate,
-      endDate: clampYmdToToday(filters.endDate || today, baseDate),
+      endDate: throughFullMonth
+        ? filters.endDate || today
+        : clampYmdToToday(filters.endDate || today, baseDate),
     };
   }
 
-  const previousMonthStart = getMonthRangeByKey(
-    shiftMonthKey(selectedMonth, -1)
-  ).startDate;
-  const selectedMonthEnd = getMonthRangeByKey(selectedMonth).endDate;
-  const endDate = isCurrentMonthKey(selectedMonth, baseDate)
-    ? today
-    : clampYmdToToday(selectedMonthEnd, baseDate);
+  const periodRange = getFinancialPeriodRange(
+    selectedMonth,
+    options?.financialPeriod
+  );
+  const selectedMonthEnd = periodRange.endDate;
+  const currentPeriodKey = getFinancialMonthKeyForDate(
+    baseDate,
+    options?.financialPeriod
+  );
+  const endDate = throughFullMonth
+    ? selectedMonthEnd
+    : selectedMonth === currentPeriodKey
+      ? today
+      : clampYmdToToday(selectedMonthEnd, baseDate);
 
   return {
-    startDate: previousMonthStart,
+    startDate: periodRange.startDate,
     endDate,
   };
 };

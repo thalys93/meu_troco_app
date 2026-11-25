@@ -2,7 +2,7 @@ import { NO_WALLET_ID, isPocketWalletId } from "@/constants/wallets";
 import { parseLocalDateInput, parseMonthKey } from "@/subdomains/dashboard/utils/month-range";
 import type { FirebaseTimestamp } from "@/types/Firebase";
 import type { Wallet } from "@/types/Wallet";
-import type { Transaction } from "@/utils/services/api/transation";
+import type { Transaction } from "@/types/entities/Transaction";
 import { resolveAllocations, roundMoney } from "@/utils/transaction-allocations";
 
 const DEFAULT_BILLING_CLOSING_DAY = 1;

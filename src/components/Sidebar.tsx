@@ -1,9 +1,8 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, Receipt, User, LogOut, Coins, BarChart3 } from 'lucide-react';
+import { Home, Receipt, User, LogOut, Coins, BarChart3, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import ThemeToggle from '@/components/ThemeToggle';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu } from './ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
 import { Separator } from '@radix-ui/react-select';
@@ -11,7 +10,6 @@ import { useTheme } from 'next-themes';
 import { useUser } from '@/hooks/use-user';
 import AvatarTrigger from './AvatarTrigger';
 import { BankIcon } from '@phosphor-icons/react';
-import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 
 const AppSidebar = () => {
@@ -23,10 +21,9 @@ const AppSidebar = () => {
   const navigation = [
     { name: t('sidebar.home'), href: '/dashboard', icon: Home },
     { name: t('sidebar.transactions'), href: "/dashboard/transactions", icon: BankIcon },
-    { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
-    { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
     { name: t('sidebar.bills'), href: '/dashboard/contas', icon: Receipt },
     { name: t('sidebar.reports'), href: '/dashboard/relatorios', icon: BarChart3 },
+    { name: t('sidebar.settings'), href: '/dashboard/settings', icon: Settings },
   ];
 
   return (
@@ -40,8 +37,6 @@ const AppSidebar = () => {
               </div>
               <span className="font-bold text-sm">{t('brand.name')}</span>
             </div>
-            <LanguageSwitcher />
-            <ThemeToggle />
           </div>
         </SidebarHeader>
 
@@ -84,6 +79,15 @@ const AppSidebar = () => {
                 <DropdownMenuItem className='flex items-center gap-2'>
                   <User className="h-4 w-4 group-hover:text-secondary-foreground transition-all" />
                   <span className='group-hover:text-secondary-foreground transition-all'>{t('sidebar.profile')}</span>
+                </DropdownMenuItem>
+              </NavLink>
+              <NavLink
+                to="/dashboard/settings"
+                className=" group w-full hover:bg-secondary hover:text-secondary-foregroundflex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground"
+              >
+                <DropdownMenuItem className='flex items-center gap-2'>
+                  <Settings className="h-4 w-4 group-hover:text-secondary-foreground transition-all" />
+                  <span className='group-hover:text-secondary-foreground transition-all'>{t('sidebar.settings')}</span>
                 </DropdownMenuItem>
               </NavLink>
 

@@ -1,11 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, Receipt, Wallet, BarChart3 } from 'lucide-react';
+import { Home, Receipt, BarChart3, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { Bank } from '@phosphor-icons/react';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 type NavItem = {
   name: string;
@@ -18,20 +17,14 @@ const MobileNav = () => {
   const { t } = useTranslation();
   const navRef = useRef<HTMLElement>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
-  const isMobile = useIsMobile();
 
-  const navigation = useMemo((): NavItem[] => {
-    const items: (NavItem | null)[] = [
-      { name: t('sidebar.home'), href: '/dashboard', icon: Home },
-      { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
-      { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
-      { name: t('sidebar.bills'), href: '/dashboard/contas', icon: Receipt },
-      { name: t('dashboard.actions.wallets'), href: '/dashboard/wallets', icon: Wallet },
-      { name: t('sidebar.reports'), href: '/dashboard/relatorios', icon: BarChart3 },
-      isMobile ? { name: t('sidebar.transactions'), href: '/dashboard/transactions', icon: Bank } : null,
-    ];
-    return items.filter((item): item is NavItem => item !== null);
-  }, [t, isMobile]);
+  const navigation = useMemo((): NavItem[] => [
+    { name: t('sidebar.home'), href: '/dashboard', icon: Home },
+    { name: t('sidebar.transactions'), href: '/dashboard/transactions', icon: Bank },
+    { name: t('sidebar.bills'), href: '/dashboard/contas', icon: Receipt },
+    { name: t('sidebar.reports'), href: '/dashboard/relatorios', icon: BarChart3 },
+    { name: t('sidebar.settings'), href: '/dashboard/settings', icon: Settings },
+  ], [t]);
 
   useEffect(() => {
     const nav = navRef.current;
@@ -54,26 +47,30 @@ const MobileNav = () => {
       <nav
         ref={navRef}
         className={cn(
-          "mobile-nav-scroll max-w-screen-xl mx-auto overflow-x-auto overflow-y-hidden flex items-center px-4 py-3 scroll-smooth",
-          hasOverflow ? "justify-start" : "justify-center"
+          "mobile-nav-scroll max-w-screen-xl mx-auto overflow-x-auto overflow-y-hidden flex items-center px-2 py-2 scroll-smooth",
+          hasOverflow ? "justify-start" : "justify-around"
         )}
       >
-        <div className="inline-flex flex-nowrap items-center gap-8 md:gap-16 min-w-max pl-4 pr-4">
+        <div className="inline-flex w-full flex-nowrap items-center justify-around gap-1 min-w-max px-1">
           {navigation.map((item) => {
-            const isActive = location.pathname === item.href;
+            const isActive =
+              location.pathname === item.href ||
+              (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
             return (
               <Link
-                key={item.name}
+                key={item.href}
                 to={item.href}
                 className={cn(
-                  "flex flex-shrink-0 flex-col items-center gap-1 px-6 py-2 rounded-2xl transition-all duration-300",
+                  "flex flex-shrink-0 flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all duration-300 min-w-[4.5rem]",
                   isActive
-                    ? "text-primary bg-primary/5 scale-105"
+                    ? "text-primary bg-primary/5"
                     : "text-muted-foreground hover:bg-accent/10"
                 )}
               >
-                <item.icon className={cn("w-6 h-6 transition-transform", isActive && "scale-110")} />
-                <span className="text-[10px] font-bold uppercase tracking-wider whitespace-nowrap">{item.name}</span>
+                <item.icon className={cn("w-5 h-5", isActive && "scale-105")} />
+                <span className="text-[9px] font-semibold uppercase tracking-wide whitespace-nowrap text-center leading-tight">
+                  {item.name}
+                </span>
               </Link>
             );
           })}

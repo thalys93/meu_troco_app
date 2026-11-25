@@ -14,8 +14,8 @@ import { useDefaultCard } from '@/hooks/useDefaultCard';
 import { useDashboardPreferences } from '../../context/dashboard-preferences';
 import {
   getBalancePeriodRange,
+  getFinancialPeriodRange,
   getLocalTodayYmd,
-  getMonthRangeByKey,
 } from '../../utils/month-range';
 import ExpenseByCategoryChart from './components/ExpenseByCategoryChart';
 import MonthlyExpenseTrendChart from './components/MonthlyExpenseTrendChart';
@@ -27,6 +27,8 @@ import {
   summarizeIncomeExpense,
   withoutSkippedTransactions,
 } from '../../utils/transaction-filters';
+
+import { Shimmer } from '@shimmer-from-structure/react'
 
 function DashboardHomeBody() {
   const { data: transactions = [], isLoading } = useUserTransactions();
@@ -44,11 +46,15 @@ function DashboardHomeBody() {
     resetCurrentMonth,
     layoutMode,
     transactionListFilters,
+    financialPeriod,
   } = useDashboardPreferences();
   const isMobile = useIsMobile();
   const { categoryLookup } = useCategories();
   const isNotionDesktop = layoutMode === 'notion' && !isMobile;
-  const monthRange = useMemo(() => getMonthRangeByKey(selectedMonth), [selectedMonth]);
+  const monthRange = useMemo(
+    () => getFinancialPeriodRange(selectedMonth, financialPeriod),
+    [financialPeriod, selectedMonth]
+  );
   const todayYmd = getLocalTodayYmd();
 
   const effectiveFilters = useMemo(() => {
@@ -69,26 +75,45 @@ function DashboardHomeBody() {
     [categoryLookup, effectiveFilters, transactions]
   );
   const balancePeriod = useMemo(
-    () => getBalancePeriodRange(selectedMonth, transactionListFilters),
-    [selectedMonth, transactionListFilters]
-  );
-  const balanceTransactions = useMemo(
     () =>
-      withoutSkippedTransactions(
-        filterTransactionsByPreferences(
-          transactions,
-          {
-            ...transactionListFilters,
-            dateRangeLockedToMonth: false,
-            startDate: balancePeriod.startDate,
-            endDate: balancePeriod.endDate,
-          },
-          { categoryLookup }
-        )
-      ),
-    [balancePeriod.endDate, balancePeriod.startDate, categoryLookup, transactionListFilters, transactions]
+      getBalancePeriodRange(selectedMonth, transactionListFilters, {
+        throughFullMonth: false,
+        financialPeriod,
+      }),
+    [financialPeriod, selectedMonth, transactionListFilters]
+  );
+  const balancePeriodFullMonth = useMemo(
+    () =>
+      getBalancePeriodRange(selectedMonth, transactionListFilters, {
+        throughFullMonth: true,
+        financialPeriod,
+      }),
+    [financialPeriod, selectedMonth, transactionListFilters]
+  );
+  const filterBalanceTransactions = (period: { startDate: string; endDate: string }) =>
+    withoutSkippedTransactions(
+      filterTransactionsByPreferences(
+        transactions,
+        {
+          ...transactionListFilters,
+          dateRangeLockedToMonth: false,
+          startDate: period.startDate,
+          endDate: period.endDate,
+        },
+        { categoryLookup }
+      )
+    );
+  const balanceTransactions = useMemo(
+    () => filterBalanceTransactions(balancePeriod),
+    [balancePeriod, categoryLookup, transactionListFilters, transactions]
+  );
+  const balanceTransactionsFullMonth = useMemo(
+    () => filterBalanceTransactions(balancePeriodFullMonth),
+    [balancePeriodFullMonth, categoryLookup, transactionListFilters, transactions]
   );
   const balancePeriodHintUntilToday = balancePeriod.endDate >= todayYmd;
+  const canToggleBalanceFullMonth =
+    balancePeriod.endDate !== balancePeriodFullMonth.endDate;
   const trendFilters = useMemo(
     () => ({
       ...effectiveFilters,
@@ -176,6 +201,7 @@ function DashboardHomeBody() {
       animate="visible"
       variants={containerVariants}
     >
+      <Shimmer loading={isLoading}>
       {isNotionDesktop ? (
         <>
           <motion.div variants={itemVariants} className="space-y-3 pt-2 pb-2">
@@ -216,7 +242,9 @@ function DashboardHomeBody() {
                 formatCurrency={formatCurrency}
                 scope="month"
                 monthTransactions={balanceTransactions}
+                monthTransactionsFullMonth={balanceTransactionsFullMonth}
                 periodHintUntilToday={balancePeriodHintUntilToday}
+                canToggleFullMonth={canToggleBalanceFullMonth}
               />
               <div className={cn(
                 "hidden md:flex items-center justify-between p-4 md:p-6 rounded-3xl border transition-colors duration-500",
@@ -250,7 +278,9 @@ function DashboardHomeBody() {
                     formatCurrency={formatCurrency}
                     scope="month"
                     monthTransactions={balanceTransactions}
+                    monthTransactionsFullMonth={balanceTransactionsFullMonth}
                     periodHintUntilToday={balancePeriodHintUntilToday}
+                    canToggleFullMonth={canToggleBalanceFullMonth}
                   />
               </motion.div>
 
@@ -324,6 +354,7 @@ function DashboardHomeBody() {
           </motion.div>
         </>
       )}
+      </Shimmer>
     </motion.div>
   );
 }

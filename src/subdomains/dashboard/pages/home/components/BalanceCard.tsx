@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useWalletsStore } from '@/store/useWalletsStore';
 import useUserStore from '@/store/UserStore';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { usePocketBalance } from '@/hooks/usePocketBalance';
 import { LEGACY_POCKET_CARD_NAME, NO_WALLET_ID } from '@/constants/wallets';
 import { useUserTransactions, type Transaction } from '@/utils/services/api/transation';
@@ -16,13 +17,24 @@ import { computeWalletDisplayBalance } from '@/utils/wallet-balance';
 import { getCurrentMonthKey } from '@/subdomains/dashboard/utils/month-range';
 
 const POCKET_COLOR = '#6b7280';
+const BALANCE_VIEW_STORAGE_KEY = 'dashboard-balance-view-mode';
+
+type BalanceViewMode = 'untilToday' | 'fullMonth';
+
+function getInitialBalanceViewMode(): BalanceViewMode {
+    if (typeof window === 'undefined') return 'untilToday';
+    const stored = window.localStorage.getItem(BALANCE_VIEW_STORAGE_KEY);
+    return stored === 'fullMonth' ? 'fullMonth' : 'untilToday';
+}
 
 interface BalanceCardProps {
     balance: number;
     formatCurrency: (value: number) => string;
     scope?: 'global' | 'month';
     monthTransactions?: Transaction[];
+    monthTransactionsFullMonth?: Transaction[];
     periodHintUntilToday?: boolean;
+    canToggleFullMonth?: boolean;
 }
 
 const BalanceCard = ({
@@ -30,9 +42,14 @@ const BalanceCard = ({
     formatCurrency,
     scope = 'global',
     monthTransactions = [],
+    monthTransactionsFullMonth = [],
     periodHintUntilToday = false,
+    canToggleFullMonth = false,
 }: BalanceCardProps) => {
     const [isVisible, setIsVisible] = React.useState(true);
+    const [balanceViewMode, setBalanceViewMode] = React.useState<BalanceViewMode>(
+        getInitialBalanceViewMode
+    );
     const { t } = useTranslation();
     const { wallets, fetchWallets } = useWalletsStore();
     const { user } = useUserStore();
@@ -44,10 +61,16 @@ const BalanceCard = ({
     );
 
     const isMonthScope = scope === 'month';
+    const showBalanceViewToggle = isMonthScope && canToggleFullMonth;
+    const isFullMonthView = showBalanceViewToggle && balanceViewMode === 'fullMonth';
+
+    const activeMonthTransactions = isFullMonthView
+        ? monthTransactionsFullMonth
+        : monthTransactions;
 
     const nets = useMemo(
-        () => (isMonthScope ? netByWalletId(monthTransactions) : null),
-        [isMonthScope, monthTransactions]
+        () => (isMonthScope ? netByWalletId(activeMonthTransactions) : null),
+        [activeMonthTransactions, isMonthScope]
     );
 
     const pocketDisplay = isMonthScope && nets ? (nets.get(NO_WALLET_ID) ?? 0) : pocketBalance;
@@ -70,7 +93,7 @@ const BalanceCard = ({
     }, [allTransactions, isMonthScope, nets, realWallets]);
 
     const primaryBalance = isMonthScope
-        ? monthTransactions.reduce(
+        ? activeMonthTransactions.reduce(
               (acc, tr) => acc + (tr.type === 'receita' ? tr.value : -tr.value),
               0
           )
@@ -80,13 +103,17 @@ const BalanceCard = ({
         ? 'dashboard.cardTotalTitlePeriod'
         : 'dashboard.cardTotalTitle';
 
-    const monthHintKey = periodHintUntilToday
-        ? 'dashboard.cardTotalPeriodHintUntilToday'
-        : 'dashboard.cardTotalPeriodHint';
+    const monthHintKey = isFullMonthView
+        ? 'dashboard.cardTotalPeriodHintFullMonth'
+        : periodHintUntilToday
+          ? 'dashboard.cardTotalPeriodHintUntilToday'
+          : 'dashboard.cardTotalPeriodHint';
 
-    const monthFlowCaptionKey = periodHintUntilToday
-        ? 'wallets.periodFlowCaptionUntilToday'
-        : 'wallets.periodFlowCaption';
+    const monthFlowCaptionKey = isFullMonthView
+        ? 'wallets.periodFlowCaptionFullMonth'
+        : periodHintUntilToday
+          ? 'wallets.periodFlowCaptionUntilToday'
+          : 'wallets.periodFlowCaption';
 
     const styles = useMemo(() => {
         if (primaryBalance < 0) {
@@ -116,11 +143,28 @@ const BalanceCard = ({
         }
     }, [user?.uid, fetchWallets]);
 
+    React.useEffect(() => {
+        if (!showBalanceViewToggle && balanceViewMode === 'fullMonth') {
+            setBalanceViewMode('untilToday');
+        }
+    }, [balanceViewMode, showBalanceViewToggle]);
+
+    React.useEffect(() => {
+        if (!showBalanceViewToggle) return;
+        window.localStorage.setItem(BALANCE_VIEW_STORAGE_KEY, balanceViewMode);
+    }, [balanceViewMode, showBalanceViewToggle]);
+
+    const handleBalanceViewModeChange = (value: string) => {
+        if (value === 'untilToday' || value === 'fullMonth') {
+            setBalanceViewMode(value);
+        }
+    };
+
     return (
         <Card className={cn("overflow-hidden border-none text-white shadow-xl rounded-3xl transition-all duration-500", styles.card)}>
             <CardContent className="p-8">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex flex-col gap-0.5">
+                <div className="flex items-start justify-between gap-4 mb-4">
+                    <div className="flex flex-col gap-1.5 min-w-0">
                         <h2 className={cn("text-sm font-semibold tracking-wide uppercase", styles.label)}>
                             {t(titleKey)}
                         </h2>
@@ -129,12 +173,40 @@ const BalanceCard = ({
                                 {t(monthHintKey)}
                             </span>
                         )}
+                        {showBalanceViewToggle && (
+                            <ToggleGroup
+                                type="single"
+                                value={balanceViewMode}
+                                onValueChange={handleBalanceViewModeChange}
+                                className="mt-1 justify-start"
+                                size="sm"
+                            >
+                                <ToggleGroupItem
+                                    value="untilToday"
+                                    aria-label={t('dashboard.balanceViewUntilToday')}
+                                    className={cn(
+                                        "h-7 rounded-full border border-white/20 bg-white/10 px-3 text-[11px] font-medium text-white/90 hover:bg-white/20 hover:text-white data-[state=on]:border-white/40 data-[state=on]:bg-white/25 data-[state=on]:text-white"
+                                    )}
+                                >
+                                    {t('dashboard.balanceViewUntilToday')}
+                                </ToggleGroupItem>
+                                <ToggleGroupItem
+                                    value="fullMonth"
+                                    aria-label={t('dashboard.balanceViewFullMonth')}
+                                    className={cn(
+                                        "h-7 rounded-full border border-white/20 bg-white/10 px-3 text-[11px] font-medium text-white/90 hover:bg-white/20 hover:text-white data-[state=on]:border-white/40 data-[state=on]:bg-white/25 data-[state=on]:text-white"
+                                    )}
+                                >
+                                    {t('dashboard.balanceViewFullMonth')}
+                                </ToggleGroupItem>
+                            </ToggleGroup>
+                        )}
                     </div>
                     <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => setIsVisible(!isVisible)}
-                        className={cn("rounded-full transition-colors", styles.button)}
+                        className={cn("rounded-full transition-colors shrink-0", styles.button)}
                     >
                         {isVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </Button>
@@ -144,7 +216,7 @@ const BalanceCard = ({
                     <AnimatePresence mode="wait">
                         {isVisible ? (
                             <motion.div
-                                key="visible"
+                                key={`${balanceViewMode}-visible`}
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}

@@ -45,34 +45,27 @@ feature/* ou fix/*  →  dev  →  master (via PR)
 
 ## 🚀 Deploy Automático
 
-O deploy é realizado automaticamente pelo GitHub Actions quando:
+O deploy é realizado automaticamente pelo Firebase CI/CD quando:
 
-- Uma Pull Request é aberta de `dev` para `master`
-- O título da PR contém o prefixo `[Deploy]`
-- A PR é aprovada e mergeada
-
-**Exemplo de título de PR:**
-```
-[Deploy] Merge dev - Nova dashboard e melhorias de performance
-```
+- **Preview:** Ao abrir uma Pull Request, um link de preview é gerado para testar
+- **Produção:** Ao fazer merge na branch `master`, o deploy automático é feito para o canal `live`
 
 **Workflow de deploy:**
-1. Abre PR de `dev` → `master` com `[Deploy]` no título
-2. GitHub Actions executa build e testes
-3. Se tudo passar, deploy automático para Firebase Hosting
-4. Código mergeado para `master`
+1. Abre PR de `dev` → `master`
+2. Firebase CI gera preview link automaticamente
+3. Teste as mudanças no preview
+4. Ao mergear na `master`, deploy automático para produção
 
 ---
 
 ## 📋 Checklist para Deploy
 
-Antes de abrir PR para `master` com `[Deploy]`:
+Antes de abrir PR para `master`:
 
 - [ ] Build local sem erros (`npm run build`)
 - [ ] Features testadas manualmente
 - [ ] Revisão de código concluída
 - [ ] Sem conflitos de merge
-- [ ] Título da PR com prefixo `[Deploy]`
 
 ---
 

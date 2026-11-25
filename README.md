@@ -1,73 +1,78 @@
-# Welcome to your Lovable project
+# PROD Branch## Meu Troco - Branch de Produção
 
-## Project info
+> O Meu Troco é um aplicativo de finanças pessoais criado para ajudar pessoas a organizarem sua vida financeira de forma prática, visual e objetiva.  
+Sem planilhas caóticas. Sem complicação. Só controle real do seu dinheiro.
 
-**URL**: https://lovable.dev/projects/ab411b9c-0d97-420a-836b-5e7b12b1c1f4
+> ✅ Esta é a branch de produção.
+> Código estável, validado e pronto para deploy.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+Esta branch contém:
+- Código validado e revisado
+- Features finalizadas e testadas
+- Correções aprovadas
+- Versão preparada para ambiente produtivo
 
-**Use Lovable**
+Não realizar desenvolvimento direto nesta branch.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/ab411b9c-0d97-420a-836b-5e7b12b1c1f4) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🎯 Objetivo da Branch `prod`
 
-**Use your preferred IDE**
+A branch `prod` representa a versão estável e publicada do sistema.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Fluxo padrão:
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- prod → versão estável (produção)
+- dev → integração de features
+- feature/* → novas funcionalidades
+- fix/* → correções emergenciais
 
-Follow these steps:
+Merge permitido apenas via PR aprovado a partir da `dev` ou `fix/*`.
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+---
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 🚀 Deploy
 
-# Step 3: Install the necessary dependencies.
-npm i
+O deploy deve ser realizado exclusivamente a partir desta branch.
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+Checklist obrigatório antes de merge:
 
-**Edit a file directly in GitHub**
+- [ ] Build sem erros
+- [ ] Testes passando
+- [ ] Revisão de código concluída
+- [ ] Changelog atualizado
+- [ ] Versionamento ajustado (SemVer)
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+---
 
-**Use GitHub Codespaces**
+## 🔒 Regras Importantes
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+- ❌ Não commitar diretamente na `prod`
+- ❌ Não testar features experimentais
+- ❌ Não alterar configurações críticas sem revisão
 
-## What technologies are used for this project?
+- ✅ Apenas código estável
+- ✅ PR obrigatório
+- ✅ Histórico limpo e rastreável
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## 🏷 Versionamento
 
-## How can I deploy this project?
+Seguir padrão **SemVer**:
 
-Simply open [Lovable](https://lovable.dev/projects/ab411b9c-0d97-420a-836b-5e7b12b1c1f4) and click on Share -> Publish.
+MAJOR.MINOR.PATCH
 
-## Can I connect a custom domain to my Lovable project?
+Exemplo:
+- 1.0.0 → primeira versão estável
+- 1.1.0 → nova feature compatível
+- 1.1.1 → correção de bug
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 👨‍💻 Manutenção
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+Responsável: thalys93  
+Ambiente produtivo. Mudanças exigem responsabilidade.

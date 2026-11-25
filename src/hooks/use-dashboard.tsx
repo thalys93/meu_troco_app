@@ -1,14 +1,21 @@
-import { useUserTransactions } from "@/utils/api/transation"
+import { useUserTransactions } from "@/utils/services/api/transation";
 import { useUser } from "./use-user";
 import { useTranslation } from "react-i18next";
+import { FirebaseTimestamp } from "@/types/Firebase";
+import { useEffect } from "react";
+import { useWalletsStore } from "@/store/useWalletsStore";
+import { usePocketBalance } from "./usePocketBalance";
+import { computeWalletDisplayBalance } from "@/utils/wallet-balance";
+import { getCurrentMonthKey } from "@/subdomains/dashboard/utils/month-range";
 export const useDashboardStats = () => {
     const { data: transactions = [] } = useUserTransactions();
     const { user } = useUser();
     const { i18n } = useTranslation()
     const incomeTransactions = transactions.filter((t) => t.type === "receita");
     const expenseTransactions = transactions.filter((t) => t.type === "despesa");
-    const userJoinedTime = user?.createdAt;
-    const getDaysSinceUserCreated = (timestamp?: { seconds: number; nanoseconds: number }) => {
+    const billTransactions = transactions.filter((t) => t.type === "conta");
+    const userJoinedTime = user?.details?.createdAt;
+    const getDaysSinceUserCreated = (timestamp?: FirebaseTimestamp) => {
         if (!timestamp) return null;
 
         const createdDate = new Date(timestamp.seconds * 1000);
@@ -22,17 +29,35 @@ export const useDashboardStats = () => {
 
     const incomeLength = incomeTransactions.length;
     const expenseLength = expenseTransactions.length;
+    const billsLength = billTransactions.length;
 
     const totalIncome = incomeTransactions.reduce((acc, curr) => acc + curr.value, 0);
     const totalExpense = expenseTransactions.reduce((acc, curr) => acc + curr.value, 0);
-    const totalBalance = totalIncome - totalExpense;
-    const totalMovimentado = totalIncome + totalExpense;
+    const totalBills = billTransactions.reduce((acc, curr) => acc + curr.value, 0);
+
+    const { fetchWallets, wallets } = useWalletsStore();
+    const pocketBalance = usePocketBalance();
+
+    useEffect(() => {
+        if (user?.uid && wallets.length === 0) {
+            fetchWallets(user.uid);
+        }
+    }, [user, wallets.length, fetchWallets]);
+
+    const currentMonth = getCurrentMonthKey();
+    const walletsTotal = wallets.reduce(
+        (acc, wallet) => acc + computeWalletDisplayBalance(wallet, transactions, currentMonth),
+        0
+    );
+    const totalBalance = pocketBalance + walletsTotal;
+
+    const totalMovimentado = totalIncome + totalExpense + totalBills + Math.abs(totalBalance);
 
     const incomePercentage = totalMovimentado > 0 ? (totalIncome / totalMovimentado) * 100 : 0;
     const expensePercentage = totalMovimentado > 0 ? (totalExpense / totalMovimentado) * 100 : 0;
     const totalBalancePercentage = totalMovimentado > 0 ? (totalBalance / totalMovimentado) * 100 : 0;
 
-    const getCurrencySymbol = (locale: string) => {        
+    const getCurrencySymbol = (locale: string) => {
         switch (locale) {
             case "pt-BR":
                 return "R$";
@@ -42,25 +67,26 @@ export const useDashboardStats = () => {
                 return "€";
             default:
                 return "$";
-        }                
+        }
     };
 
-        const formatCurrency = (amount: number) => `${getCurrencySymbol(i18n.language)} ${amount.toLocaleString(i18n.language, { minimumFractionDigits: 2 })}`;
+    const formatCurrency = (amount: number) => `${getCurrencySymbol(i18n.language)} ${amount.toLocaleString(i18n.language, { minimumFractionDigits: 2 })}`;
 
-        return {
-            totalIncome,
-            totalExpense,
-            totalBalance,
-            incomePercentage,
-            expensePercentage,
-            totalBalancePercentage,
-            formatCurrency,
-            isBalancePositive: totalBalance >= 0,
-            isIncomePositive: totalIncome >= 0,
-            isExpensePositive: totalExpense >= 0,
-            incomeLength,
-            expenseLength,
-            userJoinedTime,
-            getDaysSinceUserCreated
-        };
-    }
+    return {
+        totalIncome,
+        totalExpense,
+        totalBalance,
+        incomePercentage,
+        expensePercentage,
+        totalBalancePercentage,
+        formatCurrency,
+        isBalancePositive: totalBalance >= 0,
+        isIncomePositive: totalIncome >= 0,
+        isExpensePositive: totalExpense >= 0,
+        incomeLength,
+        expenseLength,
+        billsLength,
+        userJoinedTime,
+        getDaysSinceUserCreated
+    };
+}

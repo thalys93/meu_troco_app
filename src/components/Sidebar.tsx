@@ -1,19 +1,15 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, TrendingUp, TrendingDown, User, LogOut, DollarSign, Crown, CreditCard, ChevronDown, ChevronUp } from 'lucide-react';
+import { Home, Receipt, User, LogOut, Coins, BarChart3, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import ThemeToggle from '@/components/ThemeToggle';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from './ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu } from './ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Separator } from '@radix-ui/react-select';
 import { useTheme } from 'next-themes';
-import { useAuth } from '@/hooks/use-auth';
 import { useUser } from '@/hooks/use-user';
 import AvatarTrigger from './AvatarTrigger';
 import { BankIcon } from '@phosphor-icons/react';
-import LanguageSwitcher from './LanguageSwitcher';
 import { useTranslation } from 'react-i18next';
 
 const AppSidebar = () => {
@@ -25,23 +21,22 @@ const AppSidebar = () => {
   const navigation = [
     { name: t('sidebar.home'), href: '/dashboard', icon: Home },
     { name: t('sidebar.transactions'), href: "/dashboard/transactions", icon: BankIcon },
-    { name: t('sidebar.income'), href: '/dashboard/income', icon: TrendingUp },
-    { name: t('sidebar.expenses'), href: '/dashboard/expenses', icon: TrendingDown },
-    // { name: 'Premium', href: '/pricing', icon: Crown },
-    // { name: 'Pagamentos', href: '/payments', icon: CreditCard },    
+    { name: t('sidebar.bills'), href: '/dashboard/contas', icon: Receipt },
+    { name: t('sidebar.reports'), href: '/dashboard/relatorios', icon: BarChart3 },
+    { name: t('sidebar.settings'), href: '/dashboard/settings', icon: Settings },
   ];
 
   return (
     <Sidebar variant='floating'>
-      <div className={cn("flex flex-col h-full", theme == "dark" && "bg-gradient-to-br from-green-900/45 via-slate-900/50 to-slate-950/70 rounded")}>
+      <div className={cn("flex flex-col h-full", theme == "dark" && "bg-gradient-to-br from-primary/15 via-zinc-900/50 to-zinc-950/70 rounded")}>
         <SidebarHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 px-2">
-              <DollarSign className="w-6 h-6 text-primary" />
-              <span className="font-bold">Meu Troco</span>
+              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+                <Coins className="w-4 h-4 text-primary-foreground" />
+              </div>
+              <span className="font-bold text-sm">{t('brand.name')}</span>
             </div>
-            <LanguageSwitcher />
-            <ThemeToggle />
           </div>
         </SidebarHeader>
 
@@ -84,6 +79,15 @@ const AppSidebar = () => {
                 <DropdownMenuItem className='flex items-center gap-2'>
                   <User className="h-4 w-4 group-hover:text-secondary-foreground transition-all" />
                   <span className='group-hover:text-secondary-foreground transition-all'>{t('sidebar.profile')}</span>
+                </DropdownMenuItem>
+              </NavLink>
+              <NavLink
+                to="/dashboard/settings"
+                className=" group w-full hover:bg-secondary hover:text-secondary-foregroundflex items-center space-x-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground"
+              >
+                <DropdownMenuItem className='flex items-center gap-2'>
+                  <Settings className="h-4 w-4 group-hover:text-secondary-foreground transition-all" />
+                  <span className='group-hover:text-secondary-foreground transition-all'>{t('sidebar.settings')}</span>
                 </DropdownMenuItem>
               </NavLink>
 

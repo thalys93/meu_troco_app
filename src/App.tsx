@@ -8,7 +8,6 @@ import ThemeProvider from "@/components/ThemeProvider";
 import Routes from "@/routes";
 
 const queryClient = new QueryClient();
-
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>

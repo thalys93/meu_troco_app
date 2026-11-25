@@ -23,3 +23,23 @@ dist-ssr
 *.sln
 *.sw?
 .env
+
+# Firebase Functions
+functions/lib
+functions/.env
+functions/node_modules
+
+firestore.rules
+firestore.indexes.json
+.firebaserc
+
+# IDEs
+.firebase
+.vscode
+.cursor
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

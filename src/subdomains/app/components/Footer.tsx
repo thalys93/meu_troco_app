@@ -1,19 +1,40 @@
-import { DollarSign, Facebook, Instagram, Twitter } from 'lucide-react'
+import React from 'react'
 import { useTranslation } from 'react-i18next'
+import LegalModals from '@/shared/components/LegalModals'
+import { Link, useLocation } from 'react-router-dom'
+import { LinkedinLogo, ThreadsLogoIcon } from '@phosphor-icons/react'
 
 function Footer() {
     const { t } = useTranslation();
+    const location = useLocation();
+    const shouldShowBackofficeLink = !location.pathname.startsWith('/backoffice');
+
+    const [legalModal, setLegalModal] = React.useState<{ isOpen: boolean, type: 'terms' | 'privacy' }>({
+        isOpen: false,
+        type: 'terms'
+    });
+
+    const openLegalModal = (e: React.MouseEvent, type: 'terms' | 'privacy') => {
+        e.preventDefault();
+        e.stopPropagation();
+        setLegalModal({ isOpen: true, type });
+    };
+
     return (
         <footer className="border-t border-border/50 py-12">
             <div className="container mx-auto px-4">
                 <div className="max-w-6xl mx-auto">
                     <div className="grid md:grid-cols-3 gap-8">
                         <div>
-                            <div className="flex items-center gap-2 mb-4">
-                                <DollarSign className="w-6 h-6 text-primary" />
-                                <span className="text-xl font-bold select-none">Meu Troco</span>
+                            <div className="flex items-center gap-2.5 mb-4">
+                                <img
+                                    src="/new_rebrand/nobg.png"
+                                    alt={t('brand.full')}
+                                    className="w-9 h-9 object-contain"
+                                />
+                                <span className="text-lg font-bold tracking-tight">{t('brand.name')}</span>
                             </div>
-                            <p className="text-muted-foreground">                                
+                            <p className="text-muted-foreground leading-relaxed">
                                 {t('footer.description')}
                             </p>
                         </div>
@@ -21,10 +42,18 @@ function Footer() {
                         <div>
                             <h3 className="font-semibold mb-4">Links</h3>
                             <div className="space-y-2">
-                                <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">
+                                <a
+                                    href="#"
+                                    onClick={(e) => openLegalModal(e, 'privacy')}
+                                    className="block text-muted-foreground hover:text-primary transition-colors"
+                                >
                                     {t('footer.privacy_policy')}
                                 </a>
-                                <a href="#" className="block text-muted-foreground hover:text-primary transition-colors">
+                                <a
+                                    href="#"
+                                    onClick={(e) => openLegalModal(e, 'terms')}
+                                    className="block text-muted-foreground hover:text-primary transition-colors"
+                                >
                                     {t('footer.terms_of_use')}
                                 </a>
                             </div>
@@ -33,24 +62,33 @@ function Footer() {
                         <div>
                             <h3 className="font-semibold mb-4">{t('footer.social_groups')}</h3>
                             <div className="flex gap-4">
-                                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                                    <Facebook className="w-5 h-5" />
+                                <a href="https://www.linkedin.com/in/thalys-dev202/" className="text-muted-foreground/50 hover:text-primary transition-colors">
+                                    <LinkedinLogo className="w-5 h-5" />
                                 </a>
-                                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                                    <Twitter className="w-5 h-5" />
-                                </a>
-                                <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
-                                    <Instagram className="w-5 h-5" />
+                                <a href="https://www.threads.com/@thalys_xavierr" className="text-muted-foreground/50 hover:text-primary transition-colors">
+                                    <ThreadsLogoIcon className="w-5 h-5" />
                                 </a>
                             </div>
                         </div>
                     </div>
 
-                    <div className="border-t border-border/50 mt-8 pt-8 text-center text-muted-foreground select-none hover:text-emerald-500 transition-all">
-                        <p>&copy; {new Date().getFullYear()} Meu Troco. {t('footer.all_rights')}.</p>
+                    <div className="border-t border-border/50 mt-8 pt-8 text-center text-muted-foreground select-none hover:text-primary transition-all">
+                        {shouldShowBackofficeLink ? (
+                            <Link to="/backoffice/login" aria-label={t('footer.backoffice_access', 'Acesso operacional')} className="inline-block cursor-pointer">
+                                &copy; {new Date().getFullYear()} {t('brand.full')}. {t('footer.all_rights')}.
+                            </Link>
+                        ) : (
+                            <p>&copy; {new Date().getFullYear()} {t('brand.full')}. {t('footer.all_rights')}.</p>
+                        )}
                     </div>
                 </div>
             </div>
+
+            <LegalModals
+                isOpen={legalModal.isOpen}
+                onOpenChange={(open) => setLegalModal(prev => ({ ...prev, isOpen: open }))}
+                type={legalModal.type}
+            />
         </footer>
     )
 }

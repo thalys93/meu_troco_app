@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { User, Pencil, Lock, Cog } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { User, Pencil, Lock, Cog, LayoutGrid } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import PrivateLayout from '../../layout/PrivateLayout';
@@ -22,6 +21,7 @@ import { useTranslation } from 'react-i18next';
 import { FirebaseTimestamp } from '@/types/Firebase';
 import { cn } from '@/lib/utils';
 import ProfileMenuItem from './components/profile-menu-item';
+import { UserRankProfileCard } from '@/components/rank/UserRankProfileCard';
 
 const initialNameForm = {
   name: '',
@@ -34,7 +34,7 @@ const initialPassForm = {
   confirmPassword: '',
 };
 
-const ProfilePage = () => {
+function ProfilePageBody() {
   const { toast } = useToast();
   const { user: userLocal } = useUser();
   const { uid } = useUserStore();
@@ -221,42 +221,23 @@ const ProfilePage = () => {
   ];
 
   return (
-    <PrivateLayout>
-      <div className="mx-auto w-full max-w-xl mt-4 md:mt-6 px-4 md:px-6 space-y-6 pb-28">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {t('sidebar.profile')}
-          </h1>
-          <ProfileMenuSheet
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            title={t('profile.editProfile')}
-          >
-            <ProfileForm
-              form={nameForm}
-              onSubmit={handleSaveProfile}
-              onCancel={() => setEditOpen(false)}
-              file={file}
-              setFile={setFile}
-              onSaveAvatar={handleSaveAvatar}
-              isLoading={isLoading}
-              initialAvatar={userLocal?.details.avatar}
-              t={t}
-            />
-          </ProfileMenuSheet>
-          <Button
-            variant="outline"
-            size="icon"
-            className="rounded-full h-10 w-10 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
-            aria-label={t('profile.editProfile')}
-            onClick={() => setEditOpen(true)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-        </div>
+    <div className="mx-auto w-full max-w-6xl mt-4 md:mt-6 px-4 md:px-6 pb-28 space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {t('sidebar.profile')}
+        </h1>
+        <p className="text-sm text-muted-foreground">{t('profile.subtitle')}</p>
+      </div>
 
-        <Card className="rounded-3xl border border-border/40 shadow-sm overflow-hidden">
-          <CardContent className="pt-8 pb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <Card className="rounded-3xl border border-border/40 shadow-sm h-full">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <User className="h-5 w-5 text-primary" />
+              {t('profile.identityTitle')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
             <div className="flex flex-col items-center text-center">
               <div className="relative mb-4">
                 <div className="relative h-24 w-24 rounded-full overflow-hidden border-2 border-border/60 bg-muted">
@@ -288,16 +269,13 @@ const ProfilePage = () => {
                 {userLocal?.email ?? '—'}
               </p>
             </div>
-          </CardContent>
-        </Card>
 
-        <div className="grid grid-cols-3 gap-3">
-          {stats.map((stat) => (
-            <Card
-              key={stat.label}
-              className="rounded-2xl border border-border/40 bg-card/80 text-center overflow-hidden"
-            >
-              <CardContent className="px-3 py-4">
+            <div className="grid grid-cols-2 gap-3">
+            {stats.map((stat) => (
+              <div
+                key={stat.label}
+                className="rounded-2xl border border-border/50 bg-gradient-to-br from-background to-muted/20 p-3 text-center"
+              >
                 <p
                   className={cn(
                     'text-lg font-semibold tabular-nums',
@@ -309,63 +287,92 @@ const ProfilePage = () => {
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {stat.label}
                 </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              </div>
+            ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        <section>
-          <h3 className="text-base font-semibold text-foreground mb-2">
-            {t('profile.aboutMe')}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {t('profile.aboutMeDescription')}
-          </p>
-        </section>
+        <UserRankProfileCard />
 
-        <div className="space-y-3">
-          <ProfileMenuItem
-            icon={<User className="h-5 w-5" />}
-            title={t('profile.personalInfo')}
-            description={t('profile.aboutMeDescription')}
-            onClick={() => setEditOpen(true)}
-          />
-          {userLocal?.details?.provider === AccountProviders.EMAIL && (
-            <ProfileMenuItem
-              icon={<Lock className="h-5 w-5" />}
-              title={t('profile.changePass')}
-              description={t('profile.changePassDescription')}
-              onClick={() => setPasswordOpen(true)}
-              iconClassName='text-sky-500 bg-sky-500/10'
-            />
-          )}
-
-          <ProfileMenuItem
-            icon={<Cog className="h-5 w-5" />}
-            title={t('sidebar.settings')}
-            description={t('settings.subtitle')}
-            onClick={() => navigate('/dashboard/settings')}
-            iconClassName='text-yellow-400 bg-yellow-400/10'
-          />
-        </div>
-
-        <ProfileMenuSheet
-          open={passwordOpen}
-          onOpenChange={setPasswordOpen}
-          title={t('profile.changePass')}
-          titleIcon={<Lock className="h-5 w-5" />}
-        >
-          <ProfilePasswordForm
-            form={passForm}
-            onSubmit={handleChangePassword}
-            onCancel={() => setPasswordOpen(false)}
-            t={t}
-          />
-        </ProfileMenuSheet>
-
+        <Card className="rounded-3xl border border-border/40 shadow-sm h-full">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <LayoutGrid className="h-5 w-5 text-primary" />
+              {t('profile.shortcuts.title')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {t('profile.shortcuts.description')}
+            </p>
+            <div className="grid grid-cols-1 gap-3">
+              <ProfileMenuItem
+                icon={<User className="h-5 w-5" />}
+                title={t('profile.personalInfo')}
+                description={t('profile.aboutMeDescription')}
+                onClick={() => setEditOpen(true)}
+              />
+              {userLocal?.details?.provider === AccountProviders.EMAIL && (
+                <ProfileMenuItem
+                  icon={<Lock className="h-5 w-5" />}
+                  title={t('profile.changePass')}
+                  description={t('profile.changePassDescription')}
+                  onClick={() => setPasswordOpen(true)}
+                  iconClassName="text-sky-500 bg-sky-500/10"
+                />
+              )}
+              <ProfileMenuItem
+                icon={<Cog className="h-5 w-5" />}
+                title={t('sidebar.settings')}
+                description={t('settings.subtitle')}
+                onClick={() => navigate('/dashboard/settings')}
+                iconClassName="text-yellow-500 bg-yellow-500/10"
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </PrivateLayout>
+
+      <ProfileMenuSheet
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        title={t('profile.editProfile')}
+      >
+        <ProfileForm
+          form={nameForm}
+          onSubmit={handleSaveProfile}
+          onCancel={() => setEditOpen(false)}
+          file={file}
+          setFile={setFile}
+          onSaveAvatar={handleSaveAvatar}
+          isLoading={isLoading}
+          initialAvatar={userLocal?.details.avatar}
+          t={t}
+        />
+      </ProfileMenuSheet>
+
+      <ProfileMenuSheet
+        open={passwordOpen}
+        onOpenChange={setPasswordOpen}
+        title={t('profile.changePass')}
+        titleIcon={<Lock className="h-5 w-5" />}
+      >
+        <ProfilePasswordForm
+          form={passForm}
+          onSubmit={handleChangePassword}
+          onCancel={() => setPasswordOpen(false)}
+          t={t}
+        />
+      </ProfileMenuSheet>
+    </div>
   );
-};
+}
+
+const ProfilePage = () => (
+  <PrivateLayout>
+    <ProfilePageBody />
+  </PrivateLayout>
+);
 
 export default ProfilePage;

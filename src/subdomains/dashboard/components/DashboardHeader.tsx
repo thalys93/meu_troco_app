@@ -9,6 +9,7 @@ import ThemeToggle from '@/components/ThemeToggle';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import LayoutModeToggle from '@/components/LayoutModeToggle';
 import NotificationsTrigger from '@/subdomains/dashboard/components/notifications/NotificationsTrigger';
+import UserRankBadge from '@/components/UserRankBadge';
 
 const DashboardHeader = () => {
     const { user, handleLogout } = useUser();
@@ -26,6 +27,7 @@ const DashboardHeader = () => {
                 <div>
                     <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('dashboard.welcomeGreeting')}</p>
                     <h1 className="text-xl font-bold tracking-tight group-hover:text-primary transition-colors">{user?.displayName ?? '...'}</h1>
+                    <UserRankBadge />
                 </div>
             </Link>
 

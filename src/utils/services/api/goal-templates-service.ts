@@ -10,6 +10,7 @@ import { DEFAULT_RANKS_SEED, type DefaultRankSeed } from '@/constants/default-ra
 import { createBackofficeCrud } from './backoffice-crud-service';
 import { FireStore } from './firebase';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
 
 const DEFAULT_RANK_COLOR = '#6366f1';
 const DEFAULT_RANK_ICON = 'Shield';
@@ -99,6 +100,20 @@ export const useGetRankTier = crud.useItem;
 export const useCreateRankTier = crud.useCreate;
 export const useUpdateRankTier = crud.useUpdate;
 export const useDeleteRankTier = crud.useDelete;
+
+export function useActiveRankTiers() {
+    const query = useGetRankTiers();
+    const activeTiers = useMemo(
+        () => (query.data ?? []).filter((tier) => tier.status === 'active'),
+        [query.data],
+    );
+
+    return {
+        ...query,
+        data: activeTiers,
+        isEmptyCatalog: !query.isLoading && activeTiers.length === 0,
+    };
+}
 
 export const getGoalTemplates = getRankTiers;
 export const getGoalTemplateById = getRankTierById;

@@ -49,6 +49,7 @@ O deploy é realizado automaticamente pelo Firebase CI/CD quando:
 
 - **Preview:** Ao abrir uma Pull Request, um link de preview é gerado para testar
 - **Produção:** Ao fazer merge na branch `master`, o deploy automático é feito para o canal `live`
+- **Nota:** O deploy automático só é acionado quando o título da PR contém o prefixo `[Deploy]`
 
 **Workflow de deploy:**
 1. Abre PR de `dev` → `master`
@@ -111,4 +112,3 @@ Exemplos:
 Responsável: thalys93  
 Ambiente produtivo. Mudanças exigem responsabilidade e revisão.
 
- 

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Wallet } from "../../../../../types/Wallet";
 import { Button } from "@/components/ui/button";
 import { Card as UICard, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Edit, SlidersHorizontal, Trash } from "lucide-react";
+import { Edit, SlidersHorizontal, Trash, Eye } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getCardFlagIcon } from "../../../../../utils/cardUtils";
 import { Handbag } from "@phosphor-icons/react";
@@ -14,12 +14,15 @@ interface CardItemProps {
     onEdit: (card: Wallet) => void;
     onAdjust: (card: Wallet) => void;
     onDelete: (card: Wallet) => void;
+    onViewDetails?: (card: Wallet) => void;
     displayBalance: number;
     monthOutflow: number;
     monthLabel: string;
+    currentStatement?: number;
+    nextMonthStatement?: number;
 }
 
-export function CardItem({ card, onEdit, onAdjust, onDelete, displayBalance, monthOutflow, monthLabel }: CardItemProps) {
+export function CardItem({ card, onEdit, onAdjust, onDelete, onViewDetails, displayBalance, monthOutflow, monthLabel, currentStatement, nextMonthStatement }: CardItemProps) {
     const { t, i18n } = useTranslation();
     const [isHovered, setIsHovered] = useState(false);
 
@@ -35,6 +38,8 @@ export function CardItem({ card, onEdit, onAdjust, onDelete, displayBalance, mon
         : card.type === "voucher"
             ? t("wallets.benefitBalance", "Saldo do benefício")
             : t("wallets.availableBalance", "Saldo disponível");
+
+    const isCredit = card.type === "credit";
 
     const actionItems = useMemo<ActionMenuItem[]>(
         () => [
@@ -93,6 +98,16 @@ export function CardItem({ card, onEdit, onAdjust, onDelete, displayBalance, mon
                 <p className="text-xs text-muted-foreground mt-1">
                     {balanceLabel}
                 </p>
+                {isCredit && currentStatement !== undefined && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                        {t("wallets.currentStatement")}: {formatCurrency(currentStatement)}
+                    </p>
+                )}
+                {isCredit && nextMonthStatement !== undefined && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                        {t("wallets.nextMonthStatement")}: {formatCurrency(nextMonthStatement)}
+                    </p>
+                )}
                 <p className="text-xs text-muted-foreground mt-1">
                     {t("wallets.monthOutflow", { month: monthLabel, value: formatCurrency(monthOutflow) })}
                 </p>
@@ -101,6 +116,11 @@ export function CardItem({ card, onEdit, onAdjust, onDelete, displayBalance, mon
                 </p>
             </CardContent>
             <CardFooter className="flex justify-end gap-2 p-2 bg-muted/50">
+                {isCredit && onViewDetails && (
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onViewDetails(card)}>
+                        <Eye className="h-4 w-4" />
+                    </Button>
+                )}
                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onAdjust(card)}>
                     <SlidersHorizontal className="h-4 w-4" />
                 </Button>

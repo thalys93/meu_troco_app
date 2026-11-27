@@ -85,6 +85,8 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
   const [allocationRows, setAllocationRows] = useState<AllocationDraftRow[]>(
     createAllocationDraftRows
   );
+  const [isInstallment, setIsInstallment] = useState(false);
+  const [installmentCount, setInstallmentCount] = useState(2);
   const transactionForm = useForm({
     defaultValues: buildInitialValues(),
   });
@@ -265,16 +267,22 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
     };
   };
 
-  const buildFinalTransactionData = (data: Transaction): Transaction => {
+  const buildFinalTransactionData = (data: Transaction, installmentData?: { installmentNumber: number; installmentTotal: number; installmentGroupId: string; date: string }): Transaction => {
     const valueNum = parseDisplayValue(displayValue);
     const base: Transaction = {
       ...data,
-      value: valueNum,
+      value: installmentData ? valueNum / installmentData.installmentTotal : valueNum,
+      date: installmentData?.date || data.date,
       type,
       category,
       walletId: selectedWalletId?.trim() || NO_WALLET_ID,
       ...((type === 'conta' || type === 'despesa') && !id ? { paid: false } : {}),
       ...(recurrenceId ? { recurrenceId } : {}),
+      ...(installmentData ? {
+        installmentTotal: installmentData.installmentTotal,
+        installmentNumber: installmentData.installmentNumber,
+        installmentGroupId: installmentData.installmentGroupId,
+      } : {}),
     };
 
     if (!splitAcrossWallets) {
@@ -338,6 +346,54 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
           : t('transactionForm.toast.missingFields', { fields: description }),
         variant: "destructive",
       });
+      return;
+    }
+
+    // Handle installments
+    if (isInstallment && installmentCount > 1) {
+      const installmentGroupId = crypto.randomUUID();
+      const baseDate = new Date(data.date);
+      const transactionsToCreate: Transaction[] = [];
+
+      for (let i = 0; i < installmentCount; i++) {
+        const installmentDate = new Date(baseDate);
+        installmentDate.setMonth(baseDate.getMonth() + i);
+        const dateString = installmentDate.toISOString().split('T')[0];
+
+        const installmentData = buildFinalTransactionData(data, {
+          installmentNumber: i + 1,
+          installmentTotal: installmentCount,
+          installmentGroupId,
+          date: dateString,
+        });
+        transactionsToCreate.push(installmentData);
+      }
+
+      // Create all transactions
+      for (const tx of transactionsToCreate) {
+        create(tx, {
+          onSuccess: () => {
+            // Only show toast for the last transaction
+            if (tx.installmentNumber === installmentCount) {
+              toast({
+                title: t('transactionForm.toast.success'),
+                description: `${installmentCount}x ${typeLabel} ${t('transactionForm.toast.successDescription')}`,
+                variant: "success",
+              });
+              if (onSuccess) onSuccess();
+              if (onCancel) onCancel();
+            }
+          },
+          onError: (error) => {
+            console.error(error);
+            toast({
+              title: 'Erro',
+              description: t('transactionForm.toast.errorDescription'),
+              variant: 'destructive',
+            });
+          },
+        });
+      }
       return;
     }
 
@@ -470,14 +526,14 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
           mode === 'sheet' && "min-h-0 flex-1 overflow-y-auto overscroll-contain"
         )}
       >
-      <div className="w-full text-center space-y-2 py-6 md:py-8">
+      <div className="w-full text-center space-y-2 py-4 md:py-8">
         <p className="text-muted-foreground text-sm font-medium uppercase tracking-wider">
           {t('transactionForm.form.value')}
         </p>
-        <div className="mx-auto flex w-full items-center justify-center gap-1">
+        <div className="mx-auto flex w-full items-center justify-center gap-1 overflow-hidden px-2">
           <span
             className={cn(
-              "shrink-0 text-4xl font-bold",
+              "shrink-0 text-2xl sm:text-4xl font-bold",
               type === 'receita'
                 ? "text-emerald-400"
                 : type === 'conta'
@@ -488,7 +544,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
             {type === 'receita' ? '+' : '-'}
           </span>
           <div className="relative inline-flex items-center">
-            <span className="mr-1 shrink-0 select-none text-4xl font-medium text-muted-foreground">
+            <span className="mr-1 shrink-0 select-none text-2xl sm:text-4xl font-medium text-muted-foreground">
               {currencySymbol}
             </span>
             <input
@@ -499,7 +555,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
               placeholder="0"
               style={{ width: `${Math.max(displayValue.length || 1, 2) + 0.75}ch` }}
               className={cn(
-                "max-w-[250px] bg-transparent border-none p-0 text-6xl font-black tracking-tighter text-center outline-none focus-visible:ring-0 placeholder:text-muted-foreground/60",
+                "max-w-[200px] sm:max-w-[250px] bg-transparent border-none p-0 text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-center outline-none focus-visible:ring-0 placeholder:text-muted-foreground/60",
                 type === 'receita'
                   ? "text-emerald-200"
                   : type === 'conta'
@@ -510,7 +566,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
               autoFocus
             />
           </div>
-          <span className="mb-2 ml-1 shrink-0 self-end text-2xl font-medium text-muted-foreground">
+          <span className="mb-1 ml-1 shrink-0 self-end text-lg sm:text-2xl font-medium text-muted-foreground">
             {currencyName}
           </span>
         </div>
@@ -628,9 +684,57 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
         </div>
       )}
 
+      {/* Installment Options for Credit Cards */}
+      {!splitAcrossWallets && selectedWalletId && selectedWalletId !== NO_WALLET_ID && (
+        (() => {
+          const selectedWallet = realWallets.find((w) => w.id === selectedWalletId);
+          if (selectedWallet?.type === "credit") {
+            return (
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="installment"
+                    checked={isInstallment}
+                    onChange={(e) => setIsInstallment(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="installment" className="text-sm cursor-pointer">
+                    {t("wallets.installments", "É parcelado?")}
+                  </Label>
+                </div>
+                {isInstallment && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-semibold text-muted-foreground uppercase ml-1">
+                      {t("wallets.installmentCount", "Número de parcelas")}
+                    </Label>
+                    <Select
+                      value={String(installmentCount)}
+                      onValueChange={(val) => setInstallmentCount(parseInt(val, 10))}
+                    >
+                      <SelectTrigger className="w-full bg-background/40 border-accent h-12 rounded-2xl px-4">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((num) => (
+                          <SelectItem key={num} value={String(num)}>
+                            {num}x
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            );
+          }
+          return null;
+        })()
+      )}
+
       <div className="space-y-3">
         <div className="flex flex-col md:grid md:grid-cols-2 md:gap-5 md:divide-x md:divide-accent/10">
-          <div className="flex items-center py-3 border-b border-accent/10 md:border-b-0">
+          <div className="flex items-center py-3 border-b border-accent/10 md:border-b-0 w-full">
             <Input
               name="description"
               placeholder={`${t('transactionForm.form.descriptionPlaceholder')} ${typeItemLabel}`}
@@ -640,7 +744,7 @@ const TransactionForm = ({ type, transactionId: transactionIdProp, onSuccess, on
               onFocus={() => setFieldErrors((prev) => ({ ...prev, description: false }))}
             />
           </div>
-          <div className="flex items-center py-3 border-b border-accent/10 md:border-b-0 md:-ml-2">
+          <div className="flex items-center py-3 border-b border-accent/10 md:border-b-0 md:-ml-2 w-full">
             <DatePicker
               value={transactionForm.watch('date') || ''}
               onChange={(iso) => {

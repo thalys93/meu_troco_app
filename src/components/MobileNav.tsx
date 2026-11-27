@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-expressions */
 import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Receipt, BarChart3, Settings } from 'lucide-react';
+import { Home, Receipt, BarChart3, Settings, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { Bank } from '@phosphor-icons/react';
+import { useDashboardPreferences } from '@/subdomains/dashboard/context/dashboard-preferences';
 
 type NavItem = {
   name: string;
@@ -15,16 +16,30 @@ type NavItem = {
 const MobileNav = () => {
   const location = useLocation();
   const { t } = useTranslation();
+  const { layoutMode } = useDashboardPreferences();
   const navRef = useRef<HTMLElement>(null);
   const [hasOverflow, setHasOverflow] = useState(false);
 
-  const navigation = useMemo((): NavItem[] => [
-    { name: t('sidebar.home'), href: '/dashboard', icon: Home },
-    { name: t('sidebar.transactions'), href: '/dashboard/transactions', icon: Bank },
-    { name: t('sidebar.bills'), href: '/dashboard/contas', icon: Receipt },
-    { name: t('sidebar.reports'), href: '/dashboard/relatorios', icon: BarChart3 },
-    { name: t('sidebar.settings'), href: '/dashboard/settings', icon: Settings },
-  ], [t]);
+  const isNotionDesktop = layoutMode === 'notion';
+
+  const navigation = useMemo((): NavItem[] => {
+    const items: NavItem[] = [
+      { name: t('sidebar.home'), href: '/dashboard', icon: Home },
+      { name: t('sidebar.transactions'), href: '/dashboard/transactions', icon: Bank },
+      { name: t('sidebar.bills'), href: '/dashboard/contas', icon: Receipt },
+      { name: t('sidebar.wallets'), href: '/dashboard/wallets', icon: CreditCard },
+      { name: t('sidebar.reports'), href: '/dashboard/relatorios', icon: BarChart3 },
+      { name: t('sidebar.settings'), href: '/dashboard/settings', icon: Settings },
+    ];
+
+    if (isNotionDesktop) {
+      return items.filter((item) =>
+        ['/dashboard', '/dashboard/wallets', '/dashboard/relatorios', '/dashboard/settings'].includes(item.href)
+      );
+    }
+
+    return items;
+  }, [t, isNotionDesktop]);
 
   useEffect(() => {
     const nav = navRef.current;

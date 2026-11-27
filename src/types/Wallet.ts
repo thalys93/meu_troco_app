@@ -11,6 +11,7 @@ export interface Wallet {
     initialBalance?: number;
     creditLimit?: number;
     billingClosingDay?: number;
+    dueDay?: number;
     reloadAmount?: number;
     reloadDay?: number;
     type: WalletType;

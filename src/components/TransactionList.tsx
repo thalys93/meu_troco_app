@@ -1350,8 +1350,8 @@ const TransactionList = ({
 
   return (
     <>
-      <Card className={cn("glass-card", variant === 'table' && "rounded-xl border-border/60")}>
-        <CardHeader>
+      <Card className={cn("glass-card overflow-hidden", variant === 'table' && "rounded-xl border-border/60")}>
+        <CardHeader className="p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <CardTitle className={cn("font-semibold", variant === 'table' ? "text-base md:text-lg tracking-tight" : "text-lg")}>
               {title}
@@ -1482,10 +1482,10 @@ const TransactionList = ({
             </div>
           )}
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0 space-y-4">
           <div className={cn(
             "flex items-center justify-between",
-            variant === 'table' && "border-b border-border/40 pb-3 -mx-6 px-6"
+            variant === 'table' && "border-b border-border/40 pb-3 -mx-4 px-4 sm:-mx-6 sm:px-6"
           )}>
             <ToggleGroup
               type="multiple"
@@ -1501,19 +1501,19 @@ const TransactionList = ({
               }}
               variant="outline"
               size="sm"
-              className={cn("flex-wrap gap-2", variant === 'table' && "gap-1.5")}
+              className={cn("w-full justify-start flex-wrap gap-1.5 sm:gap-2", variant === 'table' && "gap-1.5")}
             >
-              <ToggleGroupItem value="Todos" aria-label="Todos">
+              <ToggleGroupItem value="Todos" aria-label="Todos" className="h-8 px-2.5 text-xs sm:h-9 sm:px-3 sm:text-sm">
                 {t('default.all') || 'Todos'}
               </ToggleGroupItem>
-              <ToggleGroupItem value="receita" aria-label="Receitas" className="data-[state=on]:bg-emerald-500/10 data-[state=on]:text-emerald-700 dark:data-[state=on]:text-emerald-300">
-                <TrendingUp className="w-4 h-4 mr-1 text-emerald-600 dark:text-emerald-400" /> {t('landing_v2.transactions.income')}
+              <ToggleGroupItem value="receita" aria-label="Receitas" className="h-8 px-2.5 text-xs sm:h-9 sm:px-3 sm:text-sm data-[state=on]:bg-emerald-500/10 data-[state=on]:text-emerald-700 dark:data-[state=on]:text-emerald-300">
+                <TrendingUp className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 shrink-0 text-emerald-600 dark:text-emerald-400" /> {t('landing_v2.transactions.income')}
               </ToggleGroupItem>
-              <ToggleGroupItem value="despesa" aria-label="Despesas" className="data-[state=on]:bg-red-500/10 data-[state=on]:text-red-700 dark:data-[state=on]:text-red-300">
-                <TrendingDown className="w-4 h-4 mr-1 text-red-600 dark:text-red-400" /> {t('landing_v2.transactions.expense')}
+              <ToggleGroupItem value="despesa" aria-label="Despesas" className="h-8 px-2.5 text-xs sm:h-9 sm:px-3 sm:text-sm data-[state=on]:bg-red-500/10 data-[state=on]:text-red-700 dark:data-[state=on]:text-red-300">
+                <TrendingDown className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 shrink-0 text-red-600 dark:text-red-400" /> {t('landing_v2.transactions.expense')}
               </ToggleGroupItem>
-              <ToggleGroupItem value="conta" aria-label="Contas" className="data-[state=on]:bg-amber-500/10 data-[state=on]:text-amber-700 dark:data-[state=on]:text-amber-300">
-                <Receipt className="w-4 h-4 mr-1 text-amber-600 dark:text-amber-400" /> {t('sidebar.bills')}
+              <ToggleGroupItem value="conta" aria-label="Contas" className="h-8 px-2.5 text-xs sm:h-9 sm:px-3 sm:text-sm data-[state=on]:bg-amber-500/10 data-[state=on]:text-amber-700 dark:data-[state=on]:text-amber-300">
+                <Receipt className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 shrink-0 text-amber-600 dark:text-amber-400" /> {t('sidebar.bills')}
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
@@ -1726,15 +1726,15 @@ const TransactionList = ({
               )}
             </ScrollArea>
           ) : (
-            <ScrollArea className={scrollClassName}>
+            <ScrollArea className={cn(scrollClassName, "[&_[data-radix-scroll-area-viewport]>div]:!block")}>
               {mergedListItems.length === 0 ? (
                 <p className="text-muted-foreground text-center py-8">
                   {t('transactionList.empty')}
                 </p>
               ) : (
-                <>
+                <div className="w-full min-w-0">
                 {groupedByDay.map((group) => (
-                  <div key={group.dateKey} className="mb-3">
+                  <div key={group.dateKey} className="mb-3 w-full min-w-0">
                     <div className="flex items-center justify-between mb-2 px-1">
                       <p className="text-xs font-semibold capitalize text-muted-foreground">{group.label}</p>
                       <span className="text-[11px] tabular-nums text-muted-foreground/80">{group.items.length}</span>
@@ -1755,7 +1755,7 @@ const TransactionList = ({
                       <div
                         data-transaction-row-id={transaction.id}
                         className={cn(
-                          "flex items-center justify-between p-4 rounded-xl border bg-background/50 shadow-sm hover:shadow-md transition-all mb-2",
+                          "flex items-center justify-between gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl border bg-background/50 shadow-sm hover:shadow-md transition-all mb-2 min-w-0 overflow-hidden",
                           isPendingTransaction(transaction.id) && "pointer-events-none animate-pulse",
                           isSkippedListRow && "opacity-70 border-red-500/70 shadow-[0_0_12px_rgba(239,68,68,0.35)]",
                           isSearchListMatch &&
@@ -1764,10 +1764,10 @@ const TransactionList = ({
                             'border-amber-500 bg-amber-500/15 shadow-[0_0_14px_rgba(245,158,11,0.35)]'
                         )}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                           <div
                             className={cn(
-                              "w-10 h-10 rounded-full flex items-center justify-center",
+                              "w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-full flex items-center justify-center",
                               transaction.type === 'receita'
                                 ? "bg-emerald-500/10"
                                 : transaction.type === 'conta'
@@ -1776,59 +1776,45 @@ const TransactionList = ({
                             )}
                           >
                             {transaction.type === 'receita' ? (
-                              <TrendingUp className="w-5 h-5 text-emerald-500" />
+                              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-500" />
                             ) : transaction.type === 'conta' ? (
-                              <Receipt className="w-5 h-5 text-amber-500" />
+                              <Receipt className="w-4 h-4 sm:w-5 sm:h-5 text-amber-500" />
                             ) : (
-                              <TrendingDown className="w-5 h-5 text-red-500" />
+                              <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
                             )}
                           </div>
-                          <div>
+                          <div className="min-w-0 flex-1">
                             <p
                               className={cn(
-                                "font-medium leading-tight",
+                                "text-sm sm:text-base font-medium leading-tight truncate",
                                 isSkippedListRow &&
                                   "line-through text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.75)] dark:text-red-400"
                               )}
                             >
                               {transaction.description}
                             </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Badge variant="secondary" className="text-xs gap-1.5">
+                            <div className="flex items-center flex-wrap gap-1.5 sm:gap-2 mt-1 min-w-0">
+                              <Badge variant="secondary" className="text-[11px] sm:text-xs gap-1 sm:gap-1.5 max-w-[140px] sm:max-w-none px-1.5 sm:px-2.5 py-0 sm:py-0.5">
                                 {(() => {
                                   const Icon = getCategoryIcon(transaction.category);
                                   return (
                                     <>
-                                      {Icon && <Icon className="h-3.5 w-3.5 shrink-0 opacity-70" aria-hidden />}
-                                      <span>{getCategoryLabel(transaction.category)}</span>
+                                      {Icon && <Icon className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0 opacity-70" aria-hidden />}
+                                      <span className="truncate">{getCategoryLabel(transaction.category)}</span>
                                     </>
                                   );
                                 })()}
                               </Badge>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-[11px] sm:text-xs text-muted-foreground whitespace-nowrap shrink-0">
                                 {formatDate(transaction.date)}
                               </span>
                             </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {canSkipListRow && (
-                            <TransactionPaymentStatus
-                              showPaid={canHavePaidStatus(transaction)}
-                              isPaid={isTransactionPaid(transaction)}
-                              isSkipped={isSkippedListRow}
-                              disabled={
-                                isReadOnly ||
-                                isTogglingThisSkippedList ||
-                                (isTogglingPaid && togglingPaidId === transaction.id)
-                              }
-                              onTogglePaid={() => handleToggleBillPaid(transaction)}
-                              onToggleSkipped={() => handleToggleSkipped(transaction)}
-                            />
-                          )}
+                        <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center sm:gap-2 shrink-0">
                           <div
                             className={cn(
-                              "font-semibold text-right min-w-[88px]",
+                              "text-sm sm:text-base font-semibold text-right whitespace-nowrap tabular-nums sm:min-w-[88px] sm:order-2",
                               isSkippedListRow
                                 ? "line-through text-red-500 drop-shadow-[0_0_6px_rgba(239,68,68,0.75)] dark:text-red-400"
                                 : transaction.type === 'receita'
@@ -1840,11 +1826,39 @@ const TransactionList = ({
                           >
                             {formatAmount(transaction.value, transaction.type)}
                           </div>
+                          {(canSkipListRow || !isReadOnly) && (
+                            <div className="flex items-center gap-1 sm:gap-2 shrink-0 sm:order-1">
+                              {canSkipListRow && (
+                                <TransactionPaymentStatus
+                                  showPaid={canHavePaidStatus(transaction)}
+                                  isPaid={isTransactionPaid(transaction)}
+                                  isSkipped={isSkippedListRow}
+                                  disabled={
+                                    isReadOnly ||
+                                    isTogglingThisSkippedList ||
+                                    (isTogglingPaid && togglingPaidId === transaction.id)
+                                  }
+                                  onTogglePaid={() => handleToggleBillPaid(transaction)}
+                                  onToggleSkipped={() => handleToggleSkipped(transaction)}
+                                />
+                              )}
+                              {!isReadOnly && (
+                                <div className="sm:hidden">
+                                  <EntityActionsDropdown
+                                    items={listActionItems}
+                                    menuLabel={t('transactionList.actions')}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
                           {!isReadOnly && (
-                            <EntityActionsDropdown
-                              items={listActionItems}
-                              menuLabel={t('transactionList.actions')}
-                            />
+                            <div className="hidden sm:block sm:order-3">
+                              <EntityActionsDropdown
+                                items={listActionItems}
+                                menuLabel={t('transactionList.actions')}
+                              />
+                            </div>
                           )}
                         </div>
                       </div>
@@ -1863,7 +1877,7 @@ const TransactionList = ({
                     })}
                   </div>
                 ))}
-                </>
+                </div>
               )}
 
             </ScrollArea>

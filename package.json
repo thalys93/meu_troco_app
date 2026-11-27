@@ -1,7 +1,7 @@
 {
   "name": "meu_troco_app",
   "private": true,
-  "version": "4.0",
+  "version": "4.1.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

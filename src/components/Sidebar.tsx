@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Receipt, User, LogOut, Coins, BarChart3, Settings } from 'lucide-react';
+import { Home, Receipt, User, LogOut, Coins, BarChart3, Settings, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarHeader, SidebarMenu } from './ui/sidebar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
@@ -22,6 +22,7 @@ const AppSidebar = () => {
     { name: t('sidebar.home'), href: '/dashboard', icon: Home },
     { name: t('sidebar.transactions'), href: "/dashboard/transactions", icon: BankIcon },
     { name: t('sidebar.bills'), href: '/dashboard/contas', icon: Receipt },
+    { name: t('sidebar.wallets'), href: '/dashboard/wallets', icon: CreditCard },
     { name: t('sidebar.reports'), href: '/dashboard/relatorios', icon: BarChart3 },
     { name: t('sidebar.settings'), href: '/dashboard/settings', icon: Settings },
   ];

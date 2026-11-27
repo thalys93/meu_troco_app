@@ -120,6 +120,11 @@
     font-family: 'Inter', system-ui, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
 }
 
 @layer components {

@@ -7,6 +7,7 @@ export const WalletSchema = z.object({
     initialBalance: z.coerce.number().optional(),
     creditLimit: z.coerce.number().optional(),
     billingClosingDay: z.coerce.number().min(1).max(28).optional(),
+    dueDay: z.coerce.number().min(1).max(28).optional(),
     reloadAmount: z.coerce.number().optional(),
     reloadDay: z.coerce.number().min(1).max(28).optional(),
     type: z.enum(["credit", "debit", "voucher"]),

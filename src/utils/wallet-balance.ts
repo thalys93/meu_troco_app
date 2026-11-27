@@ -110,8 +110,11 @@ export function computePocketBalance(transactions: Transaction[], extraPocketWal
   );
 }
 
-export function computeDebitBalance(wallet: Wallet, transactions: Transaction[]) {
-  return roundMoney(getWalletInitialBalance(wallet) + computeWalletNet(wallet.id, transactions));
+export function computeDebitBalance(wallet: Wallet, transactions: Transaction[], monthKey?: string) {
+  const filteredTransactions = monthKey
+    ? filterTransactionsByMonth(transactions, monthKey)
+    : transactions;
+  return roundMoney(getWalletInitialBalance(wallet) + computeWalletNet(wallet.id, filteredTransactions));
 }
 
 export function computeCreditAvailableLimit(wallet: Wallet, transactions: Transaction[], monthKey: string) {
@@ -155,7 +158,7 @@ export function computeWalletDisplayBalance(wallet: Wallet, transactions: Transa
     const monthEnd = new Date(referenceMonth.getFullYear(), referenceMonth.getMonth() + 1, 0);
     return computeVoucherBalance(wallet, transactions, monthEnd);
   }
-  return computeDebitBalance(wallet, transactions);
+  return computeDebitBalance(wallet, transactions, monthKey);
 }
 
 export function computeWalletFlowRow(wallet: Wallet, transactions: Transaction[], monthKey: string) {

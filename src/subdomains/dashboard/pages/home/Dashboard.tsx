@@ -194,7 +194,7 @@ function DashboardHomeBody() {
   return (
     <motion.div
       className={cn(
-        "container mx-auto mt-6 md:mt-3 mb-16 md:mb-12 px-4 md:px-6 space-y-6 md:space-y-8",
+        "w-full mx-auto mt-6 md:mt-3 mb-16 md:mb-12 px-4 md:px-6 space-y-6 md:space-y-8",
         isNotionDesktop ? "max-w-screen-2xl" : "max-w-5xl"
       )}
       initial="hidden"
@@ -292,7 +292,7 @@ function DashboardHomeBody() {
 
             <motion.div
               variants={itemVariants}
-              className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full items-stretch auto-rows-[minmax(0,1fr)]"
+              className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch overflow-hidden"
             >
               <StatCard
                 title={t('dashboard.cardTotalIncome')}
@@ -311,7 +311,7 @@ function DashboardHomeBody() {
                 className="h-full border-red-500/10 shadow-none hover:shadow-sm"
               />
               <div className={cn(
-                "col-span-2 hidden md:flex items-center justify-between p-4 md:p-6 rounded-3xl border transition-colors duration-500",
+                "sm:col-span-2 hidden md:flex items-center justify-between p-4 md:p-6 rounded-3xl border transition-colors duration-500",
                 bannerStyles.container
               )}>
                 <div className="flex items-center gap-4">

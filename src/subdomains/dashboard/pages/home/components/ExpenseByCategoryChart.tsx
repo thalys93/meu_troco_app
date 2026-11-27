@@ -139,7 +139,7 @@ export default function ExpenseByCategoryChart({
   );
 
   return (
-    <Card className="glass-card">
+    <Card className="glass-card overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="text-base md:text-lg">
           {t("dashboard.charts.expenseByCategory")}

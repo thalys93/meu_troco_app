@@ -9,12 +9,15 @@ interface SortableCardItemProps {
     onEdit: (card: Wallet) => void;
     onAdjust: (card: Wallet) => void;
     onDelete: (card: Wallet) => void;
+    onViewDetails?: (card: Wallet) => void;
     displayBalance: number;
     monthOutflow: number;
     monthLabel: string;
+    currentStatement?: number;
+    nextMonthStatement?: number;
 }
 
-export function SortableCardItem({ card, onEdit, onAdjust, onDelete, displayBalance, monthOutflow, monthLabel }: SortableCardItemProps) {
+export function SortableCardItem({ card, onEdit, onAdjust, onDelete, onViewDetails, displayBalance, monthOutflow, monthLabel, currentStatement, nextMonthStatement }: SortableCardItemProps) {
     const {
         attributes,
         listeners,
@@ -45,9 +48,12 @@ export function SortableCardItem({ card, onEdit, onAdjust, onDelete, displayBala
                 onEdit={onEdit}
                 onAdjust={onAdjust}
                 onDelete={onDelete}
+                onViewDetails={onViewDetails}
                 displayBalance={displayBalance}
                 monthOutflow={monthOutflow}
                 monthLabel={monthLabel}
+                currentStatement={currentStatement}
+                nextMonthStatement={nextMonthStatement}
             />
         </div>
     );

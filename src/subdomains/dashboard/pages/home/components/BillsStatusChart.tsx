@@ -126,7 +126,7 @@ export default function BillsStatusChart({ transactions }: BillsStatusChartProps
   );
 
   return (
-    <Card className="glass-card">
+    <Card className="glass-card overflow-hidden">
       <CardHeader className="pb-2">
         <CardTitle className="text-base md:text-lg">
           {t("dashboard.billsChart.title")}

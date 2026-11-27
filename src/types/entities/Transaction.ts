@@ -15,4 +15,7 @@ export interface Transaction {
     cardId?: string;
     allocations?: WalletAllocation[];
     recurrenceId?: string;
+    installmentTotal?: number;
+    installmentNumber?: number;
+    installmentGroupId?: string;
 }

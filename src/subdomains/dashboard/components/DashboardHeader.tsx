@@ -26,12 +26,12 @@ const DashboardHeader = () => {
                 </Avatar>
                 <div>
                     <p className="text-xs text-muted-foreground font-semibold uppercase tracking-wider">{t('dashboard.welcomeGreeting')}</p>
-                    <h1 className="text-xl font-bold tracking-tight group-hover:text-primary transition-colors">{user?.displayName ?? '...'}</h1>
+                    <h1 className="text-lg sm:text-xl font-bold tracking-tight group-hover:text-primary transition-colors truncate max-w-[150px] sm:max-w-none">{user?.displayName ?? '...'}</h1>
                     <UserRankBadge />
                 </div>
             </Link>
 
-            <div className="flex items-center gap-0.5 sm:gap-1">
+            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                 <NotificationsTrigger />
                 <ThemeToggle />
                 <LanguageSwitcher />

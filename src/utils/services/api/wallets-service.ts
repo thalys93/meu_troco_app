@@ -22,13 +22,14 @@ const LEGACY_COLLECTION_NAME = "cards";
 
 type LegacyCard = Omit<Wallet, "accountName"> & { accountName?: string };
 
-const resolveFinancialFields = (data: LegacyCard): Pick<Wallet, "initialBalance" | "creditLimit" | "billingClosingDay" | "reloadAmount" | "reloadDay"> => {
+const resolveFinancialFields = (data: LegacyCard): Pick<Wallet, "initialBalance" | "creditLimit" | "billingClosingDay" | "dueDay" | "reloadAmount" | "reloadDay"> => {
     const balance = data.balance ?? 0;
     if (data.type === "credit") {
         return {
             initialBalance: data.initialBalance,
             creditLimit: data.creditLimit ?? balance,
             billingClosingDay: data.billingClosingDay,
+            dueDay: data.dueDay,
             reloadAmount: data.reloadAmount,
             reloadDay: data.reloadDay,
         };
@@ -37,6 +38,7 @@ const resolveFinancialFields = (data: LegacyCard): Pick<Wallet, "initialBalance"
         initialBalance: data.initialBalance ?? balance,
         creditLimit: data.creditLimit,
         billingClosingDay: data.billingClosingDay,
+        dueDay: data.dueDay,
         reloadAmount: data.reloadAmount,
         reloadDay: data.reloadDay,
     };

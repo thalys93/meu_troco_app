@@ -162,7 +162,7 @@ const BalanceCard = ({
 
     return (
         <Card className={cn("overflow-hidden border-none text-white shadow-xl rounded-3xl transition-all duration-500", styles.card)}>
-            <CardContent className="p-8">
+            <CardContent className="p-5 sm:p-8">
                 <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex flex-col gap-1.5 min-w-0">
                         <h2 className={cn("text-sm font-semibold tracking-wide uppercase", styles.label)}>
@@ -223,7 +223,7 @@ const BalanceCard = ({
                                 transition={{ duration: 0.2 }}
                             >
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-4xl md:text-5xl font-black tracking-tight">
+                                    <span className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight">
                                         {formatCurrency(primaryBalance)}
                                     </span>
                                 </div>
